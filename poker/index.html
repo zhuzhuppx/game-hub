@@ -30,7 +30,7 @@ canvas{width:100%;touch-action:none;background:#0d5c2e;border-radius:8px;display
 <script>
 var canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
 var W,H,CARD_W,CARD_H,hand=[],ai1=[],ai2=[],selected=[];
-var landlord,curPlayer,lastPlay,lastPlayer,passCount,gameOver,lock;
+var landlord,curPlayer,lastPlay,lastPlayer,lastCards=[],passCount,gameOver,lock;
 var SUITS=['♠','♥','♣','♦'],RANKS=['3','4','5','6','7','8','9','10','J','Q','K','A','2'];
 
 function resize(){var w=Math.min(600,canvas.parentElement.clientWidth-4);canvas.style.width=w+'px';W=Math.floor(w*0.98);H=Math.floor(W*0.75);canvas.width=W;canvas.height=H;CARD_W=Math.min(Math.floor(W/8),80);CARD_H=Math.floor(CARD_W*1.45)}
@@ -41,7 +41,7 @@ function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.random()*(i+1)|0;va
 function sort(h){h.sort(function(a,b){return a.v-b.v||SUITS.indexOf(a.s)-SUITS.indexOf(b.s)})}
 function hands(h){return h.length}
 
-function startGame(){lock=false;lastPlay=null;lastPlayer=-1;passCount=0;selected=[];gameOver=false
+function startGame(){lock=false;lastPlay=null;lastPlayer=-1;lastCards=[];passCount=0;selected=[];gameOver=false
 disableBtns()
 var d=shuffle(deck())||deck();d=shuffle(d)||d
 hand=d.slice(0,17);ai1=d.slice(17,34);ai2=d.slice(34,51);var landCards=d.slice(51,54)
@@ -120,7 +120,7 @@ if(!play){msg('无效牌型！');lock=false;return}
 if(lastPlay&&lastPlayer!==0&&!canBeat(play,lastPlay)){msg('打不过，换一组牌');lock=false;return}
 // Remove cards
 selected.forEach(function(c){var idx=hand.indexOf(c);if(idx>=0)hand.splice(idx,1)})
-lastPlay=play;lastPlayer=0;passCount=0;selected=[]
+lastPlay=play;lastPlayer=0;lastCards=selected.slice();passCount=0;selected=[]
 msg('出牌成功！手牌 '+hands(hand)+' 张')
 draw()
 if(hand.length===0){gameOver=true;msg('🎉 你赢了！');disableBtns();draw();lock=false;return}
@@ -132,7 +132,7 @@ if(!lastPlay||lastPlayer===0){msg('必须出牌！');return}
 lock=true;selected=[];passCount++
 msg('你不出 ('+passCount+'人过)')
 disableBtns();draw()
-setTimeout(function(){if(passCount>=2){lastPlay=null;lastPlayer=-1;passCount=0;msg('新回合')}
+setTimeout(function(){if(passCount>=2){lastPlay=null;lastPlayer=-1;lastCards=[];passCount=0;msg('新回合')}
 nextTurn()},300)}
 
 function nextTurn(){if(gameOver)return
@@ -155,11 +155,11 @@ if(!pick){// pass
 passCount++
 msg('AI-'+(curPlayer)+' 不出 ('+passCount+'人过)')
 draw()
-if(passCount>=2){lastPlay=null;lastPlayer=-1;passCount=0;msg('新回合')}
+if(passCount>=2){lastPlay=null;lastPlayer=-1;lastCards=[];passCount=0;msg('新回合')}
 lock=false;nextTurn();return}
 // Play
 pick.forEach(function(c){var idx=h.indexOf(c);if(idx>=0)h.splice(idx,1)})
-lastPlay=parse(pick);lastPlayer=curPlayer;passCount=0
+lastPlay=parse(pick);lastPlayer=curPlayer;lastCards=pick.slice();passCount=0
 msg('AI-'+(curPlayer)+' 出了 '+pick.length+' 张')
 draw()
 if(!h.length){gameOver=true;var who=curPlayer===1?'AI-1':'AI-2';msg(who+' 赢了...😅');disableBtns();draw();lock=false;return}
@@ -200,8 +200,15 @@ ctx.fillText('你 ('+hand.length+')',W/2,H-4)
 // Landlord
 ctx.fillStyle='#ffdd44';ctx.font='14px sans-serif';ctx.textAlign='left'
 ctx.fillText('👑 '+(landlord===0?'你':landlord===1?'AI-1':'AI-2'),10,landlord===0?H-CARD_H-25:40)
-// Last play info
-if(lastPlay&&lastPlayer>=0){var names=['你','AI-1','AI-2'];ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='11px sans-serif';ctx.textAlign='center';ctx.fillText(names[lastPlayer]+'出牌',W/2,H/2-25)}
+// Last play cards in center
+var centerY=Math.floor(H*0.35)
+if(lastCards&&lastCards.length>0&&lastPlayer>=0){var names=['你','AI-1','AI-2'];ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='12px sans-serif';ctx.textAlign='center';ctx.fillText(names[lastPlayer]+'出牌:',W/2,centerY-10)
+var cw=Math.min(CARD_W*0.9,50);var ch=Math.floor(cw*1.4);var totalW=lastCards.length*cw*0.35;var cx=(W-totalW)/2
+for(var i=0;i<lastCards.length;i++){var cc=lastCards[i];var cxx=cx+i*cw*0.35;var cyy=centerY
+ctx.fillStyle='#fff';ctx.shadowColor='rgba(0,0,0,0.2)';ctx.shadowBlur=2;ctx.fillRect(cxx,cyy,cw,ch);ctx.shadowBlur=0;ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.lineWidth=1;ctx.strokeRect(cxx,cyy,cw,ch)
+var col2=cc.s==='♥'||cc.s==='♦'?'#cc2244':'#222'
+if(cc.s==='🃏'){col2=cc.v===14?'#e02444':'#3388ee';ctx.fillStyle=col2;ctx.font='bold '+(cw*0.2)+'px sans-serif';ctx.textAlign='center';ctx.fillText(cc.v===14?'大王':'小王',cxx+cw/2,cyy+ch/2+3)}
+else{ctx.fillStyle=col2;ctx.font='bold '+(cw*0.25)+'px sans-serif';ctx.textAlign='center';ctx.fillText(cc.s+cc.r,cxx+cw/2,cyy+ch/2+3)}}}
 // My hand
 var start=(W-hand.length*CARD_W*0.28)/2
 for(var i=0;i<hand.length;i++){var c=hand[i];var x=start+i*CARD_W*0.28,y=H-CARD_H-8;var up=selected.includes(c)
