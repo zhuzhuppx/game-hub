@@ -202,37 +202,31 @@ class PokerScene extends Phaser.Scene {
   createCard(x,y,c,idx) {
     var cw=this.CW, ch=this.CH;
     var g = this.add.graphics().setInteractive(new Phaser.Geom.Rectangle(0,0,cw,ch), Phaser.Geom.Rectangle.Contains);
-    g.setDepth(50 + idx); // rightmost on top
-    // Shadow
+    g.setDepth(50 + idx);
     g.fillStyle(0x000000,0.2); g.fillRoundedRect(2,4,cw,ch,6);
-    // Body
     g.fillStyle(0xffffff,1); g.fillRoundedRect(0,0,cw,ch,6);
-    g.lineStyle(1,0xcccccc,0.5); g.strokeRoundedRect(0,0,cw,ch,6);
+    g.lineStyle(1,0xcccccc,0.3); g.strokeRoundedRect(0,0,cw,ch,6);
     g.setPosition(x,y);
 
-    // Text
     var col = (c.s==='♥'||c.s==='♦') ? '#cc2244' : '#222';
     var isJoker = c.s==='🃏';
     if(isJoker) col = c.v===14 ? '#e02444' : '#3388ee';
-
-    var txtStyle = {fontFamily:'system-ui',fontSize:Math.round(cw*0.26)+'px',fontStyle:'bold',color:col};
-    var suitStyle = {fontFamily:'system-ui',fontSize:Math.round(cw*0.2)+'px',color:col};
-    var bigSuitStyle = {fontFamily:'system-ui',fontSize:Math.round(cw*0.48)+'px',color:col};
+    var tSz = Math.round(cw*0.28);
+    var sSz = Math.round(cw*0.2);
+    var bSz = Math.round(cw*0.5);
 
     if(isJoker){
       var lbl = c.v===14 ? '大王' : '小王';
-      var t = this.add.text(cw/2, ch/2-4, lbl, {fontFamily:'system-ui',fontSize:Math.round(cw*0.22)+'px',fontStyle:'bold',color:col}).setOrigin(0.5).setDepth(60+idx);
+      var t = this.add.text(x+cw/2, y+ch/2-4, lbl, {fontFamily:'sans-serif',fontSize:Math.round(cw*0.22)+'px',fontStyle:'bold',color:col}).setOrigin(0.5).setDepth(60+idx);
       this.myGroup.add(t);
     } else {
-      // Top-left
-      var tr = this.add.text(4,3, c.r, txtStyle).setDepth(60+idx);
-      var ts = this.add.text(4,3+Math.round(cw*0.26)+1, c.s, suitStyle).setDepth(60+idx);
-      // Center big suit
-      var tc = this.add.text(cw/2, ch/2, c.s, bigSuitStyle).setOrigin(0.5,0.5).setDepth(60+idx);
-      // Bottom-right (inverted)
-      var tbl = this.add.text(cw-4,ch-3, c.r, txtStyle).setOrigin(1,1).setAngle(180).setDepth(60+idx);
-      var tbr = this.add.text(cw-4,ch-3-Math.round(cw*0.26)-1, c.s, suitStyle).setOrigin(1,1).setAngle(180).setDepth(60+idx);
-      this.myGroup.add(tr);this.myGroup.add(ts);this.myGroup.add(tc);this.myGroup.add(tbl);this.myGroup.add(tbr);
+      // All text positions are ABSOLUTE (x+offset)
+      var t1=this.add.text(x+5, y+3, c.r, {fontFamily:'sans-serif',fontSize:tSz+'px',fontStyle:'bold',color:col}).setDepth(60+idx);
+      var t2=this.add.text(x+5, y+3+tSz+1, c.s, {fontFamily:'sans-serif',fontSize:sSz+'px',color:col}).setDepth(60+idx);
+      var t3=this.add.text(x+cw/2, y+ch/2, c.s, {fontFamily:'sans-serif',fontSize:bSz+'px',color:col}).setOrigin(0.5,0.5).setDepth(60+idx);
+      var t4=this.add.text(x+cw-5, y+ch-3, c.r, {fontFamily:'sans-serif',fontSize:tSz+'px',fontStyle:'bold',color:col}).setOrigin(1,1).setAngle(180).setDepth(60+idx);
+      var t5=this.add.text(x+cw-5, y+ch-3-tSz-1, c.s, {fontFamily:'sans-serif',fontSize:sSz+'px',color:col}).setOrigin(1,1).setAngle(180).setDepth(60+idx);
+      this.myGroup.add(t1);this.myGroup.add(t2);this.myGroup.add(t3);this.myGroup.add(t4);this.myGroup.add(t5);
     }
     this.myGroup.add(g);
 
