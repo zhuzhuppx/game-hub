@@ -283,19 +283,6 @@ class ChessScene extends Phaser.Scene {
     this.turn='r';this.selected=null;this.gameOver=false;this.validMovesList=[];
     g_ply=0;g_moves=[];document.getElementById('turn').textContent='红方';this.msgT.setText('点击选中棋子');
     this.syncPieces();
-    
-    // Highlight AI's destination
-    var dx = this.boardX(move.tc), dy = this.boardY(move.tr);
-    var aiHL = this.add.graphics().setDepth(75);
-    aiHL.lineStyle(3, 0xffcc00, 0.9);
-    aiHL.strokeCircle(dx, dy, this.CELL*0.48);
-    this.tweens.add({targets:aiHL, alpha:0, duration:1200, delay:200, onComplete:()=>aiHL.destroy()});
-    // Also highlight origin with a fainter marker
-    var sx = this.boardX(move.fc), sy = this.boardY(move.fr);
-    var aiFrom = this.add.graphics().setDepth(75);
-    aiFrom.lineStyle(2, 0xffcc00, 0.4);
-    aiFrom.strokeCircle(sx, sy, this.CELL*0.44);
-    this.tweens.add({targets:aiFrom, alpha:0, duration:800, onComplete:()=>aiFrom.destroy()});
     this.highlightGfx.clear();
   }
 
