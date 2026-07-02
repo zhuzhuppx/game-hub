@@ -1,0 +1,44 @@
+<!DOCTYPE html><html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>记忆翻牌</title><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;color:#ccc;font-family:system-ui,-apple-system,sans-serif;min-height:100dvh;display:flex;align-items:center;justify-content:center}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px;width:100%;max-width:400px}
+.hdr{display:flex;align-items:center;justify-content:space-between;width:100%}
+.hdr h1{font-size:20px;color:#88ddff}.hdr .s{display:flex;gap:12px;font-size:13px;color:#6666aa}
+.hdr .s .v{font-size:18px;font-weight:700;color:#fff}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;max-width:340px}
+.card{aspect-ratio:1;border-radius:8px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .2s;position:relative;perspective:200px}
+.card-inner{width:100%;height:100%;transition:transform .3s;transform-style:preserve-3d;position:relative;border-radius:8px}
+.card.flipped .card-inner{transform:rotateY(180deg)}
+.card-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:28px}
+.card-back{background:linear-gradient(135deg,#1a2a4a,#0d1a3a);border:1px solid rgba(136,221,255,0.15)}
+.card-front{background:rgba(136,221,255,0.06);transform:rotateY(180deg);border:1px solid rgba(136,221,255,0.1)}
+.card.matched .card-front{background:rgba(136,221,255,0.1);border-color:rgba(136,221,255,0.25)}
+.stats{display:flex;gap:20px;font-size:14px;color:#6666aa;text-align:center}
+.stats .num{font-size:22px;font-weight:700;color:#fff}
+.btn{padding:8px 24px;border:none;border-radius:8px;background:rgba(136,221,255,0.15);color:#88ddff;font-size:14px;cursor:pointer;touch-action:manipulation}
+.btn:active{background:rgba(136,221,255,0.25)}
+.back{color:#555588;text-decoration:none;font-size:14px}.back:hover{color:#8888bb}
+</style>
+<div class="wrap">
+<div class="hdr"><h1>🃏 记忆翻牌</h1><div class="s"><span>⏱ <b id="timer">0</b>s</span><span>👆 <b id="moves">0</b></span></div></div>
+<div class="grid" id="grid"></div>
+<div class="stats"><div><div>已配对</div><div class="num" id="paired">0</div></div><div><div>最好</div><div class="num" id="best">--</div></div></div>
+<button class="btn" onclick="startGame()">🔄 新一局</button>
+<a class="back" href="/">← 返回</a></div>
+<script>
+var EMOJIS=['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉'];
+var cards=[],flipped=[],matched=[],moves=0,paired=0,timer=0,timerId,bestScore=localStorage.getItem('memoryBest');
+document.getElementById('best').textContent=bestScore?bestScore+'步':'--';
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function startGame(){if(timerId)clearInterval(timerId);timer=0;moves=0;paired=0;flipped=[];matched=[];document.getElementById('timer').textContent='0';document.getElementById('moves').textContent='0';document.getElementById('paired').textContent='0'
+var emojis=[];for(var i=0;i<8;i++){var e=EMOJIS[Math.floor(Math.random()*EMOJIS.length)];emojis.push(e,e)}
+cards=shuffle(emojis);render();timerId=setInterval(function(){timer++;document.getElementById('timer').textContent=timer},1000)}
+function render(){var g=document.getElementById('grid');g.innerHTML=''
+for(var i=0;i<cards.length;i++){var c=document.createElement('div');c.className='card'+(matched[i]?' matched':'')+(flipped.includes(i)?' flipped':'');c.innerHTML='<div class="card-inner"><div class="card-face card-back">?</div><div class="card-face card-front">'+cards[i]+'</div></div>';c.onclick=function(n){return function(){flipCard(n)}}(i);g.appendChild(c)}}
+function flipCard(i){if(flipped.includes(i)||matched[i]||flipped.length>=2)return
+flipped.push(i);render()
+if(flipped.length===2){moves++;document.getElementById('moves').textContent=moves;var a=flipped[0],b=flipped[1];if(cards[a]===cards[b]){matched[a]=matched[b]=true;paired++;document.getElementById('paired').textContent=paired;flipped=[];render();if(paired===8){if(timerId)clearInterval(timerId);if(!bestScore||moves<parseInt(bestScore)){bestScore=moves;localStorage.setItem('memoryBest',bestScore);document.getElementById('best').textContent=bestScore+'步'}}return}
+setTimeout(function(){flipped=[];render()},600)}}
+startGame()
+</script></html>

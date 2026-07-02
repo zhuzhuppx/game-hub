@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>打地鼠</title><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;color:#ccc;font-family:system-ui,-apple-system,sans-serif;min-height:100dvh;display:flex;align-items:center;justify-content:center}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px;width:100%;max-width:380px}
+.hdr{display:flex;align-items:center;justify-content:space-between;width:100%}
+.hdr h1{font-size:20px;color:#66cc66}.hdr .s{display:flex;gap:12px}
+.hdr .s .l{font-size:11px;color:#6666aa}.hdr .s .v{font-size:18px;font-weight:700;color:#fff}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:320px}
+.hole{aspect-ratio:1;background:rgba(255,255,255,0.03);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:48px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative;overflow:hidden;border:2px solid rgba(255,255,255,0.04);transition:background .15s}
+.hole:active{background:rgba(102,204,102,0.1)}
+.hole.mole{background:rgba(102,204,102,0.08);border-color:rgba(102,204,102,0.2);cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ctext y='28' font-size='28'%3E🔨%3C/text%3E%3C/svg%3E") 16 0,pointer}
+.hole.bonus{background:rgba(255,221,68,0.08);border-color:rgba(255,221,68,0.2)}
+.particles{position:absolute;pointer-events:none;inset:0}
+.particle{position:absolute;width:6px;height:6px;border-radius:50%;animation:fly .4s ease-out forwards}
+@keyframes fly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--x),var(--y)) scale(0)}}
+.stats{display:flex;gap:20px;font-size:14px;color:#6666aa;text-align:center}
+.stats .num{font-size:22px;font-weight:700;color:#fff}
+.btn{padding:8px 24px;border:none;border-radius:8px;background:rgba(102,204,102,0.15);color:#66cc66;font-size:14px;cursor:pointer;touch-action:manipulation}
+.btn:active{background:rgba(102,204,102,0.25)}
+.back{color:#555588;text-decoration:none;font-size:14px}.back:hover{color:#8888bb}
+</style>
+<div class="wrap">
+<div class="hdr"><h1>🔨 打地鼠</h1><div class="s"><div><div class="l">分数</div><div class="v" id="sc">0</div></div><div><div class="l">⏱</div><div class="v" id="tm">30</div></div></div></div>
+<div class="grid" id="grid"></div>
+<div class="stats"><div><div>最高分</div><div class="num" id="hs">0</div></div></div>
+<button class="btn" id="startBtn" onclick="startGame()">🎮 开始!</button>
+<a class="back" href="/">← 返回</a></div>
+<script>
+var holes=[],score=0,timeLeft=30,gameOver=true,timerId,moleId,best=parseInt(localStorage.getItem('whackBest'))||0;
+document.getElementById('hs').textContent=best;
+function renderHoles(){var g=document.getElementById('grid');g.innerHTML='';for(var i=0;i<9;i++){var h=document.createElement('div');h.className='hole';h.id='h'+i;h.onclick=function(n){return function(){whack(n)}}(i);g.appendChild(h)}}
+function startGame(){if(timerId)clearInterval(timerId);score=0;timeLeft=30;gameOver=false;document.getElementById('sc').textContent='0';document.getElementById('tm').textContent='30';document.getElementById('startBtn').textContent='⏳ 游戏中...';renderHoles();timerId=setInterval(function(){timeLeft--;document.getElementById('tm').textContent=timeLeft;if(timeLeft<=0){gameOver=true;clearInterval(timerId);clearInterval(moleId);document.getElementById('startBtn').textContent='🎮 再来一局';for(var i=0;i<9;i++)document.getElementById('h'+i).className='hole';if(score>best){best=score;localStorage.setItem('whackBest',best);document.getElementById('hs').textContent=best}}},1000);spawnMole();moleId=setInterval(spawnMole,800)}
+function spawnMole(){if(gameOver)return;for(var i=0;i<9;i++)document.getElementById('h'+i).className='hole'
+var n=1+Math.floor(Math.random()*2);for(var i=0;i<n;i++){var idx=Math.floor(Math.random()*9);var h=document.getElementById('h'+idx);if(Math.random()<0.15)h.className='hole bonus';else h.className='hole mole'}}
+function whack(i){if(gameOver)return;var h=document.getElementById('h'+i);if(!h.classList.contains('mole')&&!h.classList.contains('bonus'))return
+score+=h.classList.contains('bonus')?3:1;document.getElementById('sc').textContent=score;h.className='hole'
+// Particle effect
+var p=document.createElement('div');p.className='particles';for(var j=0;j<5;j++){var dot=document.createElement('div');dot.className='particle';dot.style.setProperty('--x',(-20+Math.random()*40)+'px');dot.style.setProperty('--y',(-20+Math.random()*40)+'px');dot.style.background=h.classList.contains('bonus')?'#ffdd44':'#66cc66';p.appendChild(dot)}
+h.appendChild(p);setTimeout(function(){p.remove()},400)}
+renderHoles()
+</script></html>

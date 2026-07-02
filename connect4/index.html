@@ -1,0 +1,44 @@
+<!DOCTYPE html><html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>四子棋</title><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;color:#ccc;font-family:system-ui,-apple-system,sans-serif;min-height:100dvh;display:flex;align-items:center;justify-content:center}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px;width:100%;max-width:400px}
+.hdr{display:flex;align-items:center;justify-content:space-between;width:100%;padding:0 4px}
+.hdr h1{font-size:20px;color:#ffdd44}.hdr .s{display:flex;gap:12px}
+.hdr .s .l{font-size:11px;color:#6666aa}.hdr .s .v{font-size:18px;font-weight:700;color:#fff}
+canvas{width:100%;touch-action:none;background:#0d0d1a;border-radius:8px;display:block}
+.msg{font-size:16px;color:#8888bb;min-height:24px;text-align:center}
+.btn{padding:8px 24px;border:none;border-radius:8px;background:rgba(255,221,68,0.15);color:#ffdd44;font-size:14px;cursor:pointer;touch-action:manipulation}
+.btn:active{background:rgba(255,221,68,0.25)}
+.back{color:#555588;text-decoration:none;font-size:14px}.back:hover{color:#8888bb}
+</style>
+<div class="wrap">
+<div class="hdr"><h1>🟡 四子棋</h1><div class="s"><div><div class="l">你</div><div class="v" id="ps">0</div></div><div><div class="l">AI</div><div class="v" id="as">0</div></div></div></div>
+<canvas id="c"></canvas><div class="msg" id="msg">点击列落子 (🔴)</div>
+<button class="btn" onclick="resetGame()">🔄 重新开始</button>
+<a class="back" href="/">← 返回</a></div>
+<script>
+var canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+var COLS=7,ROWS=6,CELL,RAD,board,turn,gameOver,pScore=0,aScore=0;
+function resize(){var w=Math.min(400,canvas.parentElement.clientWidth-4);canvas.style.width=w+'px';CELL=Math.floor(w/COLS);canvas.width=CELL*COLS;canvas.height=CELL*(ROWS+1);RAD=CELL*0.38}
+resize();window.addEventListener('resize',resize);
+function init(){board=[];for(var r=0;r<ROWS;r++){board[r]=[];for(var c=0;c<COLS;c++)board[r][c]=null}turn='x';gameOver=false}
+function drop(col){for(var r=ROWS-1;r>=0;r--)if(!board[r][col]){board[r][col]=turn;return r}return -1}
+function checkWin(r,c,p){if(!p)return false;var dirs=[[0,1],[1,0],[1,1],[1,-1]];for(var d=0;d<4;d++){var count=1;for(var s=-1;s<=1;s+=2){var nr=r+dirs[d][0]*s,nc=c+dirs[d][1]*s;while(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS&&board[nr][nc]===p){count++;nr+=dirs[d][0]*s;nc+=dirs[d][1]*s}}if(count>=4)return true}return false}
+function isFull(){for(var c=0;c<COLS;c++)if(!board[0][c])return false;return true}
+canvas.addEventListener('click',function(e){if(gameOver||turn!=='x')return;var rect=canvas.getBoundingClientRect(),col=Math.floor((e.clientX-rect.left)/rect.width*COLS);if(col<0||col>=COLS)return;var r=drop(col);if(r<0)return;board[r][col]='x';if(checkWin(r,col,'x')){gameOver=true;pScore++;document.getElementById('ps').textContent=pScore;render();msg.textContent='你赢了！🎉';return}
+if(isFull()){gameOver=true;render();msg.textContent='平局！';return}
+turn='o';render();msg.textContent='AI思考中...';setTimeout(aiMove,300)})
+canvas.addEventListener('touchstart',function(e){e.preventDefault();var t=e.touches[0];var rect=canvas.getBoundingClientRect(),col=Math.floor((t.clientX-rect.left)/rect.width*COLS);if(col<0||col>=COLS)return;canvas.dispatchEvent(new MouseEvent('click',{clientX:t.clientX,clientY:t.clientY}))},{passive:false})
+function aiMove(){if(gameOver)return;var bestCol=-1,bestScore=-Infinity;for(var c=0;c<COLS;c++){if(board[0][c])continue;var r=drop(c);board[r][c]='o';var s=minimax(board,0,false,0,0);board[r][c]=null;if(s>bestScore){bestScore=s;bestCol=c}}
+var r=drop(bestCol);board[r][bestCol]='o';turn='x';if(checkWin(r,bestCol,'o')){gameOver=true;aScore++;document.getElementById('as').textContent=aScore;render();msg.textContent='AI赢了...😅';return}
+if(isFull()){gameOver=true;render();msg.textContent='平局！';return}
+render();msg.textContent='你的回合 (🔴)'}
+function minimax(b,depth,isMax,alpha,beta){var cols=[3,2,4,1,5,0,6];for(var c=0;c<COLS;c++){if(!b[0][cols[c]]){for(var rr=ROWS-1;rr>=0;rr--){if(!b[rr][cols[c]]){if(checkWin(rr,cols[c],'o'))return 10-depth;if(checkWin(rr,cols[c],'x'))return depth-10;break}}}}
+if(isFull()||depth>=5)return 0
+if(isMax){var best=-Infinity;for(var ii=0;ii<COLS;ii++){var cc=cols[ii];if(b[0][cc])continue;for(var rr=ROWS-1;rr>=0;rr--){if(!b[rr][cc]){b[rr][cc]='o';best=Math.max(best,minimax(b,depth+1,false,alpha,beta));b[rr][cc]=null;alpha=Math.max(alpha,best);if(beta<=alpha)return best;break}}}return best}else{var best=Infinity;for(var ii=0;ii<COLS;ii++){var cc=cols[ii];if(b[0][cc])continue;for(var rr=ROWS-1;rr>=0;rr--){if(!b[rr][cc]){b[rr][cc]='x';best=Math.min(best,minimax(b,depth+1,true,alpha,beta));b[rr][cc]=null;beta=Math.min(beta,best);if(beta<=alpha)return best;break}}}return best}}
+function render(){ctx.clearRect(0,0,canvas.width,canvas.height);for(var r=0;r<ROWS;r++){for(var c=0;c<COLS;c++){var x=c*CELL+CELL/2,y=r*CELL+CELL/2+CELL;ctx.beginPath();ctx.arc(x,y,RAD,0,Math.PI*2);ctx.fillStyle=board[r][c]==='x'?'#ff4466':board[r][c]==='o'?'#ffdd44':'rgba(255,255,255,0.06)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=1;ctx.stroke()}}
+// Grid lines
+ctx.strokeStyle='rgba(255,221,68,0.08)';ctx.lineWidth=1;for(var c=0;c<=COLS;c++){ctx.beginPath();ctx.moveTo(c*CELL,CELL);ctx.lineTo(c*CELL,canvas.height);ctx.stroke()}}
+init();render()
+</script></html>

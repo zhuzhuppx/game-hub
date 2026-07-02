@@ -1,0 +1,71 @@
+<!DOCTYPE html><html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>涂鸦跳跃</title><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;color:#ccc;font-family:system-ui,-apple-system,sans-serif;min-height:100dvh;display:flex;align-items:center;justify-content:center}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;width:100%;max-width:420px}
+.hdr{display:flex;align-items:center;justify-content:space-between;width:100%}
+.hdr h1{font-size:20px;color:#66ddff}.hdr .s{display:flex;gap:12px}
+.hdr .s .l{font-size:11px;color:#6666aa}.hdr .s .v{font-size:18px;font-weight:700;color:#fff}
+canvas{width:100%;touch-action:none;background:#0d0d1a;border-radius:8px;display:block}
+.msg{font-size:15px;color:#8888bb;min-height:20px;text-align:center}
+.stats{display:flex;gap:20px;font-size:14px;color:#6666aa;text-align:center}
+.stats .num{font-size:20px;font-weight:700;color:#fff}
+.btn{padding:8px 24px;border:none;border-radius:8px;background:rgba(102,221,255,0.15);color:#66ddff;font-size:14px;cursor:pointer;touch-action:manipulation}
+.btn:active{background:rgba(102,221,255,0.25)}
+.back{color:#555588;text-decoration:none;font-size:14px}.back:hover{color:#8888bb}
+.mc{display:none;gap:8px;justify-content:center;width:100%}
+.mc button{width:56px;height:56px;border:none;border-radius:50%;background:rgba(255,255,255,0.06);color:#8888bb;font-size:24px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.mc button:active{background:rgba(102,221,255,0.15)}
+@media(pointer:coarse){.mc{display:flex}.hint{display:none}}
+</style>
+<div class="wrap">
+<div class="hdr"><h1>🎈 涂鸦跳跃</h1><div class="s"><div><div class="l">分数</div><div class="v" id="sc">0</div></div><div><div class="l">最高</div><div class="v" id="hs">0</div></div></div></div>
+<canvas id="c"></canvas><div class="msg" id="msg">← → / A D 移动 · 空格/点击开始</div>
+<div class="mc"><button id="mL">◀</button><button id="mR">▶</button></div>
+<div class="stats"></div>
+<button class="btn" onclick="startGame()">🔄 重来</button>
+<a class="back" href="/">← 返回</a></div>
+<script>
+var canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+var W,H,player,platforms={},best=parseInt(localStorage.getItem('doodleBest'))||0,score,gameOver,running,gravity=0.4;
+document.getElementById('hs').textContent=best;
+function resize(){var w=Math.min(420,canvas.parentElement.clientWidth-4);canvas.style.width=w+'px';W=Math.floor(w*1.2);H=Math.floor(W*1.6);canvas.width=W;canvas.height=H;if(typeof player!=='undefined')player.y=H-80;}
+resize();window.addEventListener('resize',resize);
+function startGame(){player={x:W/2-15,y:H-80,w:30,h:30,vy:0};score=0;gameOver=false;running=true;document.getElementById('sc').textContent='0';document.getElementById('msg').textContent='';platforms={};for(var i=0;i<10;i++){platforms['p'+i]={x:Math.random()*(W-80),y:H-i*60,w:Math.floor(60+Math.random()*40),h:12,type:Math.random()<0.15?'b':'n'}}
+loop()}
+function loop(){if(gameOver){drawGameOver();return}
+// Gravity
+player.vy+=gravity;player.y+=player.vy
+// Left/right
+if(mLeft)player.x-=3;if(mRight)player.x+=3
+player.x=Math.max(0,Math.min(W-player.w,player.x))
+// Scroll
+if(player.y<H*0.4){var diff=H*0.4-player.y;player.y=H*0.4;for(var k in platforms){platforms[k].y+=diff}score+=Math.round(diff);document.getElementById('sc').textContent=score}
+// Platform collision (only when falling)
+if(player.vy>0){for(var k in platforms){var p=platforms[k];if(player.x+player.w>p.x&&player.x<p.x+p.w&&player.y+player.h>p.y&&player.y+player.h<p.y+p.h+5&&player.y+player.h-player.vy<=p.y+5){if(p.type==='b'){player.vy=-9;player.y=p.y-player.h}else{player.vy=-11;player.y=p.y-player.h}
+break}}}
+// Fall off bottom
+if(player.y>H+50){gameOver=true;document.getElementById('msg').textContent='游戏结束！分数:'+score;if(score>best){best=score;localStorage.setItem('doodleBest',best);document.getElementById('hs').textContent=best}return}
+// Remove off-screen platforms, add new
+for(var k in platforms){if(platforms[k].y>H+20)delete platforms[k]}
+while(Object.keys(platforms).length<12){var lastY=0;for(var k in platforms)if(platforms[k].y<lastY||lastY===0)lastY=platforms[k].y;var idx=Object.keys(platforms).length;platforms['n'+idx]={x:Math.random()*(W-80),y:lastY-60-Math.random()*20,w:Math.floor(50+Math.random()*50),h:12,type:Math.random()<0.12?'b':'n'}}
+draw();requestAnimationFrame(loop)}
+function draw(){ctx.clearRect(0,0,W,H);ctx.fillStyle='#0d0d1a';ctx.fillRect(0,0,W,H)
+// Platforms
+for(var k in platforms){var p=platforms[k];ctx.fillStyle=p.type==='b'?'rgba(255,221,68,0.3)':'rgba(102,221,255,0.15)';ctx.shadowColor=p.type==='b'?'#ffdd44':'#66ddff';ctx.shadowBlur=p.type==='b'?6:3;ctx.beginPath();ctx.roundRect(p.x,p.y,p.w,p.h,4);ctx.fill();ctx.shadowBlur=0
+if(p.type==='b'){ctx.fillStyle='rgba(255,221,68,0.5)';ctx.font='10px sans-serif';ctx.textAlign='center';ctx.fillText('💥',p.x+p.w/2,p.y+p.h/2+4)}}
+// Player
+ctx.fillStyle='#66ddff';ctx.shadowColor='#66ddff';ctx.shadowBlur=8;ctx.beginPath();ctx.roundRect(player.x,player.y,player.w,player.h,6);ctx.fill();ctx.shadowBlur=0
+// Eyes
+ctx.fillStyle='#fff';ctx.fillRect(player.x+8,player.y+8,6,6);ctx.fillRect(player.x+16,player.y+8,6,6)
+ctx.fillStyle='#0a0a1a';ctx.fillRect(player.x+10,player.y+10,3,4);ctx.fillRect(player.x+18,player.y+10,3,4)}
+function drawGameOver(){draw();ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,0,W,H);ctx.fillStyle='#66ddff';ctx.font='bold 30px sans-serif';ctx.textAlign='center';ctx.fillText('GAME OVER',W/2,H/2-10);ctx.fillStyle='#8888bb';ctx.font='16px sans-serif';ctx.fillText('得分: '+score,W/2,H/2+25)}
+var mLeft=false,mRight=false;
+document.addEventListener('keydown',function(e){if(e.key==='ArrowLeft'||e.key==='a')mLeft=true;if(e.key==='ArrowRight'||e.key==='d')mRight=true;if(e.key===' '&&gameOver)startGame()})
+document.addEventListener('keyup',function(e){if(e.key==='ArrowLeft'||e.key==='a')mLeft=false;if(e.key==='ArrowRight'||e.key==='d')mRight=false})
+document.getElementById('mL').addEventListener('touchstart',function(e){e.preventDefault();mLeft=true},{passive:false})
+document.getElementById('mL').addEventListener('touchend',function(){mLeft=false})
+document.getElementById('mR').addEventListener('touchstart',function(e){e.preventDefault();mRight=true},{passive:false})
+document.getElementById('mR').addEventListener('touchend',function(){mRight=false})
+startGame()
+</script></html>

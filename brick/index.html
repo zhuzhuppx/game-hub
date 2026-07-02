@@ -1,0 +1,78 @@
+<!DOCTYPE html><html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>打砖块</title><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;color:#ccc;font-family:system-ui,-apple-system,sans-serif;min-height:100dvh;display:flex;align-items:center;justify-content:center}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;width:100%;max-width:420px}
+.hdr{display:flex;align-items:center;justify-content:space-between;width:100%}
+.hdr h1{font-size:20px;color:#ff6688}.hdr .s{display:flex;gap:12px}
+.hdr .s .l{font-size:11px;color:#6666aa}.hdr .s .v{font-size:18px;font-weight:700;color:#fff}
+canvas{width:100%;touch-action:none;background:#0d0d1a;border-radius:8px;display:block}
+.msg{font-size:16px;color:#8888bb;min-height:22px;text-align:center}
+.btn{padding:8px 24px;border:none;border-radius:8px;background:rgba(255,102,136,0.15);color:#ff6688;font-size:14px;cursor:pointer;touch-action:manipulation}
+.btn:active{background:rgba(255,102,136,0.25)}
+.back{color:#555588;text-decoration:none;font-size:14px}.back:hover{color:#8888bb}
+.mc{display:none;gap:0;justify-content:center;align-items:center;max-width:200px;width:100%}
+.mc button{width:48px;height:48px;border:none;border-radius:8px;background:rgba(255,255,255,0.06);color:#8888bb;font-size:20px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.mc button:active{background:rgba(255,102,136,0.15)}
+.mc .row{display:flex;gap:12px}
+@media(pointer:coarse){.mc{display:flex}}
+</style>
+<div class="wrap">
+<div class="hdr"><h1>🧱 打砖块</h1><div class="s"><div><div class="l">分数</div><div class="v" id="sc">0</div></div><div><div class="l">等级</div><div class="v" id="lv">1</div></div></div></div>
+<canvas id="c"></canvas><div class="msg" id="msg">按空格/点击开始</div>
+<div class="mc"><div class="row"><button id="mL">◀</button><button id="mR">▶</button></div></div>
+<button class="btn" id="startBtn" onclick="startGame()">🎮 开始</button>
+<a class="back" href="/">← 返回</a></div>
+<script>
+var canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+var W,H,PW,PH,BR,BH,BRC,BCR,paddle,ball,bricks,score,level,lives,gameOver,running,animId;
+var COLORS=['#ff4466','#ff8844','#ffdd44','#44dd88','#44aaff','#cc66ff'];
+function resize(){var w=Math.min(420,canvas.parentElement.clientWidth-4);canvas.style.width=w+'px';W=Math.floor(w*1.5);H=Math.floor(W*0.75);canvas.width=W;canvas.height=H;PW=Math.round(W*0.14);PH=Math.round(H*0.025);BR=Math.round(W*0.11);BH=Math.round(H*0.028);BRC=Math.round(W/BR);BCR=Math.round(H*0.03);if(typeof ball!=='undefined')resetBall()}
+resize();window.addEventListener('resize',resize);
+function initBricks(){bricks=[];var rows=Math.min(2+level,6);for(var r=0;r<rows;r++){for(var c=0;c<BRC;c++){var padding=Math.round(W*0.01);bricks.push({x:c*(BR+padding)+padding+Math.round(W*0.015),y:r*(BH+padding)+padding+Math.round(H*0.06),w:BR,h:BH,hp:1+Math.floor(r/2),color:COLORS[r%COLORS.length],row:r})}}}
+function resetBall(){ball={x:W/2,y:H-PH-8,dx:2.5*(Math.random()>0.5?1:-1),dy:-3,size:Math.round(H*0.012)}}
+function startGame(){if(animId)cancelAnimationFrame(animId);score=0;level=1;lives=3;gameOver=false;running=false;document.getElementById('sc').textContent='0';document.getElementById('lv').textContent='1';document.getElementById('msg').textContent='按空格/点击开始';initBricks();paddle={x:W/2-PW/2,y:H-PH-2,w:PW,h:PH};resetBall();draw();document.getElementById('startBtn').textContent='🔄 重开'}
+function launch(){if(gameOver)return;if(!running){running=true;document.getElementById('msg').textContent='';loop()}}
+function loop(){if(gameOver){draw();return}
+// Move paddle with mouse
+// Move ball
+ball.x+=ball.dx;ball.y+=ball.dy
+// Wall bounce
+if(ball.x-ball.size<0||ball.x+ball.size>W){ball.dx*=-1;ball.x=Math.max(ball.size,Math.min(W-ball.size,ball.x))}
+if(ball.y-ball.size<0){ball.dy*=-1;ball.y=ball.size}
+// Paddle bounce
+if(ball.dy>0&&ball.y+ball.size>=paddle.y&&ball.y+ball.size<=paddle.y+PH&&ball.x>=paddle.x-ball.size&&ball.x<=paddle.x+PW+ball.size){ball.dy=-Math.abs(ball.dy);ball.y=paddle.y-ball.size;var hit=(ball.x-paddle.x)/PW-0.5;ball.dx+=hit*0.5;var spd=Math.sqrt(ball.dx*ball.dx+ball.dy*ball.dy);if(spd>6){ball.dx=ball.dx/spd*6;ball.dy=ball.dy/spd*6}}
+// Bottom
+if(ball.y+ball.size>H){lives--;if(lives<=0){gameOver=true;document.getElementById('msg').textContent='游戏结束！得分:'+score;return}
+running=false;resetBall();document.getElementById('msg').textContent='按空格继续';draw();return}
+// Brick collision
+for(var i=bricks.length-1;i>=0;i--){var b=bricks[i];if(ball.x+ball.size>b.x&&ball.x-ball.size<b.x+b.w&&ball.y+ball.size>b.y&&ball.y-ball.size<b.y+b.h){b.hp--;if(b.hp<=0){score+=10*bricks.length;bricks.splice(i,1);document.getElementById('sc').textContent=score}else{score+=5;document.getElementById('sc').textContent=score}
+// Bounce direction
+var overlapX=Math.min(ball.x+ball.size-b.x,b.x+b.w-(ball.x-ball.size));var overlapY=Math.min(ball.y+ball.size-b.y,b.y+b.h-(ball.y-ball.size));if(overlapX<overlapY)ball.dx*=-1;else ball.dy*=-1;break}}
+// Win
+if(bricks.length===0){level++;document.getElementById('lv').textContent=level;initBricks();resetBall();running=false;document.getElementById('msg').textContent='🎉 通关！进入第'+level+'关';draw();return}
+draw();animId=requestAnimationFrame(loop)}
+function draw(){ctx.clearRect(0,0,W,H)
+// Bricks
+for(var i=0;i<bricks.length;i++){var b=bricks[i];ctx.fillStyle=b.color;ctx.shadowColor=b.color;ctx.shadowBlur=4;ctx.beginPath();ctx.roundRect(b.x,b.y,b.w,b.h,3);ctx.fill();ctx.shadowBlur=0}
+// Paddle
+ctx.fillStyle='#ff6688';ctx.shadowColor='#ff6688';ctx.shadowBlur=8;ctx.beginPath();ctx.roundRect(paddle.x,paddle.y,paddle.w,paddle.h,4);ctx.fill();ctx.shadowBlur=0
+// Ball
+ctx.fillStyle='#fff';ctx.shadowColor='#fff';ctx.shadowBlur=10;ctx.beginPath();ctx.arc(ball.x,ball.y,ball.size,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0
+// Lives
+for(var i=0;i<lives;i++){ctx.fillStyle='rgba(255,102,136,0.4)';ctx.beginPath();ctx.arc(W-15-i*20,15,5,0,Math.PI*2);ctx.fill()}}
+// Input
+var mx=W/2;
+canvas.addEventListener('mousemove',function(e){var rect=canvas.getBoundingClientRect();mx=(e.clientX-rect.left)/rect.width*W})
+canvas.addEventListener('click',launch)
+canvas.addEventListener('touchstart',function(e){e.preventDefault();launch()},{passive:false})
+canvas.addEventListener('touchmove',function(e){e.preventDefault();var t=e.touches[0];var rect=canvas.getBoundingClientRect();mx=(t.clientX-rect.left)/rect.width*W},{passive:false})
+document.addEventListener('keydown',function(e){if(e.key===' ')launch()
+if(e.key==='ArrowLeft'||e.key==='a')paddle.x=Math.max(0,paddle.x-20)
+if(e.key==='ArrowRight'||e.key==='d')paddle.x=Math.min(W-paddle.w,paddle.x+20)})
+document.getElementById('mL').addEventListener('click',function(){paddle.x=Math.max(0,paddle.x-25)})
+document.getElementById('mR').addEventListener('click',function(){paddle.x=Math.min(W-paddle.w,paddle.x+25)})
+// Game loop for paddle following mouse
+setInterval(function(){if(!gameOver&&running){paddle.x=Math.max(0,Math.min(W-paddle.w,mx-PW/2))}},16)
+startGame()
+</script></html>
