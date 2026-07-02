@@ -116,19 +116,31 @@ closeAIModal();var badge=document.getElementById('aiBadge');badge.style.display=
 if(window.scene)window.scene.startGame()}
 function refreshAIBadge(){var badge=document.getElementById('aiBadge');badge.style.display=isAIEnabled()?'inline':'none'}
 function isAIEnabled(){return localStorage.getItem('chess_ai_enabled')==='true'&&!!localStorage.getItem('chess_llm_key')}
-function boardToText(board){var s='红方(小写)在下,黑方(大写)在上\n 0 1 2 3 4 5 6 7 8\n';for(var r=0;r<ROWS;r++){s+=r;for(var c=0;c<COLS;c++){var p=board[r][c];s+=p?p.type:'.'}s+='\n'}return s}
-function callLLM(board,color){return new Promise(function(resolve){var key=localStorage.getItem('chess_llm_key');if(!key||localStorage.getItem('chess_ai_enabled')!=='true'){resolve(null);return}
-var boardText=boardToText(board);var colorName=color==='r'?'红方(小写)':'黑方(大写)'
-var prompt='你是中国象棋大师。棋盘用字母表示棋子，.为空。行0-9(上→下)，列0-8(左→右)。\n小写=红方(帅k仕a相e马h车r炮c兵p)，大写=黑方(將K士A象E馬H車R砲C卒P)。\n\n当前棋盘：\n'+boardText+'\n轮到'+colorName+'走棋。\n请输出一步最佳走法，严格按格式：行,列 → 行,列\n例如：从第7行第1列走到第4行第1列则输出"7,1 → 4,1"（炮二平五）\n只输出坐标，不要解释。'
-fetch('/api/chess-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'deepseek-chat',messages:[{role:'user',content:prompt}],temperature:0.5,max_tokens:80})})
-.then(function(r){return r.json()}).then(function(data){try{var text=data.choices[0].message.content.trim();console.log('DeepSeek回复:',text);var m=text.match(/(\d+)\s*,\s*(\d+)\s*[→\-]>\s*(\d+)\s*,\s*(\d+)/);if(m){var fr=parseInt(m[1]),fc=parseInt(m[2]),tr=parseInt(m[3]),tc=parseInt(m[4]);if(fr>=0&&fr<10&&fc>=0&&fc<9&&tr>=0&&tr<10&&tc>=0&&tc<9){console.log('解析成功:',fr,fc,'→',tr,tc);resolve({fr:fr,fc:fc,tr:tr,tc:tc});return}}console.log('格式解析失败,原文:',text)}catch(e){console.log('解析异常:',e)}resolve(null)})
-.catch(function(e){console.log('API调用失败:',e);resolve(null)})})}
-function aiMove(board,color){return new Promise(function(resolve){callLLM(board,color).then(function(llmMove){if(llmMove){// validate
-var p=board[llmMove.fr][llmMove.fc];if(p&&p.color===color){var vm=validMoves(llmMove.fr,llmMove.fc,board,color);for(var i=0;i<vm.length;i++){if(vm[i].r===llmMove.tr&&vm[i].c===llmMove.tc){resolve(llmMove);return}}}}
-// fallback to alpha-beta
-var bestMove=null,bestScore=color==='r'?-99999:99999
-for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){var p=board[r][c];if(p&&p.color===color){var vm=validMoves(r,c,board,color);for(var i=0;i<vm.length;i++){var captured=makeMove(board,{r:r,c:c},{r:vm[i].r,c:vm[i].c});if(!isCheck(board,color)){var score=alphaBeta(board,3,-99999,99999,color,color==='r');if((color==='r'&&score>bestScore)||(color==='b'&&score<bestScore)){bestScore=score;bestMove={fr:r,fc:c,tr:vm[i].r,tc:vm[i].c}}}undoMove(board,{r:r,c:c},{r:vm[i].r,c:vm[i].c},captured)}}}
-resolve(bestMove)})})}
+function aiMove(board,color){return new Promise(function(resolve){
+  // Step 1: Alpha-beta depth 4 to find top candidates
+  var candidates=[];
+  var bestScore=color==='r'?-99999:99999;
+  var topScore=bestScore;
+  for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){var p=board[r][c];if(p&&p.color===color){var vm=validMoves(r,c,board,color);for(var i=0;i<vm.length;i++){var captured=makeMove(board,{r:r,c:c},{r:vm[i].r,c:vm[i].c});if(!isCheck(board,color)){var score=alphaBeta(board,4,-99999,99999,color,color==='r');if((color==='r'&&score>bestScore)||(color==='b'&&score<bestScore)){bestScore=score;candidates.unshift({fr:r,fc:c,tr:vm[i].r,tc:vm[i].c,score:score});if(candidates.length>6)candidates.pop()}}undoMove(board,{r:r,c:c},{r:vm[i].r,c:vm[i].c},captured)}}}
+  
+  // Step 2: Try LLM to pick best among candidates
+  callLLM(board,color,candidates).then(function(llmMove){
+    if(llmMove){resolve(llmMove);return}
+    // Fallback: best alpha-beta move
+    resolve(candidates.length>0?candidates[0]:null)
+  })
+})}
+
+function pieceName(p){var n={r:'车',h:'马',e:'相',a:'仕',k:'帅',c:'炮',p:'兵',R:'車',H:'馬',E:'象',A:'士',K:'將',C:'砲',P:'卒'};return n[p.type]||p.type}
+function coordDesc(fr,fc,tr,tc,color){var dir=color==='r'?'进':'退';var rDiff=tr-fr;if(rDiff===0)dir='平';else if((color==='r'&&rDiff<0)||(color==='b'&&rDiff>0))dir='退';var cDist=Math.abs(tc-fc);return '('+(8-fc+1)+')'+(cDist>0?'平':'')+'('+(8-tc+1)+')'}
+function callLLM(board,color,candidates){return new Promise(function(resolve){var key=localStorage.getItem('chess_llm_key');if(!key||localStorage.getItem('chess_ai_enabled')!=='true'){resolve(null);return}
+  var colorName=color==='r'?'红方':'黑方';var enemy=color==='r'?'黑方':'红方';
+  var boardStr='';for(var r=0;r<ROWS;r++){for(var c=0;c<COLS;c++){var p=board[r][c];boardStr+=p?pieceName(p):'．'}boardStr+='\n'}
+  var movesStr=candidates.slice(0,4).map(function(m,i){var p=board[m.fr][m.fc];var name=pieceName(p);return(i+1)+'. '+name+'从('+m.fr+','+m.fc+')走到('+m.tr+','+m.tc+')'}).join('\n')
+  var prompt='你是一个中国象棋特级大师。当前局面：\n\n'+boardStr+'\n轮到'+colorName+'走棋。\n\nAlpha-beta引擎推荐了以下走法（按优先级排序）：\n'+movesStr+'\n\n请从以上走法中选一个你认为最合理的，输出序号（1~4）。如果你认为某步棋有妙手或陷阱效果，优先选它。只输出数字，不要解释。'
+  fetch('/api/chess-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'deepseek-chat',messages:[{role:'user',content:prompt}],temperature:0.3,max_tokens:20})})
+  .then(function(r){return r.json()}).then(function(data){try{var text=data.choices[0].message.content.trim();var idx=parseInt(text);console.log('DeepSeek选:',text,'→候选',idx);if(idx>=1&&idx<=candidates.length){resolve(candidates[idx-1]);return}}catch(e){}resolve(null)})
+  .catch(function(){resolve(null)})})}
 
 // ===== PHASER SCENE =====
 class ChessScene extends Phaser.Scene {
