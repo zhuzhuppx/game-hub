@@ -66,6 +66,7 @@ var COLS=9,ROWS=10;
 var PIECES_RED=['r','h','e','a','k','a','e','h','r',' ','c',' ',' ',' ',' ',' ','c',' ','p',' ','p',' ','p',' ','p',' ','p'];
 var PIECES_BLK=['R','H','E','A','K','A','E','H','R',' ','C',' ',' ',' ',' ',' ','C',' ','P',' ','P',' ','P',' ','P',' ','P'];
 var PIECE_NAMES={r:'车',h:'马',e:'相',a:'仕',k:'帅',c:'炮',p:'兵',R:'車',H:'馬',E:'象',A:'士',K:'將',C:'砲',P:'卒'};
+var g_ply=0,g_moves=[];
 function getColorType(type){return type>='a'&&type<='z'?'r':'b'}
 function isEnemy(p1,p2){return p1&&p2&&p1.color!==p2.color}
 function inBoard(r,c){return r>=0&&r<ROWS&&c>=0&&c<COLS}
@@ -95,8 +96,59 @@ return false}
 function makeMove(board,from,to){var captured=board[to.r][to.c];board[to.r][to.c]=board[from.r][from.c];board[from.r][from.c]=null;return captured}
 function undoMove(board,from,to,captured){board[from.r][from.c]=board[to.r][to.c];board[to.r][to.c]=captured}
 function cloneBoard(board){var b=[];for(var r=0;r<ROWS;r++){b[r]=[];for(var c=0;c<COLS;c++)b[r][c]=board[r][c]?{type:board[r][c].type,color:board[r][c].color}:null}return b}
-function evalBoard(board,color){var score=0;var vals={k:10000,K:10000,a:20,A:20,e:25,E:25,h:40,H:40,r:100,R:100,c:45,C:45,p:10,P:10};var mg=[[-3,-2,-1,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0]];
-for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){var p=board[r][c];if(p){var v=vals[p.type]||0;var pos=color==='r'?mg[r][c]:mg[9-r][8-c];score+=(p.color===color?1:-1)*(v+pos)}}return score}
+
+// Piece-square tables (Red's perspective, 10×9; flipped for Black)
+// King (k/K), Advisor (a/A), Bishop (e/E), Horse (h/H), Rook (r/R), Cannon (c/C), Pawn (p/P)
+var PST={
+ k:[//帅 呆在中间最安全
+  [0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,1,1,1,0,0,0],[0,0,0,2,3,2,0,0,0]],
+ a:[//仕 保护帅
+  [0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,1,2,1,0,0,0],[0,1,0,2,0,2,0,1,0]],
+ e:[//相 田字中心有子保护
+  [0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[1,0,2,0,2,0,2,0,1],[0,1,0,0,0,0,0,1,0]],
+ h:[//马 中央价值高，边角低
+  [1,1,1,1,1,1,1,1,1],[1,2,2,2,2,2,2,2,1],[1,2,3,3,3,3,3,2,1],[1,2,3,4,4,4,3,2,1],
+  [1,2,3,4,5,4,3,2,1],[1,2,3,4,4,4,3,2,1],[1,2,3,3,3,3,3,2,1],[1,2,2,2,2,2,2,2,1],[1,1,1,1,1,1,1,1,1],[0,1,1,1,1,1,1,1,0]],
+ r:[//车 开放线、中路、对方阵地价值高
+  [2,2,2,3,3,3,2,2,2],[3,4,4,5,5,5,4,4,3],[3,4,4,5,6,5,4,4,3],[3,4,5,6,7,6,5,4,3],
+  [3,4,5,6,7,6,5,4,3],[4,5,6,7,8,7,6,5,4],[4,5,6,7,8,7,6,5,4],[4,5,6,7,7,7,6,5,4],[3,4,5,5,6,5,5,4,3],[2,3,4,4,5,4,4,3,2]],
+ c:[//炮 有架子时价值高，中路控制
+  [2,2,2,3,3,3,2,2,2],[2,3,3,3,3,3,3,3,2],[2,3,4,4,4,4,4,3,2],[2,3,4,4,5,4,4,3,2],
+  [2,3,4,4,5,4,4,3,2],[2,3,3,4,5,4,3,3,2],[2,2,3,3,4,3,3,2,2],[2,2,3,3,3,3,3,2,2],[2,2,2,3,3,3,2,2,2],[2,2,2,2,3,2,2,2,2]],
+ p:[//兵 过河后价值剧增，中路兵更值钱
+  [1,1,1,1,1,1,1,1,1],[1,2,2,2,2,2,2,2,1],[2,3,3,4,4,4,3,3,2],[2,3,4,5,5,5,4,3,2],
+  [2,3,4,5,6,5,4,3,2],[1,1,2,3,3,3,2,1,1],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0]]
+};
+
+// Opening book: first N plies, format [fr,fc,tr,tc] 
+var OPENINGS=[
+ //====== 中炮对屏风马 (主流)======
+ [[7,1,7,4],[2,1,2,4]],  //炮二平五 马8进7
+ [[9,7,7,6],[0,7,0,0]],  //马二进三 车9平8
+ [[8,0,8,2],[0,1,0,3]],  //车一平二 马2进3
+ [[6,6,5,6],[2,6,1,6]],  //兵七进一 卒7进1
+ [[9,1,7,2],[0,6,0,5]],  //马八进七 象3进5
+ [[7,7,7,1],[1,0,3,0]],  //炮八平九 OR 炮八进二
+ //====== 中炮对顺炮 ======
+ [[7,1,7,4],[2,7,2,4]],  //炮二平五 炮8平5
+ [[9,7,7,6],[1,7,3,6]],  //马二进三 马8进7
+ [[8,0,8,2],[0,7,0,0]],  //车一平二 车9平8
+ [[6,6,5,6],[1,2,3,2]],  //兵七进一 卒7进1...不对，卒3进1
+ //====== 仙人指路 ======
+ [[6,6,5,6],[2,6,1,6]],  //兵七进一 卒7进1
+ [[9,1,7,2],[0,6,0,5]],  //马八进七 象3进5
+ [[7,1,7,4],[2,1,2,4]],  //炮二平五 马8进7
+ [[8,0,8,2],[0,7,0,0]]   //车一平二 车9平8
+];
+
+// Check if board matches opening at given plies index
+function matchOpening(board,ply){var idx=ply%2===1?1:0;for(var i=0;i<OPENINGS.length;i+=2){if(ply>=i+2)continue;var ok=true;for(var j=0;j<ply;j++){if(ply>=OPENINGS[i].length){ok=false;break}var m=OPENINGS[i][j];if(!m||!board[m[0]]||!board[m[0]][m[1]]){ok=false;break}}if(ok&&ply<OPENINGS[i].length){var m=OPENINGS[i][ply];if(m&&board[m[0]]&&board[m[0]][m[1]]){var p=board[m[0]][m[1]];if(p&&p.color===(ply%2===0?'r':'b')&&board[m[0]][m[1]].type){var vm=validMoves(m[0],m[1],board,p.color);for(var k=0;k<vm.length;k++){if(vm[k].r===m[2]&&vm[k].c===m[3])return{m:OPENINGS[i],ply:ply}}}}}}return null}
+
+function evalBoard(board,color){var score=0;var vals={k:10000,K:10000,a:20,A:20,e:25,E:25,h:45,H:45,r:110,R:110,c:50,C:50,p:12,P:12}
+for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){var p=board[r][c];if(p){var v=vals[p.type]||0;var posTable=PST[p.type.toLowerCase()];var pos=posTable?posTable[p.color==='r'?r:9-r][p.color==='r'?c:8-c]:0;score+=(p.color===color?1:-1)*(v+pos)}}return score}
 function getOpponentColor(color){return color==='r'?'b':'r'}
 function alphaBeta(board,depth,alpha,beta,color,isMax){if(depth===0)return evalBoard(board,color)
 var curColor=isMax?color:getOpponentColor(color)
@@ -119,6 +171,9 @@ if(window.scene)window.scene.startGame()}
 function refreshAIBadge(){var badge=document.getElementById('aiBadge');badge.style.display=isAIEnabled()?'inline':'none'}
 function isAIEnabled(){return localStorage.getItem('chess_ai_enabled')==='true'&&!!localStorage.getItem('chess_llm_key')}
 async function aiMove(board,color){
+  // Opening book: check if current position matches a known opening
+  if(g_ply<20){for(var oi=0;oi<OPENINGS.length;oi++){var line=OPENINGS[oi];if(g_ply<line.length){var match=true;for(var pi=0;pi<g_ply;pi++){var m=line[pi];var gm=g_moves[pi];if(!gm||m[0]!==gm.fr||m[1]!==gm.fc||m[2]!==gm.tr||m[3]!==gm.tc){match=false;break}}if(match){var nm=line[g_ply];if(nm&&pMatch(board,nm[0],nm[1],color)){var vm=validMoves(nm[0],nm[1],board,color);for(var vi=0;vi<vm.length;vi++){if(vm[vi].r===nm[2]&&vm[vi].c===nm[3]){console.log('开局:',g_ply,'→',nm);return{fr:nm[0],fc:nm[1],tr:nm[2],tc:nm[3]}}}}}}}}
+  
   // Show thinking message
   document.getElementById('msg').textContent = '🤔 AI 思考中…';
   if(window.scene && window.scene.msgT) window.scene.msgT.setText('🤔 AI 思考中…');
@@ -143,6 +198,7 @@ async function aiMove(board,color){
   })
 }
 
+function pMatch(board,r,c,color){return r>=0&&r<10&&c>=0&&c<9&&board[r][c]&&board[r][c].color===color}
 function pieceName(p){var n={r:'车',h:'马',e:'相',a:'仕',k:'帅',c:'炮',p:'兵',R:'車',H:'馬',E:'象',A:'士',K:'將',C:'砲',P:'卒'};return n[p.type]||p.type}
 function coordDesc(fr,fc,tr,tc,color){var dir=color==='r'?'进':'退';var rDiff=tr-fr;if(rDiff===0)dir='平';else if((color==='r'&&rDiff<0)||(color==='b'&&rDiff>0))dir='退';var cDist=Math.abs(tc-fc);return '('+(8-fc+1)+')'+(cDist>0?'平':'')+'('+(8-tc+1)+')'}
 function callLLM(board,color,candidates){return new Promise(function(resolve){var key=localStorage.getItem('chess_llm_key');if(!key||localStorage.getItem('chess_ai_enabled')!=='true'){resolve(null);return}
@@ -226,7 +282,7 @@ class ChessScene extends Phaser.Scene {
       if(PIECES_RED[c+18]!==' '){this.board[6][c]={type:PIECES_RED[c+18],color:'r'};this.board[3][c]={type:PIECES_BLK[c+18],color:'b'}}
     }
     this.turn='r';this.selected=null;this.gameOver=false;this.validMovesList=[];
-    document.getElementById('turn').textContent='红方';this.msgT.setText('点击选中棋子');
+    g_ply=0;g_moves=[];document.getElementById('turn').textContent='红方';this.msgT.setText('点击选中棋子');
     this.syncPieces();
     this.highlightGfx.clear();
   }
@@ -344,6 +400,7 @@ class ChessScene extends Phaser.Scene {
     
     // Switch turn
     this.turn = enemyColor;
+    g_ply++;g_moves.push({fr:row,fc:col,tr:targetR,tc:targetC});
     document.getElementById('turn').textContent = this.turn==='r'?'红方':'黑方';
     
     // AI move
@@ -386,6 +443,7 @@ class ChessScene extends Phaser.Scene {
     
     var enemyColor = color==='r'?'b':'r';
     this.turn = enemyColor;
+    g_ply++;g_moves.push({fr:move.fr,fc:move.fc,tr:move.tr,tc:move.tc});
     document.getElementById('turn').textContent = this.turn==='r'?'红方':'黑方';
     this.msgT.setText('轮到你了');
     document.getElementById('msg').textContent = '轮到你了';
