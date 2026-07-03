@@ -425,25 +425,26 @@ function _tick(){
     var ehq2=hqOf(E);if(!ehq2)return;
     // Build priority: refinery > factory > barracks > train
     if(!hasB(E,'refinery')&&E.gold>=250){
-      var offR=(E===E1)?[[-1,1],[-2,1],[-1,2],[-2,2],[0,1],[0,2],[1,1],[-1,0],[-2,0],[1,2],[2,1],[0,0]]
-        :(E===E2)?[[1,-1],[2,-1],[1,-2],[2,-2],[0,-1],[0,-2],[-1,-1],[1,0],[2,0],[-1,-2],[-2,-1],[0,0]]
-        :[[-1,0],[-1,-1],[0,-1],[1,-1],[-2,0],[0,-2],[-1,1],[1,0],[0,1],[-2,-1],[-2,1],[-1,-2]];
+      // Tight offsets near HQ, direction based on faction corner
+      var offR=(E===E1)?[[-1,0],[-1,1],[-2,0],[0,0]]
+        :(E===E2)?[[1,0],[1,-1],[2,0],[0,0]]
+        :[[-1,0],[-2,0],[-1,-1],[0,0]]; // E0: left+up from HQ
       for(var ri=0;ri<offR.length;ri++){var rx=ehq2.x+offR[ri][0],ry=ehq2.y+offR[ri][1];
         if(rx<0||rx>=GW||ry<0||ry>=GH)continue;
         if(canPass(rx,ry)){E.gold-=250;addBld('refinery',rx,ry,350,E.id);addUnit('harvester',rx+0.5,ry+0.5,E.id);break}}
       if(!hasB(E,'refinery'))E.aiCd=-20
     }else if(!hasB(E,'factory')&&E.gold>=400){
-      var offF=(E===E1)?[[-2,1],[-2,2],[-1,2],[0,2],[1,1],[0,-1],[-1,0],[1,0]] // left+down
-        :(E===E2)?[[2,0],[2,-1],[1,-2],[0,-2],[-1,-1],[0,1],[1,0],[-1,0]] // right+up
-        :[[-2,0],[-2,-1],[-1,-2],[0,-2],[1,-1],[0,1],[-1,0],[1,0]]; // left+up (E0 default)
+      var offF=(E===E1)?[[-1,0],[-2,0],[-1,1],[-2,1]] // left+down
+        :(E===E2)?[[1,0],[2,0],[1,-1],[2,-1]] // right+up
+        :[[-1,0],[-2,0],[-1,-1],[-2,-1]]; // left+up (E0)
       var placed=false;
       for(var fi=0;fi<offF.length;fi++){var fx=ehq2.x+offF[fi][0],fy=ehq2.y+offF[fi][1];
         if(canPass(fx,fy)){E.gold-=400;addBld('factory',fx,fy,400,E.id);placed=true;break}}
       if(!placed)E.aiCd=-20
     }else if(!hasB(E,'barracks')&&E.gold>=200){
-      var offB=(E===E1)?[[-1,1],[-2,1],[-1,2],[-2,2],[0,1],[0,2],[1,1],[-1,0]] // left+down
-        :(E===E2)?[[1,-1],[2,-1],[1,-2],[2,-2],[0,-1],[0,-2],[-1,-1],[1,0]] // right+up
-        :[[0,-1],[1,-1],[-2,-1],[-1,-2],[0,1],[1,0],[-1,0],[-2,0]]; // left+up (E0)
+      var offB=(E===E1)?[[-1,0],[-2,0],[-1,1],[-2,1]] // left+down
+        :(E===E2)?[[1,0],[2,0],[1,-1],[2,-1]] // right+up
+        :[[-1,0],[-2,0],[-1,-1],[-2,-1]]; // left+up (E0)
       placed=false;
       for(var bi=0;bi<offB.length;bi++){var bx=ehq2.x+offB[bi][0],by=ehq2.y+offB[bi][1];
         if(canPass(bx,by)){E.gold-=200;addBld('barracks',bx,by,300,E.id);placed=true;break}}
