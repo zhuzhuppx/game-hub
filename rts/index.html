@@ -1,16 +1,18 @@
 <!DOCTYPE html><html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"><title>红警·小规模冲突</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <script src="/sfx.js"></script><style>
-*{margin:0;padding:0;box-sizing:border-box}html,body{overflow:hidden;height:100dvh}body{background:#0a0a1a;color:#ccc;font-family:system-ui}
+*{margin:0;padding:0;box-sizing:border-box}html,body{overflow:hidden;height:100dvh}body{background:linear-gradient(180deg,#0a0a1a 0%,#111133 100%);color:#ccc;font-family:system-ui}
 .wrap{height:100dvh;padding:4px 6px 40px;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative}
-.hud{display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;width:100%}
-.hud span{color:#aaa}.hud b{color:#ffcc44;font-size:16px}#sel{color:#8888cc;font-size:11px;position:absolute;right:10px}
-#c{max-width:100%;height:auto;border-radius:8px;touch-action:none;border:1px solid rgba(255,255,255,0.05);flex-shrink:1;min-height:0}
+.hud{display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;width:100%;background:rgba(0,0,0,0.3);border-radius:8px;padding:2px 10px;gap:10px}
+.hud span{color:#888}.hud b{color:#ffcc44;font-size:16px;text-shadow:0 0 8px rgba(255,200,60,0.3)}#sel{color:#8888cc;font-size:11px;position:absolute;right:10px}
+#c{max-width:100%;height:auto;border-radius:8px;touch-action:none;border:2px solid rgba(255,255,255,0.08);flex-shrink:1;min-height:0;box-shadow:0 2px 20px rgba(0,0,0,0.4)}
 .info{font-size:12px;color:#ff8844;text-align:center;font-weight:600;flex-shrink:0;height:18px;line-height:18px;width:100%}
 .btns{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;flex-shrink:0;width:100%}
-.btns button{padding:5px 10px;border:none;border-radius:6px;background:rgba(255,170,68,0.12);color:#ffaa44;font-size:12px;cursor:pointer;touch-action:manipulation}
-.btns button:active{background:rgba(255,170,68,0.25)}.btns button:disabled{opacity:0.25;cursor:default}
-.back{color:#8888cc;text-decoration:none;font-size:14px;position:absolute;bottom:12px;left:12px;z-index:100;background:rgba(0,0,0,0.5);padding:4px 10px;border-radius:6px}
+.btns button{padding:5px 10px;border:1px solid rgba(255,170,68,0.2);border-radius:6px;background:rgba(255,170,68,0.08);color:#ffaa44;font-size:12px;cursor:pointer;touch-action:manipulation;transition:all 0.15s}
+.btns button:hover{background:rgba(255,170,68,0.18);border-color:rgba(255,170,68,0.4)}
+.btns button:active{background:rgba(255,170,68,0.3);transform:scale(0.96)}.btns button:disabled{opacity:0.3;cursor:default;border-color:transparent}
+.back{color:#8888cc;text-decoration:none;font-size:14px;position:absolute;bottom:12px;left:12px;z-index:100;background:rgba(0,0,0,0.5);padding:4px 10px;border-radius:6px;transition:all 0.2s}
+.back:hover{background:rgba(100,100,200,0.2);color:#aaaaff}
 </style>
 <div class="wrap">
 <div class="hud"><span>💰 <b id="gold">1000</b></span><span id="sel"></span><span id="timer" style="color:#6666aa;font-size:11px;position:absolute;right:10px;top:8px">0:00</span></div>
@@ -509,31 +511,29 @@ function draw(){
   // Ground + walls
   for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){
     var gx=x*TS,gy=y*TS;
-    if(map[y][x]===1){
-      // Wall tile — dark stone
-      ctx.fillStyle='#555555';ctx.fillRect(gx,gy,TS,TS);
-      ctx.fillStyle='#666666';ctx.fillRect(gx+2,gy+2,TS-4,TS-4);
-      ctx.strokeStyle='#444444';ctx.lineWidth=1;ctx.strokeRect(gx+2,gy+2,TS-4,TS-4);
-      // brick lines
-      ctx.strokeStyle='#3a3a3a';
-      ctx.beginPath();ctx.moveTo(gx,gy+TS/2);ctx.lineTo(gx+TS,gy+TS/2);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(gx+TS/3,gy);ctx.lineTo(gx+TS/3,gy+TS/2);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(gx+TS*2/3,gy+TS/2);ctx.lineTo(gx+TS*2/3,gy+TS);ctx.stroke();
-    }else{
-      ctx.fillStyle='#233823';ctx.fillRect(gx,gy,TS,TS);
-      ctx.fillStyle='#2a442a';for(var d=0;d<3;d++){var dx=gx+5+((d*13+y*7)%(TS-10)),dy=gy+5+((d*17+x*11)%(TS-10));ctx.fillRect(dx,dy,2,2)}
+    var shade=0.85+0.15*(y/GH);
+    var r=Math.floor(25*shade),g=Math.floor(48*shade),b=Math.floor(25*shade);
+    ctx.fillStyle='rgb('+r+','+g+','+b+')';ctx.fillRect(gx,gy,TS,TS);
+    // Grass tufts
+    var s1=(x*7+y*13)%23,s2=(x*11+y*3)%17;
+    for(var d=0;d<4;d++){
+      var dx=gx+3+((d*7+~~s1)%(TS-6)),dy=gy+3+((d*11+~~s2)%(TS-6));
+      ctx.fillStyle='rgb('+Math.floor(r*1.15)+','+Math.floor(g*1.15)+','+Math.floor(b*1.15)+')';ctx.fillRect(dx,dy,2,2);
     }
+    // Subtle grid
+    ctx.strokeStyle='rgba(0,0,0,0.06)';ctx.lineWidth=0.5;ctx.strokeRect(gx+0.5,gy+0.5,TS-1,TS-1);
   }
-  // Minerals — spread across whole map
+  // Minerals — golden sparkles across map
   var totalNuggets=0;for(var k in minerals)totalNuggets+=minerals[k];
   if(totalNuggets>0){
-    for(var ni=0;ni<totalNuggets*1.5;ni++){
+    for(var ni=0;ni<totalNuggets*2;ni++){
       var seed=ni*7919%10007;
       var mx=0.5+(seed/10007)*GW,my=0.5+((seed*3517)%10007)/10007*GH;
       var gx=mx*TS,gy=my*TS;
-      var twinkle=Math.sin(frame*0.12+ni*0.37)*0.35+0.65;
-      var alpha=0.3+twinkle*0.7;
-      ctx.fillStyle='rgba(255,200,60,'+alpha+')';ctx.beginPath();ctx.arc(gx,gy,1.2+twinkle*1,0,Math.PI*2);ctx.fill();
+      var twinkle=Math.sin(frame*0.08+ni*0.31)*0.4+0.6;
+      ctx.fillStyle='rgba(255,210,60,'+(0.25+twinkle*0.6)+')';ctx.beginPath();ctx.arc(gx,gy,1+twinkle*1.5,0,Math.PI*2);ctx.fill();
+      // Occasional bright specks
+      if((ni+frame)%13<2){ctx.fillStyle='rgba(255,255,200,'+twinkle+')';ctx.beginPath();ctx.arc(gx,gy,0.6,0,Math.PI*2);ctx.fill()}
     }
   }
   // Gems — colored sparkles on mineral field
@@ -580,43 +580,62 @@ function draw(){
 function drawPad(x,y,w,h,col){ctx.fillStyle=col;ctx.fillRect(x*TS,y*TS,w*TS,h*TS)}
 
 function drawBld(b,wall,roof,accent){
-  if(b.hp<=0)return;var x=b.x*TS+2,y=b.y*TS+2,s=TS-4;
-  ctx.fillStyle=wall;ctx.fillRect(x,y,s,s);
-  // Top accent
-  ctx.fillStyle=roof;ctx.fillRect(x+2,y+2,s-4,s*0.3);
+  if(b.hp<=0)return;var x=b.x*TS,y=b.y*TS,s=TS;
+  // Drop shadow
+  ctx.fillStyle='rgba(0,0,0,0.3)';ctx.fillRect(x+2,y+2,s-2,s-2);
+  // Main building body with gradient
+  var grad=ctx.createLinearGradient(x,y,x+s,y+s);grad.addColorStop(0,wall);grad.addColorStop(1,roof);ctx.fillStyle=grad;ctx.fillRect(x+1,y+1,s-2,s-2);
+  // Border
+  ctx.strokeStyle=accent;ctx.lineWidth=1.5;ctx.strokeRect(x+1,y+1,s-2,s-2);
+  // Roof highlight
+  ctx.fillStyle=accent;ctx.fillRect(x+3,y+2,s-6,s*0.22);ctx.globalAlpha=0.3;ctx.fillStyle='#fff';ctx.fillRect(x+3,y+2,s-6,s*0.1);ctx.globalAlpha=1;
   // Details per type
   if(b.t==='hq'){
-    ctx.fillStyle=accent;ctx.fillRect(x+s*0.35,y+s*0.3,s*0.3,s*0.35);
-    ctx.fillStyle='#fff';ctx.font='bold 14px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('★',x+s/2,y+s*0.55)}
+    // Star emblem
+    ctx.fillStyle=accent;ctx.fillRect(x+s*0.3,y+s*0.25,s*0.4,s*0.4);ctx.strokeStyle=roof;ctx.lineWidth=2;ctx.strokeRect(x+s*0.3,y+s*0.25,s*0.4,s*0.4);
+    ctx.fillStyle='#fff';ctx.font='bold '+(s*0.35)+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('★',x+s/2,y+s*0.38);
+    // Flag
+    ctx.fillStyle=wall;ctx.fillRect(x+s*0.48,y+2,s*0.04,s*0.22);ctx.fillStyle=accent;ctx.beginPath();ctx.moveTo(x+s*0.48,y+3);ctx.lineTo(x+s*0.68,y+3+s*0.06);ctx.lineTo(x+s*0.48,y+3+s*0.12);ctx.fill()}
   else if(b.t==='barracks'){
-    ctx.fillStyle=roof;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+s/2,y-s*0.2);ctx.lineTo(x+s,y);ctx.fill();
-    // Door opens when spawning
-    var spark=(b._spark||0);if(spark>0){var dw=spark/45*6;ctx.fillStyle='#ffdd88';ctx.fillRect(x+s*0.35-dw,y+s*0.3,s*0.3+dw*2,s*0.35);
-      ctx.fillStyle='rgba(255,220,100,0.4)';ctx.fillRect(x,y,s,s);b._spark--}
-    else{ctx.fillStyle='#886644';ctx.fillRect(x+s*0.2,y+s*0.4,s*0.15,s*0.15)}
-    ctx.fillStyle=accent;ctx.fillRect(x+s*0.25,y+s*0.45,s*0.5,s*0.05)}
+    // Tent-like roof
+    ctx.fillStyle=roof;ctx.beginPath();ctx.moveTo(x+3,y+2);ctx.lineTo(x+s/2,y-s*0.15);ctx.lineTo(x+s-3,y+2);ctx.fill();
+    ctx.strokeStyle=accent;ctx.lineWidth=1;ctx.stroke();
+    // Door
+    var spark=(b._spark||0);
+    if(spark>0){var dw=spark/45*s*0.25;ctx.fillStyle='#ffdd88';ctx.fillRect(x+s*0.35-dw,y+s*0.28,s*0.3+dw*2,s*0.3);
+      ctx.fillStyle='rgba(255,220,100,0.25)';ctx.fillRect(x,y,s,s);b._spark--}
+    else{ctx.fillStyle='#664422';ctx.fillRect(x+s*0.35,y+s*0.28,s*0.3,s*0.3)}
+    // Windows
+    ctx.fillStyle='#ffdd88';ctx.fillRect(x+s*0.15,y+s*0.35,s*0.12,s*0.12);ctx.fillRect(x+s*0.73,y+s*0.35,s*0.12,s*0.12)}
   else if(b.t==='factory'){
-    ctx.fillStyle='#444';ctx.fillRect(x+s*0.35,y+s*0.2,s*0.15,s*0.3);
-    // Chimney smoke + flash when spawning
-    var spark=(b._spark||0);if(spark>0){ctx.fillStyle='rgba(255,180,60,0.3)';ctx.fillRect(x,y,s,s);
-      ctx.fillStyle='#666';ctx.beginPath();ctx.arc(x+s*0.42,y+s*0.12-spark*0.5,3+spark*0.1,0,Math.PI*2);ctx.fill();
+    // Industrial building
+    ctx.fillStyle='#333';ctx.fillRect(x+s*0.25,y+s*0.15,s*0.2,s*0.35);
+    var spark=(b._spark||0);
+    if(spark>0){ctx.fillStyle='rgba(255,180,60,0.3)';ctx.fillRect(x,y,s,s);
+      ctx.fillStyle='rgba(180,180,180,0.6)';ctx.beginPath();ctx.arc(x+s*0.35,y+s*0.08-spark*0.4,3+spark*0.08,0,Math.PI*2);ctx.fill();
       b._spark--}
-    ctx.fillStyle='#555';ctx.beginPath();ctx.arc(x+s*0.42,y+s*0.12,4,0,Math.PI*2);ctx.fill()}
+    // Chimney
+    ctx.fillStyle='#555';ctx.fillRect(x+s*0.33,y+1,s*0.04,s*0.18);
+    ctx.fillStyle='#444';ctx.beginPath();ctx.arc(x+s*0.35,y+1,4,0,Math.PI*2);ctx.fill();
+    // Gear icon
+    ctx.fillStyle=accent;ctx.font=(s*0.2)+'px system-ui';ctx.textAlign='center';ctx.fillText('⚙',x+s/2,y+s*0.65)}
   else if(b.t==='refinery'){
-    ctx.fillStyle='#666';ctx.fillRect(x+s*0.3,y+s*0.25,s*0.4,s*0.5);
-    ctx.fillStyle='#888';ctx.beginPath();ctx.arc(x+s/2,y+s*0.35,8,0,Math.PI*2);ctx.fill();
-    // Pulsing glow when unloading
+    // Tank + processing
+    ctx.fillStyle='#555';ctx.fillRect(x+s*0.2,y+s*0.2,s*0.6,s*0.55);
+    ctx.strokeStyle='#888';ctx.lineWidth=1;ctx.strokeRect(x+s*0.2,y+s*0.2,s*0.6,s*0.55);
+    ctx.fillStyle='#777';ctx.beginPath();ctx.arc(x+s/2,y+s*0.3,s*0.18,0,Math.PI*2);ctx.fill();
+    // Unloading glow
     var src=faction(b.o);var unloading=src.units.some(function(u){return u.t==='harvester'&&u._hs==='unload'&&Math.hypot(u.x-b.x-0.5,u.y-b.y-0.5)<1});
     if(unloading){
-      var pulse=6+Math.sin(frame*0.3)*4;
-      ctx.fillStyle='rgba(255,200,0,0.3)';ctx.beginPath();ctx.arc(x+s/2,y+s*0.35,pulse+4,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#ffcc00';ctx.beginPath();ctx.arc(x+s/2,y+s*0.35,pulse,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x+s/2,y+s*0.35,3+Math.sin(frame*0.5)*1,0,Math.PI*2);ctx.fill()
-    }else{ctx.fillStyle='#ffaa00';ctx.beginPath();ctx.arc(x+s/2,y+s*0.35,4,0,Math.PI*2);ctx.fill()}}
-  // HP bar
-  var pct=b.hp/b.mhp;
-  ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(x+1,y+s-6,s-2,4);
-  ctx.fillStyle=pct>0.5?'#44ff44':pct>0.25?'#ffaa00':'#ff2222';ctx.fillRect(x+1,y+s-6,(s-2)*pct,4);
+      var pulse=s*0.12+Math.sin(frame*0.3)*s*0.06;
+      ctx.fillStyle='rgba(255,200,0,0.3)';ctx.beginPath();ctx.arc(x+s/2,y+s*0.3,pulse+s*0.1,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#ffcc00';ctx.beginPath();ctx.arc(x+s/2,y+s*0.3,pulse,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x+s/2,y+s*0.3,s*0.05+Math.sin(frame*0.5)*1,0,Math.PI*2);ctx.fill()}
+    else{ctx.fillStyle='#ffaa00';ctx.beginPath();ctx.arc(x+s/2,y+s*0.3,s*0.08,0,Math.PI*2);ctx.fill()}}
+  // HP bar at bottom
+  var pct=b.hp/b.mhp,barH=Math.max(2,s*0.08);
+  ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(x+1,y+s-barH-1,s-2,barH);
+  ctx.fillStyle=pct>0.5?'#44ff44':pct>0.25?'#ffaa00':'#ff2222';ctx.fillRect(x+1,y+s-barH-1,(s-2)*pct,barH);
 }
 
 function drawUnit(u,col,accent){
@@ -627,6 +646,8 @@ function drawUnit(u,col,accent){
   if(u.lv>=3){col='#ffaa22';accent='#ff8800'} // gold legendary at lv3+
   else if(u.lv>=2){col=u.o==='p'?'#88ccff':'#ff8844';accent=u.o==='p'?'#4488ff':'#cc4400'} // elite
   var sc=1+u.lv*0.06; // scale up with level
+  // Drop shadow
+  ctx.fillStyle='rgba(0,0,0,0.3)';ctx.beginPath();ctx.ellipse(cx+TS/2,cy+TS-2,r*1.2,r*0.3,0,0,Math.PI*2);ctx.fill();
   ctx.save();ctx.translate(cx+TS/2,cy+TS/2);ctx.scale(sc,sc);
   // Direction
   var angle=0;if(u.dx||u.dy)angle=Math.atan2(u.dy,u.dx);else angle=u.o==='p'?0:Math.PI;
