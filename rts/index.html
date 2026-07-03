@@ -422,7 +422,7 @@ function _tick(){
   }
   // AI build/train (same rules as player)
   E.aiCd+=dt;if(E.aiCd>60){E.aiCd=0; // shorter cooldown for faster response
-    var ehq2=hqOf(E);if(!ehq2){return;
+    var ehq2=hqOf(E);if(!ehq2)return;
     // Build priority: refinery > factory > barracks > train
     if(!hasB(E,'refinery')&&E.gold>=250){
       var offR=(E===E1)?[[-1,1],[-2,1],[-1,2],[-2,2],[0,1],[0,2],[1,1],[-1,0],[-2,0],[1,2],[2,1],[0,0]]
