@@ -162,13 +162,13 @@ function cmd(a){
       if(nx<0||nx>=GW||ny<0||ny>=GH)continue;
       var occ=P.blds.concat(E.blds).some(function(b){return b.x===nx&&b.y===ny});
       if(occ)continue;
-      P.gold-=250;var refB=addBld('refinery',nx,ny,350,'p');addUnit('harvester',nx+0.5,ny+0.5,'p');msg('✅ 精炼厂建成，附赠矿车',2000);upd();return}
+      P.gold-=250;var refB=addBld('refinery',nx,ny,350,'p');addUnit('harvester',nx+1.5,ny+0.5,'p');msg('✅ 精炼厂建成，附赠矿车',2000);upd();return}
     msg('❌ HQ旁无空地',1500)}
   if(a==='harvester'){
     if(!hasB(P,'refinery')){msg('❌ 需要先建造精炼厂',1500);return}
     if(P.gold<150){msg('💰 金币不足！',1500);return}
     var ref2=P.blds.find(function(b){return b.t==='refinery'&&b.hp>0});if(!ref2)return;
-    addUnit('harvester',ref2.x+0.5,ref2.y+0.5,'p');P.gold-=150;msg('✅ 矿车出动',2000);upd()}
+    addUnit('harvester',ref2.x+1.5,ref2.y+0.5,'p');P.gold-=150;msg('✅ 矿车出动',2000);upd()}
 }
 
 function upd(){
@@ -314,7 +314,7 @@ function _tick(){
       var offR=[[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,2],[0,-2],[1,1],[-1,1],[1,-1],[-1,-1]];
       for(var ri=0;ri<offR.length;ri++){var rx=ehq2.x+offR[ri][0],ry=ehq2.y+offR[ri][1];
         if(rx<0||rx>=GW||ry<0||ry>=GH)continue;
-        if(canPass(rx,ry)){E.gold-=250;addBld('refinery',rx,ry,350,'e');addUnit('harvester',rx+0.5,ry+0.5,'e');break}}
+        if(canPass(rx,ry)){E.gold-=250;addBld('refinery',rx,ry,350,'e');addUnit('harvester',rx-0.5,ry+0.5,'e');break}}
       if(!hasB(E,'refinery'))E.aiCd=-50
     }else if(!hasB(E,'barracks')&&E.gold>=200){
       var bx=ehq2.x+1,by=ehq2.y;if(canPass(bx,by)){E.gold-=200;addBld('barracks',bx,by,300,'e')}
@@ -327,7 +327,7 @@ function _tick(){
       // Train harvesters first, then combat units
       if(hasB(E,'refinery')&&E.gold>=150&&E.units.filter(function(u){return u.t==='harvester'&&u.hp>0}).length<3){
         var ref=E.blds.find(function(b){return b.t==='refinery'&&b.hp>0});if(ref){
-          E.gold-=150;addUnit('harvester',ref.x+0.5,ref.y+0.5,'e')}
+          E.gold-=150;addUnit('harvester',ref.x-0.5,ref.y+0.5,'e')}
       }else if(hasF&&E.gold>=200){E.gold-=200;eSpawn('tank')}
       else if(!hasF&&E.gold>=100){E.gold-=100;eSpawn('rifle')}
       else if(hasF&&E.gold>=100&&E.units.length<3){E.gold-=100;eSpawn('rifle')}
