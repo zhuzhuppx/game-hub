@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>数独</title>
+<title>数独</title><script src="/sfx.js"></script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
@@ -42,8 +42,8 @@
 
   .hint { font-size:12px; color:#444477; }
   .hint kbd { background:rgba(255,255,255,0.04); padding:2px 6px; border-radius:4px; font-family:inherit; font-size:11px; border:1px solid rgba(255,255,255,0.06); }
-  .back { color:#555588; text-decoration:none; font-size:14px; }
-  .back:hover { color:#8888bb; }
+  .back { color:#8888cc; text-decoration:none; font-size:14px; position:absolute; bottom:12px; left:12px; z-index:100; background:rgba(0,0,0,0.4); padding:4px 10px; border-radius:6px; backdrop-filter:blur(4px); }
+  .back:hover { color:#bbbbff; }
 
   .overlay {
     display:none; position:absolute; inset:0; background:rgba(0,0,0,0.7);

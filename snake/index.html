@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>🐍 贪吃蛇 - 游戏大厅</title>
+<title>🐍 贪吃蛇 - 游戏大厅</title><script src="/sfx.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -103,10 +103,17 @@
   }
 
   .back-link {
-    color: #444477;
+    color: #8888cc;
     text-decoration: none;
-    font-size: 13px;
-    transition: color 0.2s;
+    font-size: 14px;
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    z-index: 100;
+    background: rgba(0,0,0,0.4);
+    padding: 4px 10px;
+    border-radius: 6px;
+    backdrop-filter: blur(4px);
   }
 
   .back-link:hover { color: #8888bb; }
@@ -309,6 +316,7 @@ function gameLoop() {
   snake.unshift(head);
 
   if (head.x === food.x && head.y === food.y) {
+    if (food.golden) sfxCoin(); else sfxEat();
     const points = food.golden ? 3 : 1;
     score += points;
     scoreEl.textContent = score;
@@ -339,6 +347,7 @@ function gameLoop() {
 }
 
 function gameOver() {
+  sfxLose(); bgmStop();
   state = STATES.GAMEOVER;
   clearInterval(timer);
   // 死亡粒子

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>💣 扫雷 - 游戏大厅</title>
+<title>💣 扫雷 - 游戏大厅</title><script src="/sfx.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -63,7 +63,7 @@
   .cell.revealed { animation: revealPop 0.15s ease-out; }
   .controls-hint { color: #444477; font-size: 12px; text-align: center; }
   .controls-hint kbd { background: rgba(255,255,255,0.04); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06); font-family: inherit; color: #6666aa; }
-  .back-link { color: #444477; text-decoration: none; font-size: 13px; }
+  .back-link { color: #8888cc; text-decoration: none; font-size: 14px; position: absolute; bottom: 12px; left: 12px; z-index: 100; background: rgba(0,0,0,0.4); padding: 4px 10px; border-radius: 6px; backdrop-filter: blur(4px); }
   .back-link:hover { color: #8888bb; }
   .btn-row { display: flex; gap: 8px; }
   .btn-row button {
@@ -232,6 +232,7 @@ function reveal(r, c) {
   revealCount++;
 
   if (board[r][c] === -1) {
+    sfxExplode();
     gameOver = true;
     clearInterval(timerInterval);
     revealAllMines(r, c);
@@ -240,6 +241,7 @@ function reveal(r, c) {
     return;
   }
 
+  sfxClick();
   if (board[r][c] === 0) {
     for (let dr = -1; dr <= 1; dr++)
       for (let dc = -1; dc <= 1; dc++)
@@ -265,6 +267,7 @@ function reveal(r, c) {
 }
 
 function showOverlay(win) {
+  if (win) sfxWin(); else { sfxLose(); bgmStop(); }
   const cfg = DIFFICULTIES[diff];
   if (win) {
     overlayTitle.textContent = '🎉 你赢了！';
@@ -323,6 +326,7 @@ function toggleFlag(r, c) {
   const cfg = DIFFICULTIES[diff];
   if (revealed[r][c] || gameOver) return;
   flagged[r][c] = !flagged[r][c];
+  sfxBlip();
   flagCount += flagged[r][c] ? 1 : -1;
   mineCountEl.textContent = mineCount - flagCount;
   updateCells();

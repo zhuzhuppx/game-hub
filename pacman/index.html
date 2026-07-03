@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>吃豆人</title>
+<title>吃豆人</title><script src="/sfx.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -23,7 +23,7 @@
   }
   .hint { font-size: 12px; color: #444477; }
   .hint kbd { background: rgba(255,255,255,0.04); padding: 2px 6px; border-radius: 4px; font-family: inherit; font-size: 11px; border: 1px solid rgba(255,255,255,0.06); }
-  .back { color: #555588; text-decoration: none; font-size: 14px; }
+  .back { color: #8888cc; text-decoration: none; font-size: 14px; position: absolute; bottom: 12px; left: 12px; z-index: 100; background: rgba(0,0,0,0.4); padding: 4px 10px; border-radius: 6px; backdrop-filter: blur(4px); }
   .back:hover { color: #8888bb; }
 
   .mc { display: none; gap: 0; justify-content: center; align-items: center; max-width: 260px; width: 100%; padding: 0 8px; }
@@ -242,6 +242,7 @@ function eatDot() {
   var v = MAZE[r][c];
   if (v === 2) {
     MAZE[r][c] = 0;
+    sfxEat();
     score += 10;
     dots--;
     pacman.eatTimer = 5;
@@ -250,6 +251,7 @@ function eatDot() {
   }
   if (v === 3) {
     MAZE[r][c] = 0;
+    sfxPowerUp();
     score += 50;
     dots--;
     pacman.eatTimer = 5;
@@ -408,6 +410,7 @@ function checkGhostCollision() {
     if (dist(pacman.x, pacman.y, g.x, g.y) < CS * 0.7) {
       if (g.mode === 'fright') {
         g.mode = 'eaten';
+        sfxCoin();
         score += 200;
         document.getElementById('sc').textContent = score;
       } else if (g.mode !== 'eaten') {
@@ -597,8 +600,10 @@ function update() {
   // Collision
   if (checkGhostCollision()) {
     lives--;
+    sfxWrong();
     document.getElementById('lv').textContent = lives;
     if (lives <= 0) {
+      sfxLose(); bgmStop();
       gameOver = true;
       document.getElementById('finalScore').textContent = '得分：' + score;
       document.getElementById('overlay').classList.add('show');

@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-<title>打地鼠</title><style>
+<title>打地鼠</title><script src="/sfx.js"></script><style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0a0a1a;color:#ccc;font-family:system-ui,-apple-system,sans-serif;min-height:100dvh;display:flex;align-items:center;justify-content:center}
 .wrap{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px;width:100%;max-width:380px}
@@ -18,7 +18,7 @@ body{background:#0a0a1a;color:#ccc;font-family:system-ui,-apple-system,sans-seri
 .stats .num{font-size:22px;font-weight:700;color:#fff}
 .btn{padding:8px 24px;border:none;border-radius:8px;background:rgba(102,204,102,0.15);color:#66cc66;font-size:14px;cursor:pointer;touch-action:manipulation}
 .btn:active{background:rgba(102,204,102,0.25)}
-.back{color:#555588;text-decoration:none;font-size:14px}.back:hover{color:#8888bb}
+.back{color:#8888cc;text-decoration:none;font-size:14px;position:absolute;bottom:12px;left:12px;z-index:100;background:rgba(0,0,0,0.4);padding:4px 10px;border-radius:6px;backdrop-filter:blur(4px)}.back:hover{color:#8888bb}
 </style>
 <div class="wrap">
 <div class="hdr"><h1>🔨 打地鼠</h1><div class="s"><div><div class="l">分数</div><div class="v" id="sc">0</div></div><div><div class="l">⏱</div><div class="v" id="tm">30</div></div></div></div>
@@ -35,7 +35,7 @@ function spawnMole(){if(gameOver)return;
 for(var i=0;i<9;i++){var h=document.getElementById('h'+i);h.className='hole';h.textContent='⬚'}
 var n=1+Math.floor(Math.random()*2);for(var i=0;i<n;i++){var idx=Math.floor(Math.random()*9);var h=document.getElementById('h'+idx);
 if(Math.random()<0.15){h.className='hole bonus';h.textContent='🐹'}else{h.className='hole mole';h.textContent='🐭'}}}
-function whack(i){if(gameOver)return;var h=document.getElementById('h'+i);if(!h.classList.contains('mole')&&!h.classList.contains('bonus'))return
+function whack(i){sfxHit();if(gameOver)return;var h=document.getElementById('h'+i);if(!h.classList.contains('mole')&&!h.classList.contains('bonus'))return
 score+=h.classList.contains('bonus')?3:1;document.getElementById('sc').textContent=score;h.className='hole';h.textContent='⬚'
 // Particle effect
 var p=document.createElement('div');p.className='particles';for(var j=0;j<5;j++){var dot=document.createElement('div');dot.className='particle';dot.style.setProperty('--x',(-20+Math.random()*40)+'px');dot.style.setProperty('--y',(-20+Math.random()*40)+'px');dot.style.background=h.classList.contains('bonus')?'#ffdd44':'#66cc66';p.appendChild(dot)}

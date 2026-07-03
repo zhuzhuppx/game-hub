@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Flappy Bird</title>
+<title>Flappy Bird</title><script src="/sfx.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -47,7 +47,7 @@
     background: rgba(255,255,255,0.04); padding: 2px 6px; border-radius: 4px;
     font-family: inherit; font-size: 11px; border: 1px solid rgba(255,255,255,0.06);
   }
-  .back { color: #555588; text-decoration: none; font-size: 14px; }
+  .back { color: #8888cc; text-decoration: none; font-size: 14px; position: absolute; bottom: 12px; left: 12px; z-index: 100; background: rgba(0,0,0,0.4); padding: 4px 10px; border-radius: 6px; backdrop-filter: blur(4px); }
   .back:hover { color: #8888bb; }
   .c-wrap { position: relative; width: 100%; max-width: 400px; }
   @media (pointer: coarse) { .hint { display: none; } }
@@ -109,8 +109,8 @@ var STATES = { MENU: 0, PLAYING: 1, DEAD: 2 };
 function init() {
   // Set constants relative to canvas size
   PIPE_W = Math.round(W * 0.075);
-  GAP = Math.round(H * 0.14);
-  PIPE_SPEED = Math.round(W * 0.0032);
+  GAP = Math.round(H * 0.17);
+  PIPE_SPEED = Math.round(W * 0.0028);
   GROUND_H = Math.round(H * 0.055);
   FLAP = -Math.round(H * 0.0035);
   GRAVITY = H * 0.00016;
@@ -119,16 +119,27 @@ function init() {
   score = 0;
   state = STATES.MENU;
   frame = 0;
+  lastGapY = -1;
   best = parseInt(localStorage.getItem('flappy_best') || '0');
   bestEl.textContent = best;
   scoreEl.textContent = '0';
   overlay.className = 'ov';
 }
 
+// Track last gap position for smooth transitions
+var lastGapY = -1;
+
 function addPipe() {
   var minY = Math.round(H * 0.08);
   var maxY = H - GROUND_H - GAP - minY;
-  var topH = minY + Math.random() * (maxY - minY);
+  // Random target, but smoothly transition from last gap
+  var target = minY + Math.random() * (maxY - minY);
+  // First pipe: use target directly
+  if (lastGapY < 0) { lastGapY = target; }
+  // Limit change to at most 15% of canvas height
+  var maxDelta = H * 0.15;
+  var topH = lastGapY + Math.max(-maxDelta, Math.min(maxDelta, target - lastGapY));
+  lastGapY = topH;
   pipes.push({ x: W + 20, topH: topH, passed: false });
 }
 
@@ -153,7 +164,7 @@ function tick() {
   var angle = Math.max(-0.5, Math.min(1.5, bird.vy * 0.08));
 
   // Pipes
-  if (frame % 100 === 0) addPipe();
+  if (frame % 130 === 0) addPipe();
   for (var i = pipes.length - 1; i >= 0; i--) {
     pipes[i].x -= PIPE_SPEED;
     if (pipes[i].x + PIPE_W < -20) { pipes.splice(i, 1); continue; }
@@ -161,6 +172,7 @@ function tick() {
     if (!pipes[i].passed && pipes[i].x + PIPE_W < bird.x - bird.r) {
       pipes[i].passed = true;
       score++;
+      sfxCoin();
       scoreEl.textContent = score;
     }
     // Collision
@@ -191,6 +203,7 @@ function checkCollision(pipe) {
 }
 
 function die() {
+  sfxLose(); bgmStop();
   state = STATES.DEAD;
   if (score > best) {
     best = score;
@@ -208,6 +221,7 @@ function die() {
 }
 
 function flap() {
+  sfxJump();
   if (state === STATES.MENU) {
     state = STATES.PLAYING;
     bird.vy = FLAP;

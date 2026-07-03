@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-<title>井字棋</title><style>
+<title>井字棋</title><script src="/sfx.js"></script><style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0a0a1a;color:#ccc;font-family:system-ui,-apple-system,sans-serif;min-height:100dvh;display:flex;align-items:center;justify-content:center}
 .wrap{display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px;width:100%;max-width:360px}
@@ -17,7 +17,7 @@ body{background:#0a0a1a;color:#ccc;font-family:system-ui,-apple-system,sans-seri
 .msg{font-size:16px;color:#8888bb;min-height:24px;text-align:center}
 .btn{padding:8px 24px;border:none;border-radius:8px;background:rgba(255,136,68,0.15);color:#ff8844;font-size:14px;cursor:pointer;touch-action:manipulation}
 .btn:active{background:rgba(255,136,68,0.25)}
-.back{color:#555588;text-decoration:none;font-size:14px}
+.back{color:#8888cc;text-decoration:none;font-size:14px;position:absolute;bottom:12px;left:12px;z-index:100;background:rgba(0,0,0,0.4);padding:4px 10px;border-radius:6px;backdrop-filter:blur(4px)}
 .back:hover{color:#8888bb}</style>
 <div class="wrap">
 <div class="hdr"><h1>❌ 井字棋</h1><div class="s"><div><div class="l">你</div><div class="v" id="ps">0</div></div><div><div class="l">AI</div><div class="v" id="as">0</div></div></div></div>

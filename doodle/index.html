@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-<title>涂鸦跳跃</title><style>
+<title>涂鸦跳跃</title><script src="/sfx.js"></script><style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0a0a1a;color:#ccc;font-family:system-ui,-apple-system,sans-serif;min-height:100dvh;display:flex;align-items:center;justify-content:center}
 .wrap{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;width:100%;max-width:420px}
@@ -12,7 +12,7 @@ canvas{width:100%;touch-action:none;background:#0d0d1a;border-radius:8px;display
 .stats .num{font-size:20px;font-weight:700;color:#fff}
 .btn{padding:8px 24px;border:none;border-radius:8px;background:rgba(102,221,255,0.15);color:#66ddff;font-size:14px;cursor:pointer;touch-action:manipulation}
 .btn:active{background:rgba(102,221,255,0.25)}
-.back{color:#555588;text-decoration:none;font-size:14px}.back:hover{color:#8888bb}
+.back{color:#8888cc;text-decoration:none;font-size:14px;position:absolute;bottom:12px;left:12px;z-index:100;background:rgba(0,0,0,0.4);padding:4px 10px;border-radius:6px;backdrop-filter:blur(4px)}.back:hover{color:#8888bb}
 .mc{display:none;gap:8px;justify-content:center;width:100%}
 .mc button{width:56px;height:56px;border:none;border-radius:50%;background:rgba(255,255,255,0.06);color:#8888bb;font-size:24px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .mc button:active{background:rgba(102,221,255,0.15)}
@@ -31,12 +31,14 @@ var W,H,player,platforms={},best=parseInt(localStorage.getItem('doodleBest'))||0
 document.getElementById('hs').textContent=best;
 function resize(){var w=Math.min(420,canvas.parentElement.clientWidth-4);canvas.style.width=w+'px';W=Math.floor(w*1.2);H=Math.floor(W*1.6);canvas.width=W;canvas.height=H;if(typeof player!=='undefined')player.y=H-80;}
 resize();window.addEventListener('resize',resize);
-function startGame(){player={x:W/2-15,y:H-80,w:30,h:30,vy:0};score=0;gameOver=false;running=true;document.getElementById('sc').textContent='0';document.getElementById('msg').textContent='';platforms={};
+var loopId=0;
+function startGame(){player={x:W/2-15,y:H-80,w:30,h:30,vy:0};score=0;gameOver=false;running=true;loopId++;document.getElementById('sc').textContent='0';document.getElementById('msg').textContent='';platforms={};
 // 初始脚下跳板
 platforms.st={x:player.x-10,y:player.y+player.h,w:player.w+20,h:12,type:'n'};
 for(var i=0;i<10;i++){platforms['p'+i]={x:Math.random()*(W-80),y:H-i*60,w:Math.floor(60+Math.random()*40),h:12,type:Math.random()<0.15?'b':'n'}}
 loop()}
-function loop(){if(gameOver){drawGameOver();return}
+function loop(){var id=loopId;if(gameOver){drawGameOver();return}
+try{
 // Gravity
 player.vy+=gravity;player.y+=player.vy
 // Left/right
@@ -45,20 +47,21 @@ player.x=Math.max(0,Math.min(W-player.w,player.x))
 // Scroll
 if(player.y<H*0.4){var diff=H*0.4-player.y;player.y=H*0.4;for(var k in platforms){platforms[k].y+=diff}score+=Math.round(diff);document.getElementById('sc').textContent=score}
 // Platform collision (only when falling)
-if(player.vy>0){for(var k in platforms){var p=platforms[k];if(player.x+player.w>p.x&&player.x<p.x+p.w&&player.y+player.h>p.y&&player.y+player.h<p.y+p.h+5&&player.y+player.h-player.vy<=p.y+5){if(p.type==='b'){player.vy=-9;player.y=p.y-player.h}else{player.vy=-11;player.y=p.y-player.h}
+if(player.vy>0){var prevBot=player.y+player.h-player.vy;for(var k in platforms){var p=platforms[k];if(player.x+player.w>p.x&&player.x<p.x+p.w&&prevBot<=p.y+10&&player.y+player.h>=p.y){if(p.type==='b'){player.vy=-9;player.y=p.y-player.h;sfxHit()}else{player.vy=-11;player.y=p.y-player.h;sfxJump()}
 break}}}
 // Fall off bottom
-if(player.y>H+50){gameOver=true;document.getElementById('msg').textContent='游戏结束！分数:'+score;if(score>best){best=score;localStorage.setItem('doodleBest',best);document.getElementById('hs').textContent=best}return}
+if(player.y>H+50){sfxLose();bgmStop();gameOver=true;document.getElementById('msg').textContent='游戏结束！分数:'+score;if(score>best){best=score;localStorage.setItem('doodleBest',best);document.getElementById('hs').textContent=best}return}
 // Remove off-screen platforms, add new
 for(var k in platforms){if(platforms[k].y>H+20)delete platforms[k]}
 while(Object.keys(platforms).length<12){var lastY=0;for(var k in platforms)if(platforms[k].y<lastY||lastY===0)lastY=platforms[k].y;var idx=Object.keys(platforms).length;platforms['n'+idx]={x:Math.random()*(W-80),y:lastY-60-Math.random()*20,w:Math.floor(50+Math.random()*50),h:12,type:Math.random()<0.12?'b':'n'}}
-draw();requestAnimationFrame(loop)}
+draw();}catch(e){console.error('doodle err',e)}if(loopId===id)requestAnimationFrame(loop)}
 function draw(){ctx.clearRect(0,0,W,H);ctx.fillStyle='#0d0d1a';ctx.fillRect(0,0,W,H)
+function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath()}
 // Platforms
-for(var k in platforms){var p=platforms[k];ctx.fillStyle=p.type==='b'?'rgba(255,221,68,0.3)':'rgba(102,221,255,0.15)';ctx.shadowColor=p.type==='b'?'#ffdd44':'#66ddff';ctx.shadowBlur=p.type==='b'?6:3;ctx.beginPath();ctx.roundRect(p.x,p.y,p.w,p.h,4);ctx.fill();ctx.shadowBlur=0
+for(var k in platforms){var p=platforms[k];ctx.fillStyle=p.type==='b'?'rgba(255,221,68,0.3)':'rgba(102,221,255,0.15)';ctx.shadowColor=p.type==='b'?'#ffdd44':'#66ddff';ctx.shadowBlur=p.type==='b'?6:3;roundRect(ctx,p.x,p.y,p.w,p.h,4);ctx.fill();ctx.shadowBlur=0
 if(p.type==='b'){ctx.fillStyle='rgba(255,221,68,0.5)';ctx.font='10px sans-serif';ctx.textAlign='center';ctx.fillText('💥',p.x+p.w/2,p.y+p.h/2+4)}}
 // Player
-ctx.fillStyle='#66ddff';ctx.shadowColor='#66ddff';ctx.shadowBlur=8;ctx.beginPath();ctx.roundRect(player.x,player.y,player.w,player.h,6);ctx.fill();ctx.shadowBlur=0
+ctx.fillStyle='#66ddff';ctx.shadowColor='#66ddff';ctx.shadowBlur=8;roundRect(ctx,player.x,player.y,player.w,player.h,6);ctx.fill();ctx.shadowBlur=0
 // Eyes
 ctx.fillStyle='#fff';ctx.fillRect(player.x+8,player.y+8,6,6);ctx.fillRect(player.x+16,player.y+8,6,6)
 ctx.fillStyle='#0a0a1a';ctx.fillRect(player.x+10,player.y+10,3,4);ctx.fillRect(player.x+18,player.y+10,3,4)}

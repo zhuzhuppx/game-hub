@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>🧱 俄罗斯方块 - 游戏大厅</title>
+<title>🧱 俄罗斯方块 - 游戏大厅</title><script src="/sfx.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -13,7 +13,7 @@
     align-items: center; justify-content: center;
     overflow: hidden; user-select: none; -webkit-user-select: none;
   }
-  .game-wrapper { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px; max-width: 100vw; }
+  .game-wrapper { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px; max-width: 100vw; position: relative; }
   .header { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 480px; padding: 0 4px; }
   .header h1 { font-size: 20px; background: linear-gradient(135deg, #44bbff, #44ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
   .score-board { display: flex; gap: 16px; font-size: 14px; }
@@ -27,7 +27,7 @@
   #next { max-width: 120px; width: 100%; aspect-ratio: 1; }
   .controls-hint { color: #444477; font-size: 12px; text-align: center; }
   .controls-hint kbd { background: rgba(255,255,255,0.04); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06); font-family: inherit; color: #6666aa; }
-  .back-link { color: #444477; text-decoration: none; font-size: 13px; }
+  .back-link { color: #8888cc; text-decoration: none; font-size: 14px; position: absolute; bottom: 12px; left: 12px; z-index: 100; background: rgba(0,0,0,0.4); padding: 4px 10px; border-radius: 6px; backdrop-filter: blur(4px); }
   .back-link:hover { color: #8888bb; }
   .mobile-controls { display: none; gap: 0; justify-content: center; align-items: center; max-width: 300px; width: 100%; padding: 0 8px; }
   .mobile-controls .dpad {
@@ -138,6 +138,19 @@ const SHAPES = [
   }
 ];
 
+// ====== Sound Effects (Web Audio API) ======
+var sfxCtx=null;
+function sfxInit(){if(!sfxCtx)sfxCtx=new(window.AudioContext||window.webkitAudioContext)()}
+function sfxTone(freq,dur,type,vol){try{sfxInit();var o=sfxCtx.createOscillator(),g=sfxCtx.createGain();o.type=type||'sine';o.frequency.setValueAtTime(freq,sfxCtx.currentTime);g.gain.setValueAtTime(vol||0.12,sfxCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,sfxCtx.currentTime+dur);o.connect(g);g.connect(sfxCtx.destination);o.start();o.stop(sfxCtx.currentTime+dur)}catch(e){}}
+function sfxNoise(dur,vol){try{sfxInit();var buf=sfxCtx.createBuffer(1,sfxCtx.sampleRate*dur,sfxCtx.sampleRate);var d=buf.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3);var s=sfxCtx.createBufferSource();s.buffer=buf;var g=sfxCtx.createGain();g.gain.setValueAtTime(vol||0.08,sfxCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,sfxCtx.currentTime+dur);s.connect(g);g.connect(sfxCtx.destination);s.start()}catch(e){}}
+function sfxMove(){sfxTone(600,0.05,'square',0.06)}
+function sfxRotate(){sfxTone(800,0.08,'sine',0.08);setTimeout(function(){sfxTone(1000,0.08,'sine',0.06)},60)}
+function sfxDrop(){sfxNoise(0.12,0.1);sfxTone(150,0.15,'triangle',0.08)}
+function sfxLock(){sfxTone(400,0.06,'triangle',0.07);setTimeout(function(){sfxTone(300,0.1,'triangle',0.05)},50)}
+function sfxClear(){for(var i=0;i<5;i++)setTimeout(function(){sfxTone(523+Math.random()*200,0.15,'sine',0.08)},i*70)}
+function sfxTetris(){for(var i=0;i<8;i++)setTimeout(function(){sfxTone(440+Math.random()*400,0.12,'sine',0.1)},i*50)}
+function sfxGameOver(){[400,350,300,250,200].forEach(function(f,i){setTimeout(function(){sfxTone(f,0.2,'sawtooth',0.06)},i*150)})}
+
 const boardCanvas = document.getElementById('board');
 const nextCanvas = document.getElementById('next');
 const ctx = boardCanvas.getContext('2d');
@@ -191,29 +204,51 @@ function lockPiece() {
         const ny = piece.y + r, nx = piece.x + c;
         if (ny >= 0) board[ny][nx] = piece.color;
       }
-  clearLines();
-  spawnPiece();
+  // Detect full rows
+  var fullRows = [];
+  for (let r = ROWS - 1; r >= 0; r--)
+    if (board[r].every(c => c !== 0)) fullRows.push(r);
+  if (fullRows.length > 0) {
+    sfxLock();
+    animateClear(fullRows);
+  } else {
+    sfxLock();
+    spawnPiece();
+  }
 }
 
-function clearLines() {
-  let cleared = 0;
-  for (let r = ROWS - 1; r >= 0; r--) {
-    if (board[r].every(c => c !== 0)) {
-      board.splice(r, 1);
-      board.unshift(Array(COLS).fill(0));
-      cleared++;
-      r++;
+var clearRows = null, clearFrame = 0, clearScore = 0, clearLinesCount = 0;
+function animateClear(rows) {
+  clearRows = rows.slice().sort((a,b) => a-b);
+  clearFrame = 0;
+  clearLinesCount = rows.length;
+  clearScore = ([0,100,300,500,800][rows.length] || 1000) * level;
+  clearInterval(timer);
+  (function animLoop() {
+    clearFrame++;
+    draw();
+    if (clearFrame <= 16) {
+      requestAnimationFrame(animLoop);
+    } else {
+      // Actually clear the rows
+      var cleared = 0;
+      for (var i = rows.length - 1; i >= 0; i--) {
+        board.splice(rows[i], 1);
+        board.unshift(Array(COLS).fill(0));
+        cleared++;
+      }
+      if (cleared >= 4) sfxTetris(); else sfxClear();
+      score += clearScore;
+      lines += cleared;
+      level = Math.floor(lines / 10) + 1;
+      document.getElementById('score').textContent = score;
+      document.getElementById('level').textContent = level;
+      clearRows = null;
+      adjustSpeed();
+      spawnPiece();
+      draw();
     }
-  }
-  if (cleared > 0) {
-    const pts = [0, 100, 300, 500, 800][cleared] || 1000;
-    score += pts * level;
-    lines += cleared;
-    level = Math.floor(lines / 10) + 1;
-    document.getElementById('score').textContent = score;
-    document.getElementById('level').textContent = level;
-    adjustSpeed();
-  }
+  })();
 }
 
 function adjustSpeed() {
@@ -235,6 +270,7 @@ function moveDown() {
 }
 
 function rotatePiece() {
+  sfxRotate();
   const cells = piece.cells;
   const n = cells.length;
   const rotated = Array.from({length:n}, (_,r) => Array.from({length:n}, (_,c) => cells[n-1-c][r]));
@@ -248,11 +284,13 @@ function rotatePiece() {
 }
 
 function hardDrop() {
+  sfxDrop();
   while (isValid({...piece, y: piece.y + 1})) piece.y++;
   lockPiece();
 }
 
 function initGame() {
+  bgmStart();
   board = createBoard();
   score = 0; level = 1; lines = 0;
   best = parseInt(localStorage.getItem('tetris_best') || '0');
@@ -268,6 +306,7 @@ function initGame() {
 }
 
 function gameOver() {
+  sfxGameOver(); bgmStop();
   if (score > best) {
     best = score;
     localStorage.setItem('tetris_best', best);
@@ -291,6 +330,18 @@ function draw() {
   for (let r = 0; r < ROWS; r++)
     for (let c = 0; c < COLS; c++)
       if (board[r][c]) drawBlock(ctx, c, r, board[r][c], cell);
+
+  // line clear flash animation
+  if (clearRows && clearFrame > 0) {
+    var flashAlpha = Math.sin(clearFrame * 0.5) * 0.5 + 0.5;
+    if (clearFrame > 12) flashAlpha = 1;
+    ctx.fillStyle = 'rgba(255,255,255,' + (flashAlpha * 0.7) + ')';
+    clearRows.forEach(r => ctx.fillRect(0, r * cell, boardCanvas.width, cell));
+    if (clearFrame > 10) {
+      ctx.fillStyle = 'rgba(68,255,136,' + ((clearFrame - 10) / 6 * 0.6) + ')';
+      clearRows.forEach(r => ctx.fillRect(0, r * cell, boardCanvas.width, cell));
+    }
+  }
 
   // current piece
   if (piece && (state === STATES.PLAYING || state === STATES.PAUSED)) {
@@ -383,8 +434,8 @@ document.addEventListener('keydown', e => {
     draw(); return;
   }
   if (state !== STATES.PLAYING) return;
-  if (k === 'ArrowLeft' || k === 'a' || k === 'A') { piece.x--; if (!isValid(piece)) piece.x++; draw(); }
-  else if (k === 'ArrowRight' || k === 'd' || k === 'D') { piece.x++; if (!isValid(piece)) piece.x--; draw(); }
+  if (k === 'ArrowLeft' || k === 'a' || k === 'A') { piece.x--; if (!isValid(piece)) piece.x++; else sfxMove(); draw(); }
+  else if (k === 'ArrowRight' || k === 'd' || k === 'D') { piece.x++; if (!isValid(piece)) piece.x--; else sfxMove(); draw(); }
   else if (k === 'ArrowDown' || k === 's' || k === 'S') { moveDown(); draw(); }
   else if (k === 'ArrowUp' || k === 'w' || k === 'W') { rotatePiece(); draw(); }
   else if (k === ' ') { e.preventDefault(); hardDrop(); draw(); }
@@ -415,9 +466,9 @@ document.getElementById('mobileCtrls').addEventListener('click', e => {
   const a = btn.dataset.action;
   if (state === STATES.MENU || state === STATES.GAMEOVER) { initGame(); return; }
   if (state !== STATES.PLAYING) return;
-  if (a === 'left') { piece.x--; if (!isValid(piece)) piece.x++; }
-  else if (a === 'right') { piece.x++; if (!isValid(piece)) piece.x--; }
-  else if (a === 'rotate' || a === 'up') rotatePiece();
+  if (a === 'left') { piece.x--; if (!isValid(piece)) piece.x++; else sfxMove(); }
+  else if (a === 'right') { piece.x++; if (!isValid(piece)) piece.x--; else sfxMove(); }
+  else if (a === 'rotate' || a === 'up') { rotatePiece(); }
   else if (a === 'down') moveDown();
   else if (a === 'drop') hardDrop();
   draw();

@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-<title>斗地主 - Phaser</title>
+<title>斗地主 - Phaser</title><script src="/sfx.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0a0a1a;display:flex;align-items:center;justify-content:center;min-height:100dvh}
@@ -17,7 +17,7 @@ body{background:#0a0a1a;display:flex;align-items:center;justify-content:center;m
 .actions .h{background:rgba(100,200,100,0.2);color:#66cc66}.actions .h:active{background:rgba(100,200,100,0.3)}
 .btn{padding:8px 24px;border:none;border-radius:8px;background:rgba(255,136,68,0.15);color:#ff8844;font-size:14px;cursor:pointer;touch-action:manipulation;font-family:system-ui}
 .btn:active{background:rgba(255,136,68,0.25)}
-.back{color:#555588;text-decoration:none;font-size:14px;font-family:system-ui}.back:hover{color:#8888bb}
+.back{color:#8888cc;text-decoration:none;font-size:14px;position:absolute;bottom:12px;left:12px;z-index:100;background:rgba(0,0,0,0.4);padding:4px 10px;border-radius:6px;backdrop-filter:blur(4px)}
 </style>
 <div class="wrap"><div class="hdr"><h1>🃏 斗地主</h1><div class="s" id="status"></div></div>
 <div id="game"></div>
