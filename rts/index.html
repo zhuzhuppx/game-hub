@@ -199,9 +199,10 @@ function _tick(){
     
     if(must_defend&&ehq){
       var intruders=cachedE.filter(function(t){return Math.hypot(t.x-ehq.x-0.5,t.y-ehq.y-0.5)<5});
-      if(intruders.length&&u.cd<=0){
-        var ct=nearUnit(u,intruders)||near(u,intruders);if(ct){var wa2=ct.hpRef.hp>0;ct.hpRef.hp-=u.atk;u.cd=u.rate;u.dx=ct.x-u.x;u.dy=ct.y-u.y;var m=muzzlePos(u);if(typeof sfxPew==='function')sfxPew();spawnBullet(m.x,m.y,ct.x*TS,ct.y*TS,'#ff6666');if(wa2&&ct.hpRef.hp<=0)grantXp(u,ct.hpRef.t==='tank'?15:8)}
-        else{moveToward(u,closest(u,intruders))}
+      if(intruders.length){
+        // Attack if cd ready, always chase intruders
+        if(u.cd<=0){var ct=nearUnit(u,intruders)||near(u,intruders);if(ct){var wa2=ct.hpRef.hp>0;ct.hpRef.hp-=u.atk;u.cd=u.rate;u.dx=ct.x-u.x;u.dy=ct.y-u.y;var m=muzzlePos(u);if(typeof sfxPew==='function')sfxPew();spawnBullet(m.x,m.y,ct.x*TS,ct.y*TS,'#ff6666');if(wa2&&ct.hpRef.hp<=0)grantXp(u,ct.hpRef.t==='tank'?15:8)}}
+        if(!u.cd||u.cd>0)moveToward(u,closest(u,intruders))
       }else{
         var distHome=Math.hypot(ehq.x+0.5-u.x,ehq.y+0.5-u.y);
         if(distHome>4)moveToward(u,{x:ehq.x+0.5+Math.random()-0.5,y:ehq.y+0.5+Math.random()-0.5})
