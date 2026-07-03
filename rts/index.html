@@ -440,7 +440,7 @@ function _tick(){
   E._waveCd=(E._waveCd||0)+1;
   if(frame>5400&&E._waveCd>=1800){E._waveCd=0; // every 60s, after 180s delay
     var eh=hqOf(E);if(eh&&hasB(E,'barracks')){
-      var n=1+Math.floor((frame-5400)/3600); // 1 at 3min, +1 every 2min
+      var n=3+Math.floor((frame-5400)/3600); // 3 at 3min, +1 every 2min
       if(hasB(E,'factory')){for(var wi=0;wi<n;wi++)eSpawn(Math.random()<0.5?'tank':'rifle')}
       else{for(var wi=0;wi<n;wi++)eSpawn('rifle')}
     }}
