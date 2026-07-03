@@ -93,16 +93,17 @@ function cmd(a){
   if(a==='barracks'||a==='factory'){
     var cost=a==='barracks'?200:400;if(P.gold<cost){msg('💰 金币不足！',1500);return}
     var hq=hqOf(P);if(!hq)return;
-    var off=[[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,2],[0,-2],[1,1],[-1,1],[1,-1],[-1,-1]];
-    for(var i=0;i<off.length;i++){var nx=hq.x+off[i][0],ny=hq.y+off[i][1];if(nx<0||nx>=GW||ny<0||ny>=GH)continue;
-      if(map[ny][nx]!==0)continue;var occ=false;
-      for(var j=0;j<P.blds.length;j++){if(P.blds[j].x===nx&&P.blds[j].y===ny)occ=true}
-      for(var j=0;j<E.blds.length;j++){if(E.blds[j].x===nx&&E.blds[j].y===ny)occ=true}
-      for(var j=0;j<P.units.length;j++){if(Math.floor(P.units[j].x)===nx&&Math.floor(P.units[j].y)===ny)occ=true}
-      if(occ)continue;
-      P.gold-=cost;addBld(a,nx,ny,a==='barracks'?300:400,'p');
-      msg('✅ '+bName(a)+' 建造完成',2000);if(typeof sfxBlip==='function')sfxBlip();upd();return}
-    msg('❌ 附近无空地！',1500);return}
+    // Search expanding radius around HQ for empty spot
+    var found=false,nx,ny;
+    outer:for(var r=1;r<=4;r++)for(var dx=-r;dx<=r;dx++)for(var dy=-r;dy<=r;dy++){
+      if(Math.abs(dx)!==r&&Math.abs(dy)!==r)continue; // only edge of square
+      nx=hq.x+dx;ny=hq.y+dy;if(nx<0||nx>=GW||ny<0||ny>=GH)continue;
+      if(map[ny][nx]===1)continue;
+      var occ=P.blds.some(function(b){return b.x===nx&&b.y===ny})||E.blds.some(function(b){return b.x===nx&&b.y===ny})||P.units.some(function(u){return u.hp>0&&Math.floor(u.x)===nx&&Math.floor(u.y)===ny});
+      if(!occ){found=true;break outer}}
+    if(!found){msg('❌ HQ周边无空地！',1500);return}
+    P.gold-=cost;addBld(a,nx,ny,a==='barracks'?300:400,'p');
+    msg('✅ '+bName(a)+' 建造完成',2000);if(typeof sfxBlip==='function')sfxBlip();upd();return}
   if(a==='rifle'||a==='tank'){
     var cost=a==='tank'?300:100;if(P.gold<cost){msg('💰 金币不足！',1500);return}
     if(!hasB(P,a==='tank'?'factory':'barracks')){msg('❌ 需要先建造对应建筑',1500);return}
