@@ -326,7 +326,7 @@ function _tick(){
   moveSoundCd-=dt;
   var anyTank=false,anyInf=false;
   for(var i=0;i<P.units.length;i++){var u=P.units[i];if(u._moved){u._moved=false;if(u.t==='tank')anyTank=true;else if(u.t!=='harvester')anyInf=true}}
-  for(var i=0;i<E.units.length;i++){var u=E.units[i];if(u._moved){u._moved=false;u.t==='tank'?anyTank=true:anyInf=true}}
+  for(var i=0;i<E.units.length;i++){var u=E.units[i];if(u._moved){u._moved=false;if(u.t==='tank')anyTank=true;else if(u.t!=='harvester')anyInf=true}}
   // Continuous tank tread sound
   if(anyTank){if(!tankSoundNodes.length&&typeof sfxTankStart==='function')sfxTankStart()}
   else{if(tankSoundNodes.length&&typeof sfxTankStop==='function')sfxTankStop()}
