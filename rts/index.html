@@ -13,7 +13,7 @@
 .back{color:#8888cc;text-decoration:none;font-size:14px;position:absolute;bottom:12px;left:12px;z-index:100;background:rgba(0,0,0,0.5);padding:4px 10px;border-radius:6px}
 </style>
 <div class="wrap">
-<div class="hud"><span>💰 <b id="gold">1000</b></span><span id="sel"></span></div>
+<div class="hud"><span>💰 <b id="gold">1000</b></span><span id="sel"></span><span id="timer" style="color:#6666aa;font-size:11px;position:absolute;right:10px;top:8px">0:00</span></div>
 <canvas id="c"></canvas>
 <div class="info" id="info"></div>
 <div class="btns">
@@ -518,6 +518,8 @@ function draw(){
     ctx.strokeStyle='rgba(255,220,60,0.15)';ctx.lineWidth=4;ctx.beginPath();ctx.arc(sx,sy,TS*0.54,0,Math.PI*2);ctx.stroke();ctx.lineWidth=1;
     var n=sel.t?bName(sel.t):uName(sel.t);document.getElementById('sel').textContent='选中: '+n+' HP:'+(sel.hp||sel.mhp)+'/'+(sel.mhp||sel.hp)}
   else{document.getElementById('sel').textContent=''}
+  var totalSec=Math.floor(frame/30);var min=Math.floor(totalSec/60),sec=totalSec%60;
+  document.getElementById('timer').textContent='⏱ '+min+':'+(sec<10?'0':'')+sec;
   upd();
 }
 
