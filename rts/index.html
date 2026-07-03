@@ -79,7 +79,7 @@ var mineralTick=0; // mineral regen timer
 
 function faction(o){if(o==='p')return P;if(o==='e')return E0;if(o==='e1')return E1;return E2}
 function addBld(t,x,y,hp,o){var b={t:t,x:x,y:y,hp:hp,mhp:hp,o:o};faction(o).blds.push(b);return b}
-function addUnit(t,x,y,o){var s=t==='tank'?{hp:250,atk:35,rng:2.5,spd:0.025,rate:45}:t==='harvester'?{hp:200,atk:0,rng:0,spd:0.05,rate:999}:{hp:65,atk:6,rng:1.4,spd:0.028,rate:32};
+function addUnit(t,x,y,o){var s=t==='tank'?{hp:250,atk:35,rng:2.5,spd:0.025,rate:45}:t==='harvester'?{hp:200,atk:0,rng:0,spd:0.05,rate:999}:{hp:65,atk:6,rng:1.4,spd:0.028,rate:20};
   var u={id:uid++,t:t,x:x,y:y,hp:s.hp,mhp:s.hp,atk:s.atk,rng:s.rng,spd:s.spd,rate:s.rate,cd:0,o:o,st:'idle',tx:0,ty:0,dx:0,dy:0,xp:0,lv:1};
   faction(o).units.push(u);return u}
 
