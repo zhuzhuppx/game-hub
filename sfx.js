@@ -111,6 +111,7 @@ function sfxCoin()    { sfxTone(660, 0.08, 'sine', 0.08); setTimeout(function() 
 function sfxJump()    { sfxFreqSweep(200, 600, 0.12, 'triangle', 0.1); }
 function sfxShoot()   { sfxNoise(0.06, 0.06); sfxFreqSweep(800, 200, 0.08, 'square', 0.04); }
 function sfxHit()     { sfxNoise(0.08, 0.1); sfxTone(200, 0.1, 'sawtooth', 0.06); }
+function sfxPew()     { sfxFreqSweep(1200, 400, 0.06, 'square', 0.05); }
 function sfxExplode() { sfxNoise(0.3, 0.15); sfxFreqSweep(400, 50, 0.3, 'sawtooth', 0.08); }
 function sfxPowerUp() { sfxTone(400, 0.1, 'sine', 0.08); setTimeout(function() { sfxTone(600, 0.1, 'sine', 0.07); }, 100); setTimeout(function() { sfxTone(900, 0.15, 'sine', 0.06); }, 200); }
 function sfxCorrect() { sfxTone(523, 0.1, 'sine', 0.07); setTimeout(function() { sfxTone(659, 0.1, 'sine', 0.06); }, 100); setTimeout(function() { sfxTone(784, 0.15, 'sine', 0.05); }, 200); }
