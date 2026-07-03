@@ -13,7 +13,7 @@
 .back{color:#8888cc;text-decoration:none;font-size:14px;position:absolute;bottom:12px;left:12px;z-index:100;background:rgba(0,0,0,0.5);padding:4px 10px;border-radius:6px}
 </style>
 <div class="wrap">
-<div class="hud"><span>💰 <b id="gold">1000</b></span><span id="sel"></span></div>
+<div class="hud"><span>💰 <b id="gold">800</b></span><span id="sel"></span></div>
 <canvas id="c"></canvas>
 <div class="info" id="info"></div>
 <div class="btns">
@@ -23,6 +23,8 @@
 <button id="btnT" onclick="sfxResume();cmd('tank')" disabled>🛡️ 坦克 200💰</button>
 <button onclick="sfxResume();cmd('rush')">⚔️ 全军出击</button>
 <button onclick="sfxResume();cmd('retreat')">🛡️ 全军回防</button>
+<button id="btnRef" onclick="sfxResume();cmd('refinery')">🏗️ 精炼厂 300💰</button>
+<button id="btnHarv" onclick="sfxResume();cmd('harvester')" disabled>⛏️ 矿车 150💰</button>
 </div>
 <a class="back" href="/">← 返回</a></div>
 <script>
@@ -34,16 +36,18 @@ c.width=W;c.height=H;
 // === MAP ===
 var map=[];
 for(var y=0;y<GH;y++){map[y]=[];for(var x=0;x<GW;x++)map[y][x]=0}
+// Mineral field center
+for(var y=4;y<8;y++)for(var x=7;x<11;x++)map[y][x]=2;
 
 // === GAME STATE ===
 var uid=0,frame=0,sel=null,over=false;
 var fx=[]; // death particles
-var P={gold:1500,units:[],blds:[]};
-var E={gold:1500,units:[],blds:[],aiCd:50,attackReady:false};
+var P={gold:800,units:[],blds:[]};
+var E={gold:800,units:[],blds:[],aiCd:50,attackReady:false};
 var moveSoundCd=0; // throttle movement sfx
 
 function addBld(t,x,y,hp,o){var b={t:t,x:x,y:y,hp:hp,mhp:hp,o:o};(o==='p'?P.blds:E.blds).push(b);return b}
-function addUnit(t,x,y,o){var s=t==='tank'?{hp:150,atk:28,rng:1.8,spd:0.015,rate:50}:{hp:65,atk:12,rng:1.4,spd:0.028,rate:32};
+function addUnit(t,x,y,o){var s=t==='tank'?{hp:150,atk:28,rng:1.8,spd:0.015,rate:50}:t==='harvester'?{hp:100,atk:0,rng:0,spd:0.012,rate:999}:{hp:65,atk:12,rng:1.4,spd:0.028,rate:32};
   var u={id:uid++,t:t,x:x,y:y,hp:s.hp,mhp:s.hp,atk:s.atk,rng:s.rng,spd:s.spd,rate:s.rate,cd:0,o:o,st:'idle',tx:0,ty:0,dx:0,dy:0,xp:0,lv:1};
   (o==='p'?P.units:E.units).push(u);return u}
 
@@ -61,8 +65,8 @@ function eSpawn(type){var eh=hqOf(E);if(!eh)return;
   for(var oi=0;oi<eoffs.length;oi++){sx=eh.x+eoffs[oi].x;sy=eh.y+eoffs[oi].y;if(canPass(sx,sy))break}
   addUnit(type,sx,sy,'e')}
 function msg(s,t){var el=document.getElementById('info');el.textContent=s;if(t)setTimeout(function(){if(el.textContent===s)el.textContent=''},t)}
-function bName(t){return{hq:'🏛️',barracks:'🏠',factory:'🏭'}[t]||t}
-function uName(t){return{rifle:'🔫',tank:'🛡️'}[t]||t}
+function bName(t){return{hq:'🏛️',barracks:'🏠',factory:'🏭',refinery:'🏗️'}[t]||t}
+function uName(t){return{rifle:'🔫',tank:'🛡️',harvester:'⛏️'}[t]||t}
 
 function near(u,list){
   var b=null,bd=999;for(var i=0;i<list.length;i++){var t=list[i];var d=Math.hypot(t.x-u.x,t.y-u.y);if(d<=u.rng&&d<bd){bd=d;b=t}}return b}
@@ -144,6 +148,27 @@ function cmd(a){
     for(var i=0;i<P.units.length;i++){var u=P.units[i];if(u.hp<=0)continue;
       u.st='moving';u.tx=hq.x+0.5+Math.random()*2-1;u.ty=hq.y+1.5+Math.random();u.dx=u.tx-u.x;u.dy=u.ty-u.y}
     msg('🛡️ 全军回防！',1500)}
+  if(a==='refinery'){
+    if(hasB(P,'refinery')){msg('❌ 已有精炼厂',1500);return}
+    if(P.gold<300){msg('💰 金币不足！',1500);return}
+    // Place near closest mineral
+    var bestX=-1,bestY=-1,bestD=999;
+    for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){if(map[y][x]!==2)continue;
+      var d=Math.hypot(x-hqOf(P).x,y-hqOf(P).y);if(d<bestD){bestD=d;bestX=x;bestY=y}}
+    if(bestX<0){msg('❌ 无矿区',1500);return}
+    // Place adjacent to mineral
+    var off=[[1,0],[-1,0],[0,1],[0,-1]];
+    for(var i=0;i<off.length;i++){var nx=bestX+off[i][0],ny=bestY+off[i][1];
+      if(nx<0||nx>=GW||ny<0||ny>=GH)continue;if(map[ny][nx]===2||map[ny][nx]===1)continue;
+      var occ=P.blds.concat(E.blds).some(function(b){return b.x===nx&&b.y===ny});
+      if(occ)continue;
+      P.gold-=300;addBld('refinery',nx,ny,350,'p');msg('✅ 精炼厂建成',2000);upd();return}
+    msg('❌ 矿区旁无空地',1500)}
+  if(a==='harvester'){
+    if(!hasB(P,'refinery')){msg('❌ 需要先建造精炼厂',1500);return}
+    if(P.gold<150){msg('💰 金币不足！',1500);return}
+    var ref2=P.blds.find(function(b){return b.t==='refinery'&&b.hp>0});if(!ref2)return;
+    addUnit('harvester',ref2.x+0.5,ref2.y+0.5,'p');P.gold-=150;msg('✅ 矿车出动',2000);upd()}
 }
 
 function upd(){
@@ -152,6 +177,8 @@ function upd(){
   document.getElementById('btnF').disabled=P.gold<400||over||hasB(P,'factory');
   document.getElementById('btnR').disabled=!hasB(P,'barracks')||P.gold<100||over;
   document.getElementById('btnT').disabled=!hasB(P,'factory')||P.gold<200||over;
+  document.getElementById('btnRef').disabled=P.gold<300||over||hasB(P,'refinery');
+  document.getElementById('btnHarv').disabled=!hasB(P,'refinery')||P.gold<150||over;
 }
 
 // === UPDATE ===
@@ -173,8 +200,8 @@ function _tick(){
       if(u.cd<=0){var t=nearUnit(u,cachedP)||near(u,cachedP);if(t){var wasAlive=t.hpRef.hp>0;t.hpRef.hp-=u.atk;u.cd=u.rate;u.dx=t.x-u.x;u.dy=t.y-u.y;var m=muzzlePos(u);if(typeof sfxPew==='function')sfxPew();spawnBullet(m.x,m.y,t.x*TS,t.y*TS,'#ffff88');if(wasAlive&&t.hpRef.hp<=0)grantXp(u,t.hpRef.t==='tank'?15:8)}else{u.st='idle'}}
       else{var d=Math.hypot(u.tx-u.x,u.ty-u.y);if(d>u.rng){moveToward(u,{x:u.tx,y:u.ty})}}
     }
-    // Auto-defend: ALL units rush to intercept when enemies near HQ fence
-    u._adCd=(u._adCd||0)+dt;
+    // Auto-defend: ALL combat units rush to intercept
+    if(u.t!=='harvester'){u._adCd=(u._adCd||0)+dt;
     if(u._adCd>25){u._adCd=0;
     var phq=hqOf(P);if(phq){
       var nearE2=cachedP.filter(function(e){return Math.hypot(e.x-phq.x-0.5,e.y-phq.y-0.5)<5});
@@ -188,7 +215,33 @@ function _tick(){
           var defY=phq.y+0.5+(ady/ad)*(1.5+Math.random()*2);
           u.st='attacking';u.tx=defX;u.ty=defY;u.dx=adx;u.dy=ady}
       }
-    }}
+    }}}
+    // Harvester mining logic
+    if(u.t==='harvester'&&u.hp>0){
+      if(u._mineTime>0){u._mineTime-=dt;if(u._mineTime<=0){
+        // Mining complete → return to refinery
+        var ref=P.blds.find(function(b){return b.t==='refinery'&&b.hp>0});
+        if(ref){u.st='moving';u.tx=ref.x+0.5;u.ty=ref.y+0.5;u.dx=u.tx-u.x;u.dy=u.ty-u.y}
+      }}
+      else if(u.st==='idle'||(u.st==='moving'&&!u._mineTime)){
+        // Find nearest mineral
+        var nearestOre=null,bestD=999;
+        for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){if(map[y][x]!==2)continue;
+          var d=Math.hypot(x+0.5-u.x,y+0.5-u.y);if(d<bestD){bestD=d;nearestOre={x:x+0.5,y:y+0.5}}}
+        if(nearestOre){
+          var dd=Math.hypot(nearestOre.x-u.x,nearestOre.y-u.y);
+          if(dd<0.3){u._mineTime=90;u.st='idle'} // start mining
+          else{u.st='moving';u.tx=nearestOre.x;u.ty=nearestOre.y;u.dx=u.tx-u.x;u.dy=u.ty-u.y}
+        }
+      }
+      else if(u.st==='moving'&&u._mineTime<=0){
+        // Check if arrived at refinery
+        var ref=P.blds.find(function(b){return b.t==='refinery'&&b.hp>0});
+        if(ref&&Math.hypot(ref.x+0.5-u.x,ref.y+0.5-u.y)<0.5){P.gold+=100;u.st='idle';upd()}
+      }
+      // Don't fight
+      continue;
+    }
   }
   // Enemy AI
   var ehq=hqOf(E);var e_base_threat=ehq?cachedE.filter(function(t){return Math.hypot(t.x-ehq.x-0.5,t.y-ehq.y-0.5)<5}).length:0;
@@ -205,6 +258,28 @@ function _tick(){
   
   for(var i=E.units.length-1;i>=0;i--){var u=E.units[i];if(u.hp<=0){spawnFx(u.x*TS,u.y*TS,u.t==='tank'?'#ff6644':'#ff4444',u.t==='tank'?12:6);if(u.t==='tank'&&typeof sfxExplode==='function')sfxExplode();E.units.splice(i,1);continue}
     if(u.cd>0)u.cd-=dt;
+    // Enemy harvester mining
+    if(u.t==='harvester'&&u.hp>0){
+      if(u._mineTime>0){u._mineTime-=dt;if(u._mineTime<=0){
+        var refE=E.blds.find(function(b){return b.t==='refinery'&&b.hp>0});
+        if(refE){u.st='moving';u.tx=refE.x+0.5;u.ty=refE.y+0.5;u.dx=u.tx-u.x;u.dy=u.ty-u.y}
+      }}
+      else if(u.st==='idle'||(u.st==='moving'&&!u._mineTime)){
+        var nearestOreE=null,bestDE=999;
+        for(var y3=0;y3<GH;y3++)for(var x3=0;x3<GW;x3++){if(map[y3][x3]!==2)continue;
+          var d3=Math.hypot(x3+0.5-u.x,y3+0.5-u.y);if(d3<bestDE){bestDE=d3;nearestOreE={x:x3+0.5,y:y3+0.5}}}
+        if(nearestOreE){
+          var ddE=Math.hypot(nearestOreE.x-u.x,nearestOreE.y-u.y);
+          if(ddE<0.3){u._mineTime=90;u.st='idle'}
+          else{u.st='moving';u.tx=nearestOreE.x;u.ty=nearestOreE.y;u.dx=u.tx-u.x;u.dy=u.ty-u.y}
+        }
+      }
+      else if(u.st==='moving'&&u._mineTime<=0){
+        var refE=E.blds.find(function(b){return b.t==='refinery'&&b.hp>0});
+        if(refE&&Math.hypot(refE.x+0.5-u.x,refE.y+0.5-u.y)<0.5){E.gold+=100;u.st='idle'}
+      }
+      continue;
+    }
     var et=nearUnit(u,cachedE)||near(u,cachedE);
     if(et){if(u.cd<=0){var wa=et.hpRef.hp>0;et.hpRef.hp-=u.atk;u.cd=u.rate;var m=muzzlePos(u);if(typeof sfxPew==='function')sfxPew();spawnBullet(m.x,m.y,et.x*TS,et.y*TS,'#ff6666');if(wa&&et.hpRef.hp<=0)grantXp(u,et.hpRef.t==='tank'?15:8)}}
     
@@ -230,8 +305,18 @@ function _tick(){
   // AI build/train (same rules as player)
   E.aiCd+=dt;if(E.aiCd>100){E.aiCd=0;
     var ehq2=hqOf(E);if(!ehq2)return;
-    // Build priority: barracks > factory > train
-    if(!hasB(E,'barracks')&&E.gold>=200){
+    // Build priority: refinery > barracks > factory > train
+    if(!hasB(E,'refinery')&&E.gold>=300){
+      // Place near minerals
+      var bestX=-1,bestY=-1,bestD=999;
+      for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){if(map[y][x]!==2)continue;
+        var d2=Math.hypot(x-ehq2.x,y-ehq2.y);if(d2<bestD){bestD=d2;bestX=x;bestY=y}}
+      if(bestX>=0){var offR=[[1,0],[-1,0],[0,1],[0,-1]];
+        for(var ri=0;ri<offR.length;ri++){var rx=bestX+offR[ri][0],ry=bestY+offR[ri][1];
+          if(rx<0||rx>=GW||ry<0||ry>=GH||map[ry][rx]===2)continue;
+          if(canPass(rx,ry)){E.gold-=300;addBld('refinery',rx,ry,350,'e');break}}}
+      else{E.aiCd=-50}
+    }else if(!hasB(E,'barracks')&&E.gold>=200){
       var bx=ehq2.x+1,by=ehq2.y;if(canPass(bx,by)){E.gold-=200;addBld('barracks',bx,by,300,'e')}
       else{E.aiCd=-50} // retry sooner
     }else if(!hasB(E,'factory')&&E.gold>=400){
@@ -243,9 +328,13 @@ function _tick(){
       else if(!hasF&&E.gold>=100){E.gold-=100;eSpawn('rifle')}
       else if(hasF&&E.gold>=100&&E.units.length<3){E.gold-=100;eSpawn('rifle')}
     }
+    // AI also trains harvesters
+    if(hasB(E,'refinery')&&E.gold>=150&&E.units.filter(function(u){return u.t==='harvester'&&u.hp>0}).length<2){
+      var ref=E.blds.find(function(b){return b.t==='refinery'&&b.hp>0});if(ref){
+        E.gold-=150;addUnit('harvester',ref.x+0.5,ref.y+0.5,'e')}
+    }
   }
-  // Resources
-  if(frame%50===0){P.gold+=8;E.gold+=8}
+  // Resources (no auto-gold, mining only)
   // Building death FX
   for(var i=P.blds.length-1;i>=0;i--){var b=P.blds[i];if(b.hp<=0&&!b._dead){b._dead=true;spawnBldFx(b);if(typeof sfxExplode==='function')sfxExplode()}}
   for(var i=E.blds.length-1;i>=0;i--){var b=E.blds[i];if(b.hp<=0&&!b._dead){b._dead=true;spawnBldFx(b);if(typeof sfxExplode==='function')sfxExplode()}}
@@ -258,7 +347,7 @@ function _tick(){
   // Movement sound
   moveSoundCd-=dt;
   var anyTank=false,anyInf=false;
-  for(var i=0;i<P.units.length;i++){var u=P.units[i];if(u._moved){u._moved=false;u.t==='tank'?anyTank=true:anyInf=true}}
+  for(var i=0;i<P.units.length;i++){var u=P.units[i];if(u._moved){u._moved=false;if(u.t==='tank')anyTank=true;else if(u.t!=='harvester')anyInf=true}}
   for(var i=0;i<E.units.length;i++){var u=E.units[i];if(u._moved){u._moved=false;u.t==='tank'?anyTank=true:anyInf=true}}
   // Continuous tank tread sound
   if(anyTank){if(!tankSoundNodes.length&&typeof sfxTankStart==='function')sfxTankStart()}
@@ -278,7 +367,13 @@ function draw(){
     // Grass dots
     ctx.fillStyle='#2a442a';for(var d=0;d<3;d++){var dx=gx+5+((d*13+y*7)%(TS-10)),dy=gy+5+((d*17+x*11)%(TS-10));ctx.fillRect(dx,dy,2,2)}
   }
-  
+  // Minerals
+  for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){if(map[y][x]===2){
+    var gx=x*TS,gy=y*TS;
+    ctx.fillStyle='#889922';ctx.fillRect(gx+3,gy+3,TS-6,TS-6);
+    ctx.fillStyle='#aabb33';ctx.beginPath();ctx.arc(gx+TS/2,gy+TS/2,TS*0.3,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ccdd44';ctx.beginPath();ctx.arc(gx+TS*0.35,gy+TS*0.4,5,0,Math.PI*2);ctx.fill();
+  }}
   // Buildings
   for(var i=0;i<P.blds.length;i++)drawBld(P.blds[i],'#3355aa','#2244cc','#5588ff');
   for(var i=0;i<E.blds.length;i++)drawBld(E.blds[i],'#aa3333','#cc2222','#ff4444');
@@ -321,6 +416,10 @@ function drawBld(b,wall,roof,accent){
   else if(b.t==='factory'){
     ctx.fillStyle='#444';ctx.fillRect(x+s*0.35,y+s*0.2,s*0.15,s*0.3);
     ctx.fillStyle='#555';ctx.beginPath();ctx.arc(x+s*0.42,y+s*0.12,4,0,Math.PI*2);ctx.fill()}
+  else if(b.t==='refinery'){
+    ctx.fillStyle='#666';ctx.fillRect(x+s*0.3,y+s*0.25,s*0.4,s*0.5);
+    ctx.fillStyle='#888';ctx.beginPath();ctx.arc(x+s/2,y+s*0.35,6,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffaa00';ctx.beginPath();ctx.arc(x+s/2,y+s*0.35,3,0,Math.PI*2);ctx.fill()}
   // HP bar
   var pct=b.hp/b.mhp;
   ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(x+1,y+s-6,s-2,4);
@@ -343,6 +442,11 @@ function drawUnit(u,col,accent){
     ctx.fillStyle='#333';ctx.fillRect(-tr,-tr*0.75,tr*1.8,tr*0.22);ctx.fillRect(-tr,tr*0.5,tr*1.8,tr*0.22);
     ctx.fillStyle=accent;ctx.beginPath();ctx.arc(0,-tr*0.08,tr*0.48,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#555';ctx.fillRect(tr*0.35,-tr*0.13,tr*1.3,tr*0.18)}
+  else if(u.t==='harvester'){
+    ctx.fillStyle='#887744';ctx.fillRect(-r*0.8,-r*0.6,r*1.6,r*1.2);
+    ctx.fillStyle='#996633';ctx.fillRect(-r*0.8,-r*0.8,r*1.6,r*0.25);
+    ctx.fillStyle='#aa8844';ctx.beginPath();ctx.arc(r*0.5,-r*0.3,r*0.35,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#333';ctx.fillRect(-r*0.8,r*0.5,r*1.6,r*0.15)}
   else{
     ctx.fillStyle=col;ctx.beginPath();ctx.arc(0,0,r*0.6,0,Math.PI*2);ctx.fill();
     ctx.fillStyle=accent;ctx.beginPath();ctx.arc(0,-r*0.4,r*0.35,0,Math.PI*2);ctx.fill();
