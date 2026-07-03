@@ -205,9 +205,9 @@ function _tick(){
     else if(u.st==='attacking'){
       // Always try to attack first if ready
       if(u.cd<=0){var t=nearUnit(u,cachedP)||near(u,cachedP);if(t){var wasAlive=t.hpRef.hp>0;t.hpRef.hp-=u.atk;u.cd=u.rate;u.dx=t.x-u.x;u.dy=t.y-u.y;u.tx=t.x;u.ty=t.y;var m=muzzlePos(u);if(typeof sfxPew==='function')sfxPew(u.lv);spawnBullet(m.x,m.y,t.x*TS,t.y*TS,'#ffff88');if(wasAlive&&t.hpRef.hp<=0)grantXp(u,t.hpRef.t==='tank'?15:8)}}
-      // Then move toward target
+      // Then move toward target, but stop when within attack range
       var d=Math.hypot(u.tx-u.x,u.ty-u.y);
-      if(d>0.2)moveToward(u,{x:u.tx,y:u.ty})
+      if(d>u.rng*0.7)moveToward(u,{x:u.tx,y:u.ty})
       else if(!(nearUnit(u,cachedP)||near(u,cachedP))){u.st='idle'}}
     // Auto-defend: ALL combat units rush to intercept
     if(u.t!=='harvester'){u._adCd=(u._adCd||0)+dt;
