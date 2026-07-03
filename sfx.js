@@ -71,6 +71,7 @@ function sfxTankMove(){ sfxNoise(0.12, 0.08); sfxFreqSweep(80, 40, 0.15, 'sawtoo
 var tankSoundNodes = [];
 function sfxTankStart() {
   try {
+    sfxTankStop(); // kill any existing sound
     sfxInit(); sfxResume();
     var now = sfxCtx.currentTime;
     // Low rumble oscillator (continuous)
@@ -97,14 +98,9 @@ function sfxTankStart() {
 function sfxTankStop() {
   try {
     if (!tankSoundNodes.length) return;
-    var now = sfxCtx.currentTime;
-    tankSoundNodes[2].gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-    tankSoundNodes[3].gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-    setTimeout(function() {
-      try { tankSoundNodes[0].stop(); tankSoundNodes[1].stop(); } catch(e) {}
-      tankSoundNodes = [];
-    }, 400);
-  } catch(e) {}
+    tankSoundNodes[0].stop(); tankSoundNodes[1].stop();
+    tankSoundNodes = [];
+  } catch(e) { tankSoundNodes = []; }
 }
 function sfxSelect()  { sfxTone(1000, 0.08, 'sine', 0.07); setTimeout(function() { sfxTone(1200, 0.08, 'sine', 0.05); }, 60); }
 function sfxBlip()    { sfxTone(880, 0.06, 'triangle', 0.07); }
