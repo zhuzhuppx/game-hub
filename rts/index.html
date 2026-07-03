@@ -44,9 +44,9 @@ c.style.width=(W*scale)+'px';c.style.height=(H*scale)+'px';
 var map=[];
 for(var y=0;y<GH;y++){map[y]=[];for(var x=0;x<GW;x++)map[y][x]=0}
 // Mineral field center
-var minerals={}; // {x,y : amount}
-for(var y=4;y<8;y++)for(var x=7;x<11;x++){map[y][x]=2;minerals[x+','+y]=500}
-var MINERAL_MAX=500,MINERAL_REGEN=8; // regen per second
+var minerals={}; // {x,y : nuggets 0-20}
+for(var y=4;y<8;y++)for(var x=7;x<11;x++){map[y][x]=2;minerals[x+','+y]=20}
+var MIN_NUGGETS=20,MIN_REGEN=1; // 1 nugget per 2 seconds per tile
 
 // === GAME STATE ===
 var uid=0,frame=0,sel=null,over=false;
@@ -54,6 +54,7 @@ var fx=[]; // death particles
 var P={gold:1000,units:[],blds:[]};
 var E={gold:1000,units:[],blds:[],aiCd:50,attackReady:false};
 var moveSoundCd=0; // throttle movement sfx
+var mineralTick=0; // mineral regen timer
 
 function addBld(t,x,y,hp,o){var b={t:t,x:x,y:y,hp:hp,mhp:hp,o:o};(o==='p'?P.blds:E.blds).push(b);return b}
 function addUnit(t,x,y,o){var s=t==='tank'?{hp:250,atk:35,rng:2.5,spd:0.025,rate:45}:t==='harvester'?{hp:200,atk:0,rng:0,spd:0.03,rate:999}:{hp:65,atk:10,rng:1.4,spd:0.028,rate:32};
@@ -267,12 +268,14 @@ function _tick(){
       // First trip: drive to refinery, then start mining
       if(u._toRef){var d1=Math.hypot(u._toRef.x-u.x,u._toRef.y-u.y);if(d1<0.35){u._toRef=0;u._hs='go'}else moveToward(u,u._toRef);continue}
       if(!u._hs)u._hs='go';
-      if(u._hs==='mine'){u._mt=(u._mt||90)-dt;
-        // Deplete mineral
-        var mk=Math.floor(u.x)+','+Math.floor(u.y);
-        if(minerals[mk]!==undefined){minerals[mk]=Math.max(0,minerals[mk]-3);if(minerals[mk]<=0)u._mt=0}
-        if(u._mt<=0){u._hs='back';u._mt=0}}
-      else if(u._hs==='unload'){u._mt=(u._mt||45)-dt;if(u._mt<=0){P.gold+=100;u._hs='go';u._mt=0;upd()}}
+      // Idle harvesters retry after cooldown
+      if(u._hs==='idle'&&u._idleCd>0){u._idleCd--;if(u._idleCd<=0)u._hs='go';continue}
+      if(u._hs==='idle')continue;
+      if(u._hs==='mine'){u._mt=(u._mt||90)-dt;if(u._mt<=0){u._hs='back';u._mt=0}}
+      else if(u._hs==='unload'){u._mt=(u._mt||45)-dt;if(u._mt<=0){P.gold+=100;
+        // Deplete the mined tile
+        if(u._mineKey&&minerals[u._mineKey]!==undefined){minerals[u._mineKey]=Math.max(0,minerals[u._mineKey]-5);if(minerals[u._mineKey]<=0){var p2=u._mineKey.split(',');map[+p2[1]][+p2[0]]=0}}
+        u._hs='go';u._mt=0;upd()}}
       else if(u._hs==='back'){
         var ref=null,bd2=999;
         var refs=P.blds.filter(function(b){return b.t==='refinery'&&b.hp>0});
@@ -282,14 +285,17 @@ function _tick(){
       if(u._hs==='go'){
         var no=null,bd=999;
         for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){if(map[y][x]!==2)continue;var m=minerals[x+','+y];if(m===undefined||m<=0)continue;var d=Math.hypot(x+0.5-u.x,y+0.5-u.y);if(d<bd){bd=d;no={x:x+0.5,y:y+0.5}}}
-        if(no){var dd=Math.hypot(no.x-u.x,no.y-u.y);if(dd<0.3){u._hs='mine';u._mt=90}else moveToward(u,no)}
-        else u._hs='idle' // no minerals, wait
+        if(no){var dd=Math.hypot(no.x-u.x,no.y-u.y);if(dd<0.3){u._hs='mine';u._mt=90;u._mineKey=Math.floor(no.x)+','+Math.floor(no.y)}else moveToward(u,no)}
+        else{u._hs='idle';u._idleCd=90} // no minerals, retry later
       }
       continue;
     }
   }
-  // Mineral regeneration
-  for(var k in minerals){minerals[k]=Math.min(MINERAL_MAX,minerals[k]+MINERAL_REGEN/30);if(minerals[k]<=0)map[+k.split(',')[1]][+k.split(',')[0]]=0;else map[+k.split(',')[1]][+k.split(',')[0]]=2}
+  // Mineral regeneration (1 nugget every 60 ticks = 2 seconds)
+  mineralTick=(mineralTick||0)+1;
+  if(mineralTick>=60){mineralTick=0;
+    for(var k in minerals){minerals[k]=Math.min(MIN_NUGGETS,minerals[k]+MIN_REGEN);
+      var parts=k.split(',');map[+parts[1]][+parts[0]]=minerals[k]>0?2:0}}
   // Passive gold income — always on while HQ is alive
   var phq2=hqOf(P);
   if(phq2){P._goldTick=(P._goldTick||0)+1;if(P._goldTick>=90){P.gold+=20;P._goldTick=0;upd()}}else P._goldTick=0;
@@ -318,12 +324,13 @@ function _tick(){
     if(u.t==='harvester'&&u.hp>0){
       if(u._toRef){var d1=Math.hypot(u._toRef.x-u.x,u._toRef.y-u.y);if(d1<0.35){u._toRef=0;u._hs='go'}else moveToward(u,u._toRef);continue}
       if(!u._hs)u._hs='go';
-      if(u._hs==='mine'){u._mt=(u._mt||90)-dt;
-        // Deplete mineral
-        var mk=Math.floor(u.x)+','+Math.floor(u.y);
-        if(minerals[mk]!==undefined){minerals[mk]=Math.max(0,minerals[mk]-3);if(minerals[mk]<=0)u._mt=0}
-        if(u._mt<=0){u._hs='back';u._mt=0}}
-      else if(u._hs==='unload'){u._mt=(u._mt||45)-dt;if(u._mt<=0){E.gold+=100;u._hs='go';u._mt=0}}
+      // Idle harvesters retry after cooldown
+      if(u._hs==='idle'&&u._idleCd>0){u._idleCd--;if(u._idleCd<=0)u._hs='go';continue}
+      if(u._hs==='idle')continue;
+      if(u._hs==='mine'){u._mt=(u._mt||90)-dt;if(u._mt<=0){u._hs='back';u._mt=0}}
+      else if(u._hs==='unload'){u._mt=(u._mt||45)-dt;if(u._mt<=0){E.gold+=100;
+        if(u._mineKey&&minerals[u._mineKey]!==undefined){minerals[u._mineKey]=Math.max(0,minerals[u._mineKey]-5);if(minerals[u._mineKey]<=0){var p2=u._mineKey.split(',');map[+p2[1]][+p2[0]]=0}}
+        u._hs='go';u._mt=0}}
       else if(u._hs==='back'){
         var ref=null,bd2=999;
         var refs=E.blds.filter(function(b){return b.t==='refinery'&&b.hp>0});
@@ -333,8 +340,8 @@ function _tick(){
       if(u._hs==='go'){
         var no=null,bd=999;
         for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){if(map[y][x]!==2)continue;var m=minerals[x+','+y];if(m===undefined||m<=0)continue;var d=Math.hypot(x+0.5-u.x,y+0.5-u.y);if(d<bd){bd=d;no={x:x+0.5,y:y+0.5}}}
-        if(no){var dd=Math.hypot(no.x-u.x,no.y-u.y);if(dd<0.3){u._hs='mine';u._mt=90}else moveToward(u,no)}
-        else u._hs='idle' // no minerals, wait
+        if(no){var dd=Math.hypot(no.x-u.x,no.y-u.y);if(dd<0.3){u._hs='mine';u._mt=90;u._mineKey=Math.floor(no.x)+','+Math.floor(no.y)}else moveToward(u,no)}
+        else{u._hs='idle';u._idleCd=90} // no minerals, retry later
       }
       continue;
     }
@@ -444,14 +451,19 @@ function draw(){
     // Grass dots
     ctx.fillStyle='#2a442a';for(var d=0;d<3;d++){var dx=gx+5+((d*13+y*7)%(TS-10)),dy=gy+5+((d*17+x*11)%(TS-10));ctx.fillRect(dx,dy,2,2)}
   }
-  // Minerals
+  // Minerals — golden sparkling nuggets
   for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){if(map[y][x]===2){
     var gx=x*TS,gy=y*TS;
-    var amt=minerals[x+','+y]||0;var pct=amt/MINERAL_MAX;
-    var sz=TS*(0.15+0.25*pct);
-    ctx.fillStyle='#556620';ctx.fillRect(gx+3,gy+3,TS-6,TS-6);
-    ctx.fillStyle='rgba(170,187,51,'+(0.4+0.6*pct)+')';ctx.beginPath();ctx.arc(gx+TS/2,gy+TS/2,sz,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='rgba(204,221,68,'+(0.5+0.5*pct)+')';ctx.beginPath();ctx.arc(gx+TS*0.35,gy+TS*0.4,3+4*pct,0,Math.PI*2);ctx.fill();
+    var n=minerals[x+','+y]||0;
+    for(var ni=0;ni<n;ni++){
+      var seed=(x*37+y*53+ni*71)%997;
+      var nx=gx+6+((seed%83)%(TS-12)),ny=gy+6+((seed%61)%(TS-12));
+      var twinkle=Math.sin(frame*0.15+seed*0.1)*0.3+0.7;
+      var alpha=0.4+twinkle*0.6;
+      ctx.fillStyle='rgba(255,200,60,'+alpha+')';ctx.beginPath();ctx.arc(nx,ny,1.5+twinkle*0.8,0,Math.PI*2);ctx.fill();
+    }
+    // Base dirt
+    ctx.fillStyle='rgba(85,102,32,0.3)';ctx.fillRect(gx+2,gy+2,TS-4,TS-4);
   }}
   // Buildings
   for(var i=0;i<P.blds.length;i++)drawBld(P.blds[i],'#3355aa','#2244cc','#5588ff');
