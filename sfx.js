@@ -65,6 +65,7 @@ function sfxFreqSweep(f1, f2, dur, type, vol) {
 
 function sfxClick()   { sfxTone(800, 0.05, 'square', 0.05); }
 function sfxMove()    { sfxTone(600, 0.05, 'square', 0.05); }
+function sfxTankMove(){ sfxNoise(0.12, 0.08); sfxFreqSweep(80, 40, 0.15, 'sawtooth', 0.06); }
 function sfxSelect()  { sfxTone(1000, 0.08, 'sine', 0.07); setTimeout(function() { sfxTone(1200, 0.08, 'sine', 0.05); }, 60); }
 function sfxBlip()    { sfxTone(880, 0.06, 'triangle', 0.07); }
 function sfxEat()     { sfxFreqSweep(400, 800, 0.1, 'sine', 0.08); }

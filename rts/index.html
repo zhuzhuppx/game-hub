@@ -227,10 +227,12 @@ function tick(){
   if(!pAlive){over=true;msg('💀 失败！所有建筑被摧毁',99999)}
   if(!eAlive){over=true;msg('🎉 胜利！敌方全灭',99999)}
   // Movement sound
-  moveSoundCd-=dt;if(moveSoundCd<=0){var any=false;
-    for(var i=0;i<P.units.length;i++){if(P.units[i]._moved){any=true;P.units[i]._moved=false}}
-    for(var i=0;i<E.units.length;i++){if(E.units[i]._moved){any=true;E.units[i]._moved=false}}
-    if(any&&typeof sfxMove==='function'){sfxMove();moveSoundCd=18}}
+  moveSoundCd-=dt;if(moveSoundCd<=0){var inf=false,tank=false;
+    for(var i=0;i<P.units.length;i++){var u=P.units[i];if(u._moved){u._moved=false;u.t==='tank'?tank=true:inf=true}}
+    for(var i=0;i<E.units.length;i++){var u=E.units[i];if(u._moved){u._moved=false;u.t==='tank'?tank=true:inf=true}}
+    if(tank&&typeof sfxTankMove==='function')sfxTankMove();
+    else if(inf&&typeof sfxMove==='function')sfxMove();
+    if(tank||inf)moveSoundCd=tank?22:15}
   
   if(frame%8===0)draw();
 }
