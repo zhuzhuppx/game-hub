@@ -92,13 +92,14 @@ function moveToward(u,t,spd){var dx=t.x-u.x,dy=t.y-u.y,d=Math.hypot(dx,dy);if(d>
 function canPass(gx,gy,self){var ix=Math.floor(gx),iy=Math.floor(gy);
   if(ix<0||ix>=GW||iy<0||iy>=GH)return false;
   // check buildings (allow leaving own tile)
-  var ox=Math.floor(self?self.x:gx),oy=Math.floor(self?self.y:gy);
+  var ox=self?Math.floor(self.x):-1,oy=self?Math.floor(self.y):-1;
   var all=P.blds.concat(E.blds);for(var i=0;i<all.length;i++){if(all[i].hp<=0)continue;
     if(ix===all[i].x&&iy===all[i].y){
-      // Allow friendly harvesters to pass through own refinery
-      if(self&&self.t==='harvester'&&all[i].o===self.o&&all[i].t==='refinery')continue;
-      if(!(self&&ix===ox&&iy===oy&&all[i].o===self.o))return false}}
+      if(!self)return false;
+      if(self.t==='harvester'&&all[i].o===self.o&&all[i].t==='refinery')continue;
+      if(!(ix===ox&&iy===oy&&all[i].o===self.o))return false}}
   // only enemy units at target tile block movement
+  if(!self)return true;
   var allu=P.units.concat(E.units);for(var i=0;i<allu.length;i++){var ou=allu[i];if(ou.hp<=0||ou===self)continue;if(ou.o!==self.o&&Math.floor(ou.x)===ix&&Math.floor(ou.y)===iy)return false}
   return true}
 function spawnFx(x,y,color,n){if(fx.length>200)return;for(var i=0;i<(n||8);i++){fx.push({x:x,y:y,vx:(Math.random()-0.5)*3,vy:(Math.random()-0.5)*3-1,life:20+Math.random()*15,c:color||'#ff8844',s:2+Math.random()*3})}}
