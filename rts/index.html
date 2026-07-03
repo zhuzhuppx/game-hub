@@ -451,6 +451,10 @@ function drawUnit(u,col,accent){
   else if(u.t==='harvester'){
     ctx.fillStyle=accent;ctx.fillRect(-r*0.8,-r*0.6,r*1.6,r*1.2);
     ctx.fillStyle=col;ctx.fillRect(-r*0.8,-r*0.8,r*1.6,r*0.25);
+    // Ore cargo when loaded
+    if(u._hs==='back'||u._hs==='unload'){ctx.fillStyle='#ddbb22';ctx.fillRect(-r*0.3,-r*0.5,r*1.0,r*0.55);
+      ctx.fillStyle='#ffdd44';ctx.beginPath();ctx.arc(r*0.1,-r*0.3,0.15*r,0,Math.PI*2);ctx.fill()}
+    else{ctx.fillStyle='#555';ctx.fillRect(-r*0.3,-r*0.5,r*1.0,r*0.08)}
     ctx.fillStyle='#aa8844';ctx.beginPath();ctx.arc(r*0.5,-r*0.3,r*0.35,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#333';ctx.fillRect(-r*0.8,r*0.5,r*1.6,r*0.15)}
   else{
