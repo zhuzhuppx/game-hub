@@ -146,11 +146,11 @@ function cmd(a){
     var tg=allTargets('p');if(!tg.length)return;
     var cx=0,cy=0;for(var i=0;i<tg.length;i++){cx+=tg[i].x;cy+=tg[i].y}
     cx/=tg.length;cy/=tg.length;
-    for(var i=0;i<P.units.length;i++){var u=P.units[i];if(u.hp<=0)continue;u.st='moving';u.tx=cx+Math.random()*4-2;u.ty=cy+Math.random()*2-1;u.dx=u.tx-u.x;u.dy=u.ty-u.y}
+    for(var i=0;i<P.units.length;i++){var u=P.units[i];if(u.hp<=0||u.t==='harvester')continue;u.st='moving';u.tx=cx+Math.random()*4-2;u.ty=cy+Math.random()*2-1;u.dx=u.tx-u.x;u.dy=u.ty-u.y}
     msg('⚔️ 全军出击！',1500)}
   if(a==='retreat'){
     var hq=hqOf(P);if(!hq){msg('❌ 基地已毁！',1500);return}
-    for(var i=0;i<P.units.length;i++){var u=P.units[i];if(u.hp<=0)continue;
+    for(var i=0;i<P.units.length;i++){var u=P.units[i];if(u.hp<=0||u.t==='harvester')continue;
       u.st='moving';u.tx=hq.x+0.5+Math.random()*2-1;u.ty=hq.y+1.5+Math.random();u.dx=u.tx-u.x;u.dy=u.ty-u.y}
     msg('🛡️ 全军回防！',1500)}
   if(a==='refinery'){
@@ -233,7 +233,7 @@ function _tick(){
           else{u.st='moving';u.tx=nearestOre.x;u.ty=nearestOre.y;u.dx=u.tx-u.x;u.dy=u.ty-u.y;moveToward(u,{x:nearestOre.x,y:nearestOre.y})}
         }
       }
-      else if(u.st==='moving'&&u._mineTime<=0){
+      else if(u.st==='moving'&&(!u._mineTime||u._mineTime<=0)){
         var ref=P.blds.find(function(b){return b.t==='refinery'&&b.hp>0});
         if(ref){
           var dd2=Math.hypot(ref.x+0.5-u.x,ref.y+0.5-u.y);
@@ -275,7 +275,7 @@ function _tick(){
           else{u.st='moving';u.tx=nearestOreE.x;u.ty=nearestOreE.y;u.dx=u.tx-u.x;u.dy=u.ty-u.y;moveToward(u,{x:nearestOreE.x,y:nearestOreE.y})}
         }
       }
-      else if(u.st==='moving'&&u._mineTime<=0){
+      else if(u.st==='moving'&&(!u._mineTime||u._mineTime<=0)){
         var refE=E.blds.find(function(b){return b.t==='refinery'&&b.hp>0});
         if(refE){
           var ddE2=Math.hypot(refE.x+0.5-u.x,refE.y+0.5-u.y);
