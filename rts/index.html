@@ -22,6 +22,7 @@
 <button id="btnR" onclick="cmd('rifle')" disabled>🔫 步兵 100💰</button>
 <button id="btnT" onclick="cmd('tank')" disabled>🛡️ 坦克 300💰</button>
 <button onclick="cmd('rush')">⚔️ 全军出击</button>
+<button onclick="cmd('retreat')">🛡️ 全军回防</button>
 </div>
 <a class="back" href="/">← 返回</a></div>
 <script>
@@ -118,6 +119,11 @@ function cmd(a){
     cx/=tg.length;cy/=tg.length;
     for(var i=0;i<P.units.length;i++){var u=P.units[i];if(u.hp<=0)continue;u.st='moving';u.tx=cx+Math.random()*4-2;u.ty=cy+Math.random()*2-1;u.dx=u.tx-u.x;u.dy=u.ty-u.y}
     msg('⚔️ 全军出击！',1500)}
+  if(a==='retreat'){
+    var hq=hqOf(P);if(!hq){msg('❌ 基地已毁！',1500);return}
+    for(var i=0;i<P.units.length;i++){var u=P.units[i];if(u.hp<=0)continue;
+      u.st='moving';u.tx=hq.x+0.5+Math.random()*2-1;u.ty=hq.y+1.5+Math.random();u.dx=u.tx-u.x;u.dy=u.ty-u.y}
+    msg('🛡️ 全军回防！',1500)}
 }
 
 function upd(){
