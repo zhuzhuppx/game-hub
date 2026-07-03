@@ -196,7 +196,7 @@ function cmd(a){
   if(a==='rifle'||a==='tank'){
     var cost=a==='tank'?200:100;if(P.gold<cost){msg('💰 金币不足！',1500);return}
     if(!hasB(P,a==='tank'?'factory':'barracks')){msg('❌ 需要先建造对应建筑',1500);return}
-    if(P.units.length>=40){msg('👥 人口已满！',1500);return}
+    // no pop limit
     // Spawn next to production building, drive out
     var bType=a==='tank'?'factory':'barracks';
     var fb=P.blds.find(function(b){return b.t===bType&&b.hp>0});
@@ -449,7 +449,7 @@ function _tick(){
       for(var bi=0;bi<offB.length;bi++){var bx=ehq2.x+offB[bi][0],by=ehq2.y+offB[bi][1];
         if(canPass(bx,by)){E.gold-=200;addBld('barracks',bx,by,300,E.id);placed=true;break}}
       if(!placed)E.aiCd=-20
-    }else if(E.units.length<60&&(hasB(E,'barracks')||hasB(E,'factory'))){
+    }else if(hasB(E,'barracks')||hasB(E,'factory')){
       var hasF=hasB(E,'factory'),hasR=hasB(E,'refinery'),hasBbar=hasB(E,'barracks');
       var aliveH=E.units.filter(function(u){return u.t==='harvester'&&u.hp>0}).length;
       var threat=cachedE.filter(function(t){var eh=hqOf(E);return eh&&Math.hypot(t.x-eh.x-0.5,t.y-eh.y-0.5)<5}).length;
