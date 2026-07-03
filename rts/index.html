@@ -47,11 +47,11 @@ for(var y=0;y<GH;y++){map[y]=[];for(var x=0;x<GW;x++)map[y][x]=0}
 function addWall(x,y){if(x>=0&&x<GW&&y>=0&&y<GH)map[y][x]=1}
 // Bases: each 3x3 with HQ at corner, one gap
 // Player: HQ(0,0) base(0-2,0-2) gap(2,1)
-addWall(1,0);addWall(2,0);addWall(2,2);addWall(0,2);addWall(0,1);
+addWall(1,0);addWall(2,0);addWall(2,2);addWall(1,2);addWall(0,2);addWall(0,1);
 // E0: HQ(17,11) base(15-17,9-11) gap(15,10)
-addWall(16,9);addWall(17,9);addWall(17,10);addWall(17,11);addWall(16,11);addWall(15,11);addWall(15,9);
+addWall(15,9);addWall(16,9);addWall(17,9);addWall(17,10);addWall(16,11);addWall(15,11);
 // E1: HQ(17,0) base(15-17,0-2) gap(15,1)
-addWall(16,0);addWall(17,0);addWall(17,1);addWall(17,2);addWall(16,2);addWall(15,2);addWall(15,0);
+addWall(15,2);addWall(16,2);addWall(17,2);addWall(17,1);addWall(16,0);addWall(15,0);
 // E2: HQ(0,11) base(0-2,9-11) gap(2,10)
 addWall(1,11);addWall(2,11);addWall(2,9);addWall(0,9);addWall(0,10);
 
