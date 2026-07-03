@@ -186,8 +186,11 @@ function tick(){
     msg('⚠️ 第'+E.wave+'波敌军来袭！',3000)}
   // Resources
   if(frame%50===0){P.gold+=5;E.gold+=5}
-  // Win/lose
-  if(!hqOf(P)||!hqOf(E)){over=true;msg(hqOf(P)?'🎉 胜利！敌方基地摧毁':'💀 失败！你的基地被摧毁',99999)}
+  // Win/lose — check HQ per side directly
+  var phq=P.blds.find(function(b){return b.t==='hq'});
+  var eq=E.blds.find(function(b){return b.t==='hq'});
+  if(!phq||phq.hp<=0){over=true;msg('💀 失败！你的基地被摧毁',99999)}
+  if(!eq||eq.hp<=0){over=true;msg('🎉 胜利！敌方基地摧毁',99999)}
   if(frame%8===0)draw();
 }
 
