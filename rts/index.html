@@ -252,12 +252,12 @@ function draw(){
   // Ground
   for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){
     var gx=x*TS,gy=y*TS;
-    if(map[y][x]===1){ctx.fillStyle='#5a4428';ctx.fillRect(gx,gy,TS-1,TS-1);
+    if(map[y][x]===1){ctx.fillStyle='#5a4428';ctx.fillRect(gx,gy,TS,TS);
       // Ore rocks
       ctx.fillStyle='#aa8833';ctx.beginPath();ctx.arc(gx+TS*0.5,gy+TS*0.4,7,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#cc9944';ctx.beginPath();ctx.arc(gx+TS*0.3,gy+TS*0.6,4,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#997722';ctx.beginPath();ctx.arc(gx+TS*0.7,gy+TS*0.5,5,0,Math.PI*2);ctx.fill()}
-    else{ctx.fillStyle='#233823';ctx.fillRect(gx,gy,TS-1,TS-1);
+    else{ctx.fillStyle='#233823';ctx.fillRect(gx,gy,TS,TS);
       // Grass dots
       ctx.fillStyle='#2a442a';for(var d=0;d<3;d++){var dx=gx+5+((d*13+y*7)%(TS-10)),dy=gy+5+((d*17+x*11)%(TS-10));ctx.fillRect(dx,dy,2,2)}}
   }
