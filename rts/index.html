@@ -13,7 +13,7 @@
 .back{color:#8888cc;text-decoration:none;font-size:14px;position:absolute;bottom:12px;left:12px;z-index:100;background:rgba(0,0,0,0.5);padding:4px 10px;border-radius:6px}
 </style>
 <div class="wrap">
-<div class="hud"><span>💰 <b id="gold">1000</b></span><span id="sel"></span><span id="dbg" style="color:#ff6644;font-size:11px;cursor:pointer" onclick="var s=document.getElementById('dbg');s._v=!s._v;s.textContent=s._v?'🤖AI 💰'+E.gold+' | 🏭'+E.blds.map(function(b){return b.t}).join(',')+' | 👥'+E.units.length:'🔍调试';sfxResume()">🔍调试</span></div>
+<div class="hud"><span>💰 <b id="gold">1000</b></span><span id="sel"></span></div>
 <canvas id="c"></canvas>
 <div class="info" id="info"></div>
 <div class="btns">
@@ -398,9 +398,6 @@ function draw(){
     ctx.strokeStyle='rgba(255,220,60,0.15)';ctx.lineWidth=4;ctx.beginPath();ctx.arc(sx,sy,TS*0.54,0,Math.PI*2);ctx.stroke();ctx.lineWidth=1;
     var n=sel.t?bName(sel.t):uName(sel.t);document.getElementById('sel').textContent='选中: '+n+' HP:'+(sel.hp||sel.mhp)+'/'+(sel.mhp||sel.hp)}
   else{document.getElementById('sel').textContent=''}
-  // Update debug display if open
-  var dbgEl=document.getElementById('dbg');
-  if(dbgEl._v)dbgEl.textContent='🤖AI 💰'+E.gold+' | 🏭'+E.blds.filter(function(b){return b.hp>0}).map(function(b){return b.t}).join(',')+' | 👥'+E.units.filter(function(u){return u.hp>0}).length;
   upd();
 }
 
