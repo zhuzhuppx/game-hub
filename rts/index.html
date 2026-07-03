@@ -311,9 +311,9 @@ function drawBld(b,wall,roof,accent){
 
 function drawUnit(u,col,accent){
   if(u.hp<=0)return;var cx=u.x*TS,cy=u.y*TS,r=TS*0.3;
-  // Level upgrades appearance
-  if(u.lv>=3){col='#ffaa22';accent='#ff8800'} // gold at lv3+
-  else if(u.lv>=2){col='#88ccff';accent='#4488ff'} // elite at lv2
+  // Level upgrades appearance (different per faction)
+  if(u.lv>=3){col='#ffaa22';accent='#ff8800'} // gold legendary at lv3+
+  else if(u.lv>=2){col=u.o==='p'?'#88ccff':'#ff8844';accent=u.o==='p'?'#4488ff':'#cc4400'} // elite
   var sc=1+u.lv*0.06; // scale up with level
   ctx.save();ctx.translate(cx+TS/2,cy+TS/2);ctx.scale(sc,sc);
   // Direction
