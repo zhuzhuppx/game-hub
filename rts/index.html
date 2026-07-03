@@ -154,8 +154,7 @@ function tick(){
   }
   // Enemy AI
   var ehq=hqOf(E);var e_base_threat=ehq?cachedE.filter(function(t){return Math.hypot(t.x-ehq.x-0.5,t.y-ehq.y-0.5)<5}).length:0;
-  var e_alive=E.units.filter(function(u){return u.hp>0}).length;
-  var must_defend=e_base_threat>=2||e_alive<=3; // defend if player near base or low on troops
+  var must_defend=e_base_threat>=2; // defend only when player units near base
   if(must_defend&&!E._defending){E._defending=true;msg('🛡️ 敌军回防！',2000)}
   if(!must_defend)E._defending=false;
   
