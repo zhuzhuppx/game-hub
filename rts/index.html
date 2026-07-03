@@ -86,8 +86,8 @@ function canPass(gx,gy,self){var ix=Math.floor(gx),iy=Math.floor(gy);
   // check units (all sides, skip self)
   var allu=P.units.concat(E.units);for(var i=0;i<allu.length;i++){var ou=allu[i];if(ou.hp<=0||ou===self)continue;if(Math.floor(ou.x)===ix&&Math.floor(ou.y)===iy)return false}
   return true}
-function spawnFx(x,y,color,n){for(var i=0;i<(n||8);i++){fx.push({x:x,y:y,vx:(Math.random()-0.5)*3,vy:(Math.random()-0.5)*3-1,life:20+Math.random()*15,c:color||'#ff8844',s:2+Math.random()*3})}}
-function spawnBldFx(b){for(var i=0;i<14;i++){fx.push({x:(b.x+0.5)*TS,y:(b.y+0.5)*TS,vx:(Math.random()-0.5)*4,vy:(Math.random()-0.5)*4-2,life:25+Math.random()*15,c:b.o==='p'?'#66aaff':'#ff6644',s:3+Math.random()*4})}}
+function spawnFx(x,y,color,n){if(fx.length>200)return;for(var i=0;i<(n||8);i++){fx.push({x:x,y:y,vx:(Math.random()-0.5)*3,vy:(Math.random()-0.5)*3-1,life:20+Math.random()*15,c:color||'#ff8844',s:2+Math.random()*3})}}
+function spawnBldFx(b){if(fx.length>200)return;for(var i=0;i<14;i++){fx.push({x:(b.x+0.5)*TS,y:(b.y+0.5)*TS,vx:(Math.random()-0.5)*4,vy:(Math.random()-0.5)*4-2,life:25+Math.random()*15,c:b.o==='p'?'#66aaff':'#ff6644',s:3+Math.random()*4})}}
 
 function grantXp(u,amount){
   u.xp+=amount;
@@ -104,7 +104,7 @@ function grantXp(u,amount){
 function muzzlePos(u){var cx=u.x*TS,cy=u.y*TS,angle=u.dx||u.dy?Math.atan2(u.dy,u.dx):(u.o==='p'?0:Math.PI);
   var barrelLen=u.t==='tank'?TS*0.35:TS*0.15;
   return{x:cx+Math.cos(angle)*barrelLen,y:cy+Math.sin(angle)*barrelLen}}
-function spawnBullet(fx2,fy2,tx,ty,c){var dx=tx-fx2,dy=ty-fy2,d=Math.hypot(dx,dy);if(d<0.01)return;
+function spawnBullet(fx2,fy2,tx,ty,c){if(fx.length>200)return;var dx=tx-fx2,dy=ty-fy2,d=Math.hypot(dx,dy);if(d<0.01)return;
   fx.push({x:fx2,y:fy2,vx:(dx/d)*8,vy:(dy/d)*8,life:Math.ceil(d/8)+1,c:c||'#ffff44',s:1.5,tx:tx,ty:ty})}
 
 function allTargets(o){var r=[];var src=o==='p'?E:P;
@@ -164,6 +164,9 @@ function upd(){
 var cachedP=null,cachedE=null;
 function tick(){
   if(over)return;
+  try{_tick()}catch(e){over=true;msg('💥 出错了，强刷新重试',99999);console.error(e)}
+}
+function _tick(){
   frame++;var dt=1;
   cachedP=allTargets('p');cachedE=allTargets('e');
   // Player units
