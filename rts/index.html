@@ -44,7 +44,7 @@ map[GH-3][GW-2]=0;map[GH-2][GW-3]=0;map[GH-3][GW-3]=0; // enemy spawn
 var uid=0,frame=0,sel=null,over=false;
 var fx=[]; // death particles
 var P={gold:1500,units:[],blds:[]};
-var E={gold:600,units:[],blds:[],aiCd:300,wave:0,attackReady:false};
+var E={gold:1500,units:[],blds:[],aiCd:0,attackReady:false};
 var moveSoundCd=0; // throttle movement sfx
 
 function addBld(t,x,y,hp,o){var b={t:t,x:x,y:y,hp:hp,mhp:hp,o:o};(o==='p'?P.blds:E.blds).push(b);return b}
@@ -55,15 +55,16 @@ function addUnit(t,x,y,o){var s=t==='tank'?{hp:150,atk:28,rng:1.8,spd:0.015,rate
 // Init
 addBld('hq',2,2,600,'p');
 addBld('hq',GW-3,GH-3,600,'e');
-addBld('barracks',GW-2,GH-3,300,'e');
-addBld('factory',GW-4,GH-3,400,'e');
-// Enemy starter troops (a few, not overwhelming)
-addUnit('rifle',GW-3,GH-2,'e');
-addUnit('rifle',GW-2,GH-4,'e');
+// Both start equal: just HQ, no free buildings/units
 
 // === HELPERS ===
 function hasB(o,t){return o.blds.some(function(b){return b.t===t&&b.hp>0})}
 function hqOf(o){return o.blds.find(function(b){return b.t==='hq'&&b.hp>0})}
+function eSpawn(type){var eh=hqOf(E);if(!eh)return;
+  var sx=eh.x+0.5,sy=eh.y+1.5;
+  var eoffs=[{x:0.5,y:1.5},{x:-0.5,y:1.5},{x:0.5,y:2.5},{x:-0.5,y:2.5},{x:1.5,y:0.5},{x:1.5,y:1.5},{x:-1.5,y:1.5},{x:-1.5,y:2.5}];
+  for(var oi=0;oi<eoffs.length;oi++){sx=eh.x+eoffs[oi].x;sy=eh.y+eoffs[oi].y;if(canPass(sx,sy))break}
+  addUnit(type,sx,sy,'e')}
 function msg(s,t){var el=document.getElementById('info');el.textContent=s;if(t)setTimeout(function(){if(el.textContent===s)el.textContent=''},t)}
 function bName(t){return{hq:'🏛️',barracks:'🏠',factory:'🏭'}[t]||t}
 function uName(t){return{rifle:'🔫',tank:'🛡️'}[t]||t}
@@ -185,7 +186,7 @@ function tick(){
   // Group attack logic: gather 5+ then strike
   var e_alive=E.units.filter(function(u){return u.hp>0}).length;
   if(!must_defend){
-    if(!E.attackReady&&e_alive>=5){E.attackReady=true;msg('⚔️ 敌军集结完毕，发起进攻！',2000)}
+    if(!E.attackReady&&e_alive>=3){E.attackReady=true;msg('⚔️ 敌军集结完毕，发起进攻！',2000)}
     if(E.attackReady&&e_alive<2){E.attackReady=false;msg('💨 敌军败退，重新集结…',2000)}
   }
   
@@ -212,18 +213,25 @@ function tick(){
       if(!et&&ehq){var dh=Math.hypot(ehq.x+0.5-u.x,ehq.y+0.5-u.y);if(dh>3)moveToward(u,{x:ehq.x+0.5+Math.random()-0.5,y:ehq.y+0.5+Math.random()-0.5})}
     }
   }
-  // AI spawn
-  E.aiCd+=dt;if(E.aiCd>400){E.aiCd=0;E.wave++;
-    var count=2+Math.floor(E.wave/2);if(E.wave>4)count+=1;
-    for(var j=0;j<count;j++){if(E.units.length<40&&E.gold>=80){E.gold-=80;
-      // Find empty spot near enemy HQ, avoid buildings
-      var eh=E.blds.find(function(b){return b.t==='hq'});if(!eh)continue;
-      var sx=eh.x+0.5,sy=eh.y+1.5;var eoffs=[{x:0.5,y:1.5},{x:-0.5,y:1.5},{x:0.5,y:2.5},{x:-0.5,y:2.5},{x:1.5,y:0.5},{x:1.5,y:1.5},{x:-1.5,y:1.5},{x:-1.5,y:2.5}];
-      for(var oi=0;oi<eoffs.length;oi++){sx=eh.x+eoffs[oi].x;sy=eh.y+eoffs[oi].y;if(canPass(sx,sy))break}
-      addUnit(E.gold>500?'tank':'rifle',sx,sy,'e')}}
-    msg('⚠️ 第'+E.wave+'波敌军来袭！',3000)}
+  // AI build/train (same rules as player)
+  E.aiCd+=dt;if(E.aiCd>180){E.aiCd=0;
+    var ehq2=hqOf(E);if(!ehq2)return;
+    // Build priority: barracks > factory > train
+    if(!hasB(E,'barracks')&&E.gold>=200){
+      var bx=ehq2.x+1,by=ehq2.y;if(canPass(bx,by)){E.gold-=200;addBld('barracks',bx,by,300,'e')}
+      else{E.aiCd=-100} // retry sooner
+    }else if(!hasB(E,'factory')&&E.gold>=400){
+      var fx=ehq2.x-1,fy=ehq2.y;if(canPass(fx,fy)){E.gold-=400;addBld('factory',fx,fy,400,'e')}
+      else{E.aiCd=-100}
+    }else if(E.units.length<40&&hasB(E,'barracks')){
+      var hasF=hasB(E,'factory');
+      if(hasF&&E.gold>=200){E.gold-=200;eSpawn('tank')}
+      else if(!hasF&&E.gold>=100){E.gold-=100;eSpawn('rifle')}
+      else if(hasF&&E.gold>=100&&E.units.length<3){E.gold-=100;eSpawn('rifle')}
+    }
+  }
   // Resources
-  if(frame%50===0){P.gold+=8;E.gold+=6}
+  if(frame%50===0){P.gold+=8;E.gold+=8}
   // Building death FX
   for(var i=P.blds.length-1;i>=0;i--){var b=P.blds[i];if(b.hp<=0&&!b._dead){b._dead=true;spawnBldFx(b);if(typeof sfxExplode==='function')sfxExplode()}}
   for(var i=E.blds.length-1;i>=0;i--){var b=E.blds[i];if(b.hp<=0&&!b._dead){b._dead=true;spawnBldFx(b);if(typeof sfxExplode==='function')sfxExplode()}}
