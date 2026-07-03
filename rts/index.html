@@ -310,10 +310,10 @@ function _tick(){
     if(Math.random()<0.3){var gx=7+Math.floor(Math.random()*4),gy=4+Math.floor(Math.random()*4);var gk=gx+','+gy;if(!gems[gk])gems[gk]=[];gems[gk].push(GEM_COLORS[Math.floor(Math.random()*GEM_COLORS.length)])}}
   // Passive gold income — always on while HQ is alive
   var phq2=hqOf(P);
-  if(phq2){P._goldTick=(P._goldTick||0)+1;if(P._goldTick>=90){P.gold+=20;P._goldTick=0;upd()}}else P._goldTick=0;
+  if(phq2){P._goldTick=(P._goldTick||0)+1;if(P._goldTick>=90){P.gold+=10;P._goldTick=0;upd()}}else P._goldTick=0;
   // Enemy AI
   var ehq2E=hqOf(E);
-  if(ehq2E){E._goldTick=(E._goldTick||0)+1;if(E._goldTick>=90){E.gold+=20;E._goldTick=0}}else E._goldTick=0;
+  if(ehq2E){E._goldTick=(E._goldTick||0)+1;if(E._goldTick>=90){E.gold+=10;E._goldTick=0}}else E._goldTick=0;
   var ehq=hqOf(E);var e_base_threat=ehq?cachedE.filter(function(t){return Math.hypot(t.x-ehq.x-0.5,t.y-ehq.y-0.5)<5}).length:0;
   var must_defend=e_base_threat>=2;
   if(must_defend&&!E._defending){E._defending=true;msg('🛡️ 敌军回防！',2000)}
