@@ -66,6 +66,7 @@ addBld('hq',GW-1,GH-1,600,'e');
 // === HELPERS ===
 function hasB(o,t){return o.blds.some(function(b){return b.t===t&&b.hp>0})}
 function hqOf(o){return o.blds.find(function(b){return b.t==='hq'&&b.hp>0})}
+function stopSfx(){if(typeof sfxTankStop==='function')sfxTankStop();if(typeof sfxMoveStop==='function')sfxMoveStop()}
 function eSpawn(type){var eh=hqOf(E);if(!eh)return;
   var bType=type==='tank'?'factory':'barracks';
   var fb=E.blds.find(function(b){return b.t===bType&&b.hp>0});
@@ -403,9 +404,10 @@ function _tick(){
   var pa=0,ea=0;
   for(var i=0;i<P.blds.length;i++)if(P.blds[i].hp>0)pa++;
   for(var i=0;i<E.blds.length;i++)if(E.blds[i].hp>0)ea++;
-  if(pa===0){over=true;msg('💀 失败！所有建筑被摧毁',99999)}
-  if(ea===0){over=true;msg('🎉 胜利！敌方全灭',99999)}
-  // Movement sound
+  if(pa===0){over=true;stopSfx();msg('💀 失败！所有建筑被摧毁',99999)}
+  if(ea===0){over=true;stopSfx();msg('🎉 胜利！敌方全灭',99999)}
+  // Movement sound (skip if game over)
+  if(over)return;
   moveSoundCd-=dt;
   var anyTank=false,anyInf=false;
   for(var i=0;i<P.units.length;i++){var u=P.units[i];if(u._moved){u._moved=false;if(u.t==='tank')anyTank=true;else if(u.t!=='harvester')anyInf=true}}
@@ -574,10 +576,11 @@ function loop(t){
     var p2=0,e2=0;
     for(var i=0;i<P.blds.length;i++)if(P.blds[i].hp>0)p2++;
     for(var i=0;i<E.blds.length;i++)if(E.blds[i].hp>0)e2++;
-    if(p2===0){over=true;msg('💀 失败！所有建筑被摧毁',99999)}
-    if(e2===0){over=true;msg('🎉 胜利！敌方全灭',99999)}
+    if(p2===0){over=true;stopSfx();msg('💀 失败！所有建筑被摧毁',99999)}
+    if(e2===0){over=true;stopSfx();msg('🎉 胜利！敌方全灭',99999)}
     }catch(e){console.error(e)}
   }
+  if(over){stopSfx();draw();requestAnimationFrame(loop);return}
   try{draw()}catch(e){console.error(e)}
   requestAnimationFrame(loop);
 }
