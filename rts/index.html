@@ -1,216 +1,216 @@
 <!DOCTYPE html><html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"><title>红警·小规模冲突</title>
 <script src="/sfx.js"></script><style>
 *{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a1a;color:#ccc;font-family:system-ui;min-height:100dvh;display:flex;align-items:center;justify-content:center}
-.wrap{max-width:680px;width:100%;padding:6px;display:flex;flex-direction:column;gap:4px;align-items:center}
-.hud{display:flex;align-items:center;justify-content:space-between;width:100%;font-size:14px}
-.hud span{color:#aaa}.hud b{color:#ffcc44}#sel{color:#8888cc;font-size:12px}
-#c{width:100%;border-radius:8px;touch-action:none;display:block}
-.info{font-size:12px;color:#8888bb;min-height:18px;text-align:center}
+.wrap{max-width:700px;width:100%;padding:6px;display:flex;flex-direction:column;gap:4px;align-items:center}
+.hud{display:flex;align-items:center;justify-content:space-between;width:100%;font-size:13px}
+.hud span{color:#aaa}.hud b{color:#ffcc44}#sel{color:#8888cc;font-size:11px}
+#c{width:100%;border-radius:8px;touch-action:none;border:1px solid rgba(255,255,255,0.05);display:block}
+.info{font-size:12px;color:#ff8844;min-height:18px;text-align:center;font-weight:600}
 .btns{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
-.btns button{padding:5px 12px;border:none;border-radius:6px;background:rgba(255,170,68,0.12);color:#ffaa44;font-size:12px;cursor:pointer;touch-action:manipulation}
-.btns button:active{background:rgba(255,170,68,0.25)}.btns button:disabled{opacity:0.3}
+.btns button{padding:5px 10px;border:none;border-radius:6px;background:rgba(255,170,68,0.12);color:#ffaa44;font-size:12px;cursor:pointer;touch-action:manipulation}
+.btns button:active{background:rgba(255,170,68,0.25)}.btns button:disabled{opacity:0.25;cursor:default}
 .back{color:#8888cc;text-decoration:none;font-size:14px;position:absolute;bottom:12px;left:12px;z-index:100;background:rgba(0,0,0,0.5);padding:4px 10px;border-radius:6px}
 </style>
 <div class="wrap">
-<div class="hud"><span>💰 <b id="gold">1000</b></span><span>⚡ <b id="power">100</b></span><span id="sel">点击己方单位选中</span></div>
+<div class="hud"><span>💰 <b id="gold">1000</b></span><span>⚡ <b id="power">100</b></span><span id="sel">👆 点击己方单位选中</span></div>
 <canvas id="c"></canvas>
 <div class="info" id="info"></div>
 <div class="btns">
-<button id="btnB" onclick="build('barracks')">🏠 兵营 200💰</button>
-<button id="btnF" onclick="build('factory')">🏭 工厂 400💰</button>
-<button id="btnR" onclick="train('rifle')" disabled>🔫 步兵 100💰</button>
-<button id="btnT" onclick="train('tank')" disabled>🛡️ 坦克 300💰</button>
-<button onclick="attackMove()">⚔️ 全军出击</button>
+<button id="btnB" onclick="cmd('barracks')">🏠 兵营 200💰</button>
+<button id="btnF" onclick="cmd('factory')">🏭 工厂 400💰</button>
+<button id="btnR" onclick="cmd('rifle')" disabled>🔫 步兵 100💰</button>
+<button id="btnT" onclick="cmd('tank')" disabled>🛡️ 坦克 300💰</button>
+<button onclick="cmd('rush')">⚔️ 全军出击</button>
 </div>
 <a class="back" href="/">← 返回</a></div>
 <script>
-// ===== CONSTANTS =====
-var MW=20,MH=14,TW=34, W=MW*TW, H=MH*TW;
-var canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
-canvas.width=W;canvas.height=H;
+// === CONSTANTS ===
+var GW=18,GH=12,TS=38, W=GW*TS, H=GH*TS;
+var c=document.getElementById('c'),ctx=c.getContext('2d');
+c.width=W;c.height=H;
 
-// ===== MAP =====
+// === MAP ===
 var map=[];
-for(var y=0;y<MH;y++){map[y]=[];for(var x=0;x<MW;x++)map[y][x]=Math.random()<0.1?1:0}
+for(var y=0;y<GH;y++){map[y]=[];for(var x=0;x<GW;x++)map[y][x]=Math.random()<0.08?1:0}
 // Clear bases
-for(var y=1;y<5;y++)for(var x=1;x<5;x++)map[y][x]=0;
-for(var y=MH-5;y<MH-1;y++)for(var x=MW-5;x<MW-1;x++)map[y][x]=0;
+for(var y=1;y<4;y++)for(var x=1;x<4;x++)map[y][x]=0;
+for(var y=GH-4;y<GH-1;y++)for(var x=GW-4;x<GW-1;x++)map[y][x]=0;
+map[2][1]=0;map[1][2]=0;map[2][2]=0; // player spawn open
+map[GH-3][GW-2]=0;map[GH-2][GW-3]=0;map[GH-3][GW-3]=0; // enemy spawn
 
-// ===== STATE =====
-var uid=0, frame=0, selected=null, gameOver=false;
-var P={gold:1000,power:100,units:[],buildings:[],maxUnits:30};
-var E={gold:800,power:80,units:[],buildings:[],maxUnits:30,aiTick:0};
+// === GAME STATE ===
+var uid=0,frame=0,sel=null,over=false;
+var P={gold:1200,units:[],blds:[]};
+var E={gold:1000,units:[],blds:[],aiCd:0,wave:0};
 
-function B(type,x,y,hp,owner){var b={type:type,x:x,y:y,hp:hp,maxHp:hp,owner:owner};
-  if(owner==='p')P.buildings.push(b);else E.buildings.push(b);return b}
-function U(type,x,y,owner){var s=type==='tank'?{hp:150,atk:25,spd:0.018,range:1.6,rate:55}:{hp:60,atk:10,spd:0.03,range:1.3,rate:35};
-  var u={id:uid++,type:type,x:x,y:y,hp:s.hp,maxHp:s.hp,atk:s.atk,spd:s.spd,range:s.range,rate:s.rate,cd:0,owner:owner,state:'idle',tx:0,ty:0};
-  if(owner==='p')P.units.push(u);else E.units.push(u);return u}
+function addBld(t,x,y,hp,o){var b={t:t,x:x,y:y,hp:hp,mhp:hp,o:o};(o==='p'?P.blds:E.blds).push(b);return b}
+function addUnit(t,x,y,o){var s=t==='tank'?{hp:150,atk:28,rng:1.8,spd:0.015,rate:50}:{hp:65,atk:12,rng:1.4,spd:0.028,rate:32};
+  var u={id:uid++,t:t,x:x,y:y,hp:s.hp,mhp:s.hp,atk:s.atk,rng:s.rng,spd:s.spd,rate:s.rate,cd:0,o:o,st:'idle',tx:0,ty:0,dx:0,dy:0};
+  (o==='p'?P.units:E.units).push(u);return u}
 
 // Init
-B('hq',2,2,500,'p');B('hq',MW-3,MH-3,500,'e');B('barracks',MW-2,MH-3,300,'e');B('factory',MW-4,MH-3,400,'e');
-U('rifle',MW-3,MH-2,'e');U('rifle',MW-2,MH-4,'e');U('tank',MW-4,MH-2,'e');
+addBld('hq',2,2,600,'p');
+addBld('hq',GW-3,GH-3,600,'e');
+addBld('barracks',GW-2,GH-3,300,'e');
+addBld('factory',GW-4,GH-3,400,'e');
+// Enemy starter troops (a few, not overwhelming)
+addUnit('rifle',GW-3,GH-2,'e');
+addUnit('rifle',GW-2,GH-4,'e');
 
-// ===== HELPERS =====
-function hasB(o,type){return o.buildings.some(function(b){return b.type===type&&b.hp>0})}
-function msg(s){document.getElementById('info').textContent=s;setTimeout(function(){document.getElementById('info').textContent=''},2500)}
-function upBtns(){
+// === HELPERS ===
+function hasB(o,t){return o.blds.some(function(b){return b.t===t&&b.hp>0})}
+function hqOf(o){return o.blds.find(function(b){return b.t==='hq'&&b.hp>0})}
+function msg(s,t){var el=document.getElementById('info');el.textContent=s;if(t)setTimeout(function(){if(el.textContent===s)el.textContent=''},t)}
+function bName(t){return{hq:'🏛️',barracks:'🏠',factory:'🏭'}[t]||t}
+function uName(t){return{rifle:'🔫',tank:'🛡️'}[t]||t}
+
+function near(u,list){
+  var b=null,bd=999;for(var i=0;i<list.length;i++){var t=list[i];var d=Math.hypot(t.x-u.x,t.y-u.y);if(d<=u.rng&&d<bd){bd=d;b=t}}return b}
+
+function allTargets(o){var r=[];var src=o==='p'?E:P;
+  for(var i=0;i<src.blds.length;i++){var b=src.blds[i];if(b.hp>0)r.push({x:b.x+0.5,y:b.y+0.5,hpRef:b})}
+  for(var i=0;i<src.units.length;i++){var u=src.units[i];if(u.hp>0)r.push({x:u.x,y:u.y,hpRef:u})}
+  return r}
+
+// === COMMANDS ===
+function cmd(a){
+  if(over)return;
+  if(a==='barracks'||a==='factory'){
+    var cost=a==='barracks'?200:400;if(P.gold<cost){msg('💰 金币不足！',1500);return}
+    var hq=hqOf(P);if(!hq)return;
+    var off=[[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,2],[0,-2],[1,1],[-1,1],[1,-1],[-1,-1]];
+    for(var i=0;i<off.length;i++){var nx=hq.x+off[i][0],ny=hq.y+off[i][1];if(nx<0||nx>=GW||ny<0||ny>=GH)continue;
+      if(map[ny][nx]!==0)continue;var occ=false;
+      for(var j=0;j<P.blds.length;j++){if(P.blds[j].x===nx&&P.blds[j].y===ny)occ=true}
+      for(var j=0;j<E.blds.length;j++){if(E.blds[j].x===nx&&E.blds[j].y===ny)occ=true}
+      for(var j=0;j<P.units.length;j++){if(Math.floor(P.units[j].x)===nx&&Math.floor(P.units[j].y)===ny)occ=true}
+      if(occ)continue;
+      P.gold-=cost;addBld(a,nx,ny,a==='barracks'?300:400,'p');
+      msg('✅ '+bName(a)+' 建造完成',2000);if(typeof sfxBlip==='function')sfxBlip();upd();return}
+    msg('❌ 附近无空地！',1500);return}
+  if(a==='rifle'||a==='tank'){
+    var cost=a==='tank'?300:100;if(P.gold<cost){msg('💰 金币不足！',1500);return}
+    if(!hasB(P,a==='tank'?'factory':'barracks')){msg('❌ 需要先建造对应建筑',1500);return}
+    if(P.units.length>=40){msg('👥 人口已满！',1500);return}
+    var hq=hqOf(P);if(!hq)return;
+    // Spawn near HQ but with slight offset so they don't stack
+    var sx=hq.x+0.5+Math.random()*2-1,sy=hq.y+1.2+Math.random();
+    addUnit(a,sx,sy,'p');P.gold-=cost;
+    msg('✅ '+uName(a)+' 训练完成',2000);if(typeof sfxBlip==='function')sfxBlip();upd();return}
+  if(a==='rush'){
+    var tg=allTargets('p');if(!tg.length)return;
+    var cx=0,cy=0;for(var i=0;i<tg.length;i++){cx+=tg[i].x;cy+=tg[i].y}
+    cx/=tg.length;cy/=tg.length;
+    for(var i=0;i<P.units.length;i++){var u=P.units[i];if(u.hp<=0)continue;u.st='moving';u.tx=cx+Math.random()*4-2;u.ty=cy+Math.random()*2-1}
+    msg('⚔️ 全军出击！',1500)}
+}
+
+function upd(){
   document.getElementById('gold').textContent=P.gold;
   document.getElementById('power').textContent=P.power;
-  document.getElementById('btnB').disabled=P.gold<200||P.power<20||gameOver;
-  document.getElementById('btnF').disabled=P.gold<400||P.power<20||gameOver;
-  document.getElementById('btnR').disabled=!hasB(P,'barracks')||P.gold<100||gameOver;
-  document.getElementById('btnT').disabled=!hasB(P,'factory')||P.gold<300||gameOver;
+  document.getElementById('btnB').disabled=P.gold<200||over;
+  document.getElementById('btnF').disabled=P.gold<400||over;
+  document.getElementById('btnR').disabled=!hasB(P,'barracks')||P.gold<100||over;
+  document.getElementById('btnT').disabled=!hasB(P,'factory')||P.gold<300||over;
 }
 
-function allUnits(owner){
-  var o=owner==='p'?P:E;var all=[];
-  for(var i=0;i<o.buildings.length;i++){var b=o.buildings[i];if(b.hp>0)all.push({isBld:true,obj:b,x:b.x+0.5,y:b.y+0.5})}
-  for(var i=0;i<o.units.length;i++){var u=o.units[i];if(u.hp>0)all.push({isBld:false,obj:u,x:u.x,y:u.y})}
-  return all
-}
-function enemyList(owner){return owner==='p'?allUnits('e'):allUnits('p')}
-
-function near(u,targets){
-  var b=null,bd=999;for(var i=0;i<targets.length;i++){var t=targets[i];var d=Math.hypot(t.x-u.x,t.y-u.y);if(d<=u.range&&d<bd){bd=d;b=t}}
-  return b
-}
-
-// ===== ACTIONS =====
-function build(type){
-  if(gameOver)return;var cost=type==='barracks'?200:400;if(P.gold<cost||P.power<20)return;
-  var hq=Bfind(P,'hq');if(!hq)return;
-  var offs=[[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,2],[0,-2],[1,1],[-1,1],[1,-1],[-1,-1]];
-  for(var i=0;i<offs.length;i++){var nx=hq.x+offs[i][0],ny=hq.y+offs[i][1];
-    if(nx<0||nx>=MW||ny<0||ny>=MH||map[ny][nx]!==0)continue;
-    var occ=allBuildings().some(function(b){return b.x===nx&&b.y===ny});if(occ)continue;
-    P.gold-=cost;P.power-=20;B(type,nx,ny,type==='barracks'?300:400,'p');upBtns();return}
-  msg('附近无空地！')
-}
-function train(type){
-  if(gameOver)return;var cost=type==='tank'?300:100;if(P.gold<cost)return;
-  if(type==='tank'&&!hasB(P,'factory'))return;if(type==='rifle'&&!hasB(P,'barracks'))return;
-  if(P.units.length>=P.maxUnits){msg('人口已满！');return}
-  var hq=Bfind(P,'hq');if(!hq)return;
-  U(type,hq.x+0.5,hq.y+1.5,'p');P.gold-=cost;if(typeof sfxBlip==='function')sfxBlip();upBtns()
-}
-function attackMove(){
-  for(var i=0;i<P.units.length;i++){var u=P.units[i];if(u.hp<=0)continue;
-    var t=findFar(P,E);if(t){u.state='attack';u.tx=t.x;u.ty=t.y}
-  }
-}
-function Bfind(o,type){for(var i=0;i<o.buildings.length;i++){if(o.buildings[i].type===type&&o.buildings[i].hp>0)return o.buildings[i]}return null}
-function allBuildings(){return P.buildings.concat(E.buildings)}
-
-function findFar(owner,target){
-  var list=target.buildings.concat(target.units).filter(function(o){return o.hp>0});
-  if(!list.length)return null;
-  // Find center of mass and go there
-  var cx=0,cy=0,n=0;for(var i=0;i<list.length;i++){var it=list[i];cx+=it.x;cy+=it.y;n++}
-  return {x:cx/n,y:cy/n}
-}
-
-// ===== DAMAGE =====
-function doDmg(atk,def){
-  def.hp-=atk;if(def.hp<=0)def.hp=0;
-  if(typeof sfxHit==='function')sfxHit()
-}
-
-// ===== UPDATE =====
+// === UPDATE ===
 function tick(){
-  if(gameOver)return;frame++;var dt=1;
+  if(over)return;frame++;
+  var dt=1;
   // Player units
   for(var i=P.units.length-1;i>=0;i--){var u=P.units[i];if(u.hp<=0){P.units.splice(i,1);continue}
     if(u.cd>0)u.cd-=dt;
-    if(u.state==='attack'){var ex=u.tx-u.x,ey=u.ty-u.y,d=Math.hypot(ex,ey);if(d<0.5)u.state='idle';else{u.x+=(ex/d)*u.spd*dt;u.y+=(ey/d)*u.spd*dt}}else if(u.state==='idle'){
-      if(u.cd<=0){var t=near(u,enemyList('p'));if(t){doDmg(u.atk,t.obj);u.cd=u.rate}}
-    }
+    if(u.st==='moving'){var ex=u.tx-u.x,ey=u.ty-u.y,d=Math.hypot(ex,ey);if(d<0.3){u.st='idle'}else{u.x+=(ex/d)*u.spd*dt;u.y+=(ey/d)*u.spd*dt}}
+    else if(u.st==='idle'&&u.cd<=0){var t=near(u,allTargets('p'));if(t){u.st='attacking';u.tx=t.x;u.ty=t.y}}
+    else if(u.st==='attacking'){var t=allTargets('p').find(function(v){return v.x===u.tx&&v.y===u.ty});
+      if(!t||t.hpRef.hp<=0){u.st='idle'}else{var d=Math.hypot(t.x-u.x,t.y-u.y);
+        if(d>u.rng){u.x+=(u.tx-u.x)/d*u.spd*dt;u.y+=(u.ty-u.y)/d*u.spd*dt}else{if(u.cd<=0){t.hpRef.hp-=u.atk;u.cd=u.rate;if(typeof sfxHit==='function')sfxHit()}}}}
   }
   // Enemy units
   for(var i=E.units.length-1;i>=0;i--){var u=E.units[i];if(u.hp<=0){E.units.splice(i,1);continue}
     if(u.cd>0)u.cd-=dt;
-    if(u.state==='attack'){var px=u.tx-u.x,py=u.ty-u.y,d=Math.hypot(px,py);if(d<0.5)u.state='idle';else{u.x+=(px/d)*u.spd*dt;u.y+=(py/d)*u.spd*dt}}else{
-      if(u.cd<=0){var t=near(u,enemyList('e'));if(t){doDmg(u.atk,t.obj);u.cd=u.rate}else{// Move toward player
-        var hq=Bfind(P,'hq');if(!hq){var any=P.buildings[0];hq=any}
-        if(hq){var dx=hq.x+0.5-u.x,dy=hq.y+0.5-u.y,d=Math.hypot(dx,dy);if(d>1.5){u.x+=(dx/d)*u.spd*dt;u.y+=(dy/d)*u.spd*dt}}}}
-    }
+    var et=near(u,allTargets('e'));
+    if(et){if(u.cd<=0){et.hpRef.hp-=u.atk;u.cd=u.rate}}else{
+      var hq=hqOf(P);if(hq){var dx=hq.x+0.5-u.x,dy=hq.y+0.5-u.y,d=Math.hypot(dx,dy);if(d>1.5){u.x+=(dx/d)*u.spd*dt;u.y+=(dy/d)*u.spd*dt}}}
   }
-  // AI training
-  E.aiTick+=dt;if(E.aiTick>900){E.aiTick=0;if(E.units.length<E.maxUnits&&E.gold>=100){E.gold-=100;U(E.gold>=300?'tank':'rifle',MW-3+Math.random()*2,MH-2+Math.random(),'e')}}
+  // AI spawn
+  E.aiCd+=dt;if(E.aiCd>700){E.aiCd=0;E.wave++;
+    var count=1+Math.floor(E.wave/3);if(E.wave>5)count+=1;
+    for(var j=0;j<count;j++){if(E.units.length<40&&E.gold>=80){E.gold-=80;addUnit(E.gold>300?'tank':'rifle',GW-3+Math.random()*2,GH-2+Math.random(),'e')}}
+    msg('⚠️ 第'+E.wave+'波敌军来袭！',3000)}
   // Resources
-  if(frame%60===0){P.gold+=8;E.gold+=8;P.power=Math.min(100,P.power+2);E.power=Math.min(100,E.power+2)}
+  if(frame%50===0){P.gold+=5;E.gold+=5}
   // Win/lose
-  var ph=Bfind(P,'hq'),eh=Bfind(E,'hq');
-  if(!ph){gameOver=true;msg('💀 失败！基地被摧毁')}
-  if(!eh){gameOver=true;msg('🎉 胜利！摧毁敌方基地')}
+  if(!hqOf(P)||!hqOf(E)){over=true;msg(hqOf(P)?'🎉 胜利！敌方基地摧毁':'💀 失败！你的基地被摧毁',99999)}
+  if(frame%8===0)draw();
 }
 
-// ===== RENDER =====
-function drawMap(){
-  for(var y=0;y<MH;y++)for(var x=0;x<MW;x++){
-    ctx.fillStyle=map[y][x]===1?'#443318':'#1e2e1e';ctx.fillRect(x*TW,y*TW,TW-1,TW-1);
-    if(map[y][x]===1){ctx.fillStyle='#887744';ctx.fillRect(x*TW+8,y*TW+8,8,8)}
+// === RENDER ===
+function draw(){
+  // Map
+  for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){
+    ctx.fillStyle=map[y][x]===1?'#4a3520':'#1a2e1a';ctx.fillRect(x*TS,y*TS,TS-1,TS-1);
+    if(map[y][x]===1){ctx.fillStyle='#886633';ctx.beginPath();ctx.arc(x*TS+TS/2,y*TS+TS/2,6,0,Math.PI*2);ctx.fill()}
   }
-}
-function drawBlds(list,col){
-  for(var i=0;i<list.length;i++){var b=list[i];if(b.hp<=0)continue;
-    var x=b.x*TW,y=b.y*TW,cx=x+TW/2,cy=y+TW/2;
-    ctx.fillStyle=col;ctx.fillRect(x+3,y+3,TW-6,TW-6);
-    // Symbol
-    ctx.fillStyle='#fff';ctx.font='14px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(b.type==='hq'?'★':b.type==='barracks'?'▣':'⚙',cx,cy);
-    // HP bar
-    var hp=b.hp/b.maxHp;
-    ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(x,y+TW-5,TW,4);
-    ctx.fillStyle=hp>0.5?'#4f4':hp>0.25?'#fa0':'#f22';ctx.fillRect(x,y+TW-5,TW*hp,4);
-  }
-}
-function drawUnits(list,col){
-  for(var i=0;i<list.length;i++){var u=list[i];if(u.hp<=0)continue;
-    var cx=u.x*TW,cy=u.y*TW;
-    ctx.fillStyle=col;
-    if(u.type==='tank'){ctx.fillRect(cx+4,cy+4,TW-8,TW-8)}else{ctx.beginPath();ctx.arc(cx+TW/2,cy+TW/2,TW*0.3,0,Math.PI*2);ctx.fill()}
-    // HP
-    var hp=u.hp/u.maxHp,hw=(TW-2)*hp;
-    ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(cx+1,cy+TW-5,TW-2,3);
-    ctx.fillStyle=hp>0.5?'#4f4':'#f22';ctx.fillRect(cx+1,cy+TW-5,hw,3);
-  }
-}
-function render(){
-  drawMap();
-  drawBlds(P.buildings,'#4488ff');drawBlds(E.buildings,'#ff4444');
-  drawUnits(P.units,'#44aaff');drawUnits(E.units,'#ff6644');
-  // Selection highlight
-  if(selected){
-    var sx,sy;
-    if(selected.isBld!==undefined){sx=selected.x*TW+TW/2;sy=selected.y*TW+TW/2}else{sx=selected.x*TW;sy=selected.y*TW}
-    ctx.strokeStyle='#ff0';ctx.lineWidth=2;ctx.beginPath();ctx.arc(sx,sy,TW*0.55,0,Math.PI*2);ctx.stroke();ctx.lineWidth=1;
-  }
-  upBtns();
+  // Grid lines
+  ctx.strokeStyle='rgba(255,255,255,0.03)';ctx.lineWidth=0.5;
+  for(var y=0;y<GH;y++){ctx.beginPath();ctx.moveTo(0,y*TS);ctx.lineTo(W,y*TS);ctx.stroke()}
+  for(var x=0;x<GW;x++){ctx.beginPath();ctx.moveTo(x*TS,0);ctx.lineTo(x*TS,H);ctx.stroke()}
+  
+  // Buildings
+  for(var i=0;i<P.blds.length;i++)drawBld(P.blds[i],'#3366cc');
+  for(var i=0;i<E.blds.length;i++)drawBld(E.blds[i],'#cc3333');
+  // Units
+  for(var i=0;i<P.units.length;i++)drawUnit(P.units[i],'#4488ff','#2266dd');
+  for(var i=0;i<E.units.length;i++)drawUnit(E.units[i],'#ff5544','#dd3322');
+  
+  // Selection
+  if(sel){ctx.strokeStyle='#ffdd44';ctx.lineWidth=2.5;
+    var sx,sy;if(sel.t){sx=sel.x*TS+TS/2;sy=sel.y*TS+TS/2}else{sx=sel.x*TS;sy=sel.y*TS}
+    ctx.beginPath();ctx.arc(sx,sy,TS*0.5,0,Math.PI*2);ctx.stroke();ctx.lineWidth=1;
+    var n=sel.t?bName(sel.t):uName(sel.t);document.getElementById('sel').textContent='选中: '+n+' HP:'+(sel.hp||sel.mhp)+'/'+(sel.mhp||sel.hp)}
+  else{document.getElementById('sel').textContent='👆 点击己方单位选中'}
+  upd();
 }
 
-// ===== INPUT =====
-function getXY(e){var r=canvas.getBoundingClientRect();var sx=W/r.width;return{x:Math.floor((e.clientX-r.left)*sx/TW),y:Math.floor((e.clientY-r.top)*sx/TW)}}
-var touchStart=null;
-canvas.addEventListener('mousedown',function(e){e.preventDefault();var p=getXY(e);click(p.x,p.y)});
-canvas.addEventListener('touchstart',function(e){e.preventDefault();var p=getXY(e.touches[0]);touchStart={x:p.x,y:p.y};click(p.x,p.y)});
-canvas.addEventListener('contextmenu',function(e){e.preventDefault();if(selected&&selected.owner==='p'&&!selected.isBld){var p=getXY(e);selected.state='attack';selected.tx=p.x+0.5;selected.ty=p.y+0.5}});
+function drawBld(b,col){
+  if(b.hp<=0)return;var x=b.x*TS,y=b.y*TS;
+  ctx.fillStyle=col;ctx.fillRect(x+2,y+2,TS-4,TS-4);
+  ctx.fillStyle='rgba(255,255,255,0.3)';ctx.fillRect(x+2,y+2,TS-4,6);
+  ctx.fillStyle='#fff';ctx.font='13px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(b.t==='hq'?'★':b.t==='barracks'?'▣':'⚙',x+TS/2,y+TS/2+2);
+  // HP bar
+  var pct=b.hp/b.mhp;
+  ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(x+2,y+TS-8,TS-4,4);
+  ctx.fillStyle=pct>0.5?'#44ff44':pct>0.25?'#ffaa00':'#ff2222';ctx.fillRect(x+2,y+TS-8,(TS-4)*pct,4);
+}
+function drawUnit(u,col,accent){
+  if(u.hp<=0)return;var cx=u.x*TS,cy=u.y*TS;
+  ctx.fillStyle=col;
+  if(u.t==='tank'){ctx.fillRect(cx+4,cy+4,TS-8,TS-8);ctx.fillStyle=accent;ctx.fillRect(cx+2,cy+6,5,TS-12)}
+  else{ctx.beginPath();ctx.arc(cx+TS/2,cy+TS/2,TS*0.28,0,Math.PI*2);ctx.fill()}
+  var pct=u.hp/u.mhp;
+  ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(cx+1,cy+TS-6,TS-2,3);
+  ctx.fillStyle=pct>0.5?'#44ff44':'#ff2222';ctx.fillRect(cx+1,cy+TS-6,(TS-2)*pct,3);
+}
+
+// === INPUT ===
+function get(e){var r=c.getBoundingClientRect();var s=W/r.width;return{x:Math.floor((e.clientX-r.left)*s/TS),y:Math.floor((e.clientY-r.top)*s/TS)}}
+c.addEventListener('mousedown',function(e){e.preventDefault();var p=get(e);click(p.x,p.y)});
+c.addEventListener('touchstart',function(e){e.preventDefault();var p=get(e.touches[0]);click(p.x,p.y)});
+c.addEventListener('contextmenu',function(e){e.preventDefault();if(sel&&sel.o==='p'&&!sel.t&&sel.hp>0){var p=get(e);sel.st='moving';sel.tx=p.x+0.5;sel.ty=p.y+0.5;msg('📍 移动中',800)}});
 
 function click(gx,gy){
-  if(gameOver)return;
-  // Find clicked entity
-  var found=null;
-  for(var i=0;i<P.buildings.length;i++){if(P.buildings[i].hp>0&&P.buildings[i].x===gx&&P.buildings[i].y===gy){found=P.buildings[i];break}}
-  if(!found){for(var i=0;i<E.buildings.length;i++){if(E.buildings[i].hp>0&&E.buildings[i].x===gx&&E.buildings[i].y===gy){found=E.buildings[i];break}}}
-  if(!found){for(var i=0;i<P.units.length;i++){if(P.units[i].hp>0&&Math.floor(P.units[i].x)===gx&&Math.floor(P.units[i].y)===gy){found=P.units[i];break}}}
-  if(!found){for(var i=0;i<E.units.length;i++){if(E.units[i].hp>0&&Math.floor(E.units[i].x)===gx&&Math.floor(E.units[i].y)===gy){found=E.units[i];break}}}
-  
-  if(found){selected=found;var n=found.type||'building';document.getElementById('sel').textContent='已选中: '+n+' HP:'+found.hp}else{selected=null;document.getElementById('sel').textContent='点击己方单位选中'}
-  render();
+  if(over)return;var f=null;
+  for(var i=0;i<P.blds.length;i++){if(P.blds[i].hp>0&&P.blds[i].x===gx&&P.blds[i].y===gy){f=P.blds[i];break}}
+  if(!f){for(var i=0;i<E.blds.length;i++){if(E.blds[i].hp>0&&E.blds[i].x===gx&&E.blds[i].y===gy){f=E.blds[i];break}}}
+  if(!f){for(var i=0;i<P.units.length;i++){if(P.units[i].hp>0&&Math.floor(P.units[i].x)===gx&&Math.floor(P.units[i].y)===gy){f=P.units[i];break}}}
+  if(!f){for(var i=0;i<E.units.length;i++){if(E.units[i].hp>0&&Math.floor(E.units[i].x)===gx&&Math.floor(E.units[i].y)===gy){f=E.units[i];break}}}
+  sel=f||null;draw();
 }
 
-// ===== LOOP =====
-function loop(){tick();render();requestAnimationFrame(loop)}
-drawMap();render();loop();
+// === START ===
+draw();upd();setInterval(tick,1000/30);
 </script>
 </html>
