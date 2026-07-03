@@ -263,7 +263,9 @@ function _tick(){
       if(u._hs==='mine'){u._mt=(u._mt||90)-dt;if(u._mt<=0){u._hs='back';u._mt=0}}
       else if(u._hs==='unload'){u._mt=(u._mt||45)-dt;if(u._mt<=0){P.gold+=100;u._hs='go';u._mt=0;upd()}}
       else if(u._hs==='back'){
-        var ref=P.blds.find(function(b){return b.t==='refinery'&&b.hp>0});
+        var ref=null,bd2=999;
+        var refs=P.blds.filter(function(b){return b.t==='refinery'&&b.hp>0});
+        for(var ri=0;ri<refs.length;ri++){var d2=Math.hypot(refs[ri].x+0.5-u.x,refs[ri].y+0.5-u.y);if(d2<bd2){bd2=d2;ref=refs[ri]}}
         if(ref){var db=Math.hypot(ref.x+0.5-u.x,ref.y+0.5-u.y);if(db<0.35){u._hs='unload';u._mt=45}else moveToward(u,{x:ref.x+0.5,y:ref.y+0.5})}
       }
       if(u._hs==='go'){
@@ -305,8 +307,10 @@ function _tick(){
       if(u._hs==='mine'){u._mt=(u._mt||90)-dt;if(u._mt<=0){u._hs='back';u._mt=0}}
       else if(u._hs==='unload'){u._mt=(u._mt||45)-dt;if(u._mt<=0){E.gold+=100;u._hs='go';u._mt=0}}
       else if(u._hs==='back'){
-        var refE=E.blds.find(function(b){return b.t==='refinery'&&b.hp>0});
-        if(refE){var db=Math.hypot(refE.x+0.5-u.x,refE.y+0.5-u.y);if(db<0.35){u._hs='unload';u._mt=45}else moveToward(u,{x:refE.x+0.5,y:refE.y+0.5})}
+        var ref=null,bd2=999;
+        var refs=E.blds.filter(function(b){return b.t==='refinery'&&b.hp>0});
+        for(var ri=0;ri<refs.length;ri++){var d2=Math.hypot(refs[ri].x+0.5-u.x,refs[ri].y+0.5-u.y);if(d2<bd2){bd2=d2;ref=refs[ri]}}
+        if(ref){var db=Math.hypot(ref.x+0.5-u.x,ref.y+0.5-u.y);if(db<0.35){u._hs='unload';u._mt=45}else moveToward(u,{x:ref.x+0.5,y:ref.y+0.5})}
       }
       if(u._hs==='go'){
         var no=null,bd=999;
