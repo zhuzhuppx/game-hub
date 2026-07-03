@@ -21,6 +21,9 @@ body{background:#0a0a1a;display:flex;align-items:center;justify-content:center;m
 .modal label{display:block;font-size:14px;color:#aaa;margin-bottom:4px;margin-top:12px}
 .modal input[type=text]{width:100%;padding:10px 14px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:rgba(255,255,255,0.04);color:#fff;font-size:14px;outline:none}
 .modal input[type=text]:focus{border-color:#ffaa44}
+.modal select{width:100%;padding:10px 14px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:rgba(255,255,255,0.04);color:#fff;font-size:14px;outline:none;cursor:pointer;appearance:auto}
+.modal select:focus{border-color:#ffaa44}
+.modal select option{background:#1a1a2e;color:#fff}
 .modal .hint{font-size:12px;color:#666;margin-top:4px}
 .modal .btns{display:flex;gap:8px;margin-top:20px}
 .modal .btns button{flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;cursor:pointer}
@@ -51,7 +54,14 @@ body{background:#0a0a1a;display:flex;align-items:center;justify-content:center;m
 <div class="aiset" id="aiSet">
 <label>DeepSeek API Key</label>
 <input type="text" id="apiKey" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
-<div class="hint">提供 DeepSeek Key 后 AI 会用大模型思考棋路，否则使用系统算法</div>
+<label>模型选择</label>
+<select id="aiModel">
+<option value="deepseek-v4-flash">deepseek-v4-flash（快速便宜，推荐）</option>
+<option value="deepseek-v4-pro">deepseek-v4-pro（深度推理，更强）</option>
+<option value="deepseek-chat">deepseek-chat（旧版，即将废弃）</option>
+<option value="deepseek-reasoner">deepseek-reasoner（旧版思考，即将废弃）</option>
+</select>
+<div class="hint">⚠️ deepseek-chat/reasoner 将在 2026/07/24 废弃，建议使用 v4 系列</div>
 </div>
 <div class="btns">
 <button class="ok" onclick="saveAISettings()">确定</button>
@@ -158,26 +168,59 @@ if(isMax){var maxE=-99999;for(var i=0;i<moves.length;i++){var captured=makeMove(
 // AI config modal
 function showAIModal(){document.getElementById('aiModal').classList.add('show')
 var enabled=localStorage.getItem('chess_ai_enabled')==='true';var key=localStorage.getItem('chess_llm_key')||''
+var model=localStorage.getItem('chess_llm_model')||'deepseek-v4-flash'
 document.getElementById('aiToggle').classList.toggle('on',enabled);document.getElementById('aiSet').classList.toggle('show',enabled)
-document.getElementById('apiKey').value=key}
+document.getElementById('apiKey').value=key;document.getElementById('aiModel').value=model}
 function closeAIModal(){document.getElementById('aiModal').classList.remove('show')}
 function toggleAI(){var el=document.getElementById('aiToggle');var on=el.classList.toggle('on');document.getElementById('aiSet').classList.toggle('show',on)}
 function saveAISettings(){var enabled=document.getElementById('aiToggle').classList.contains('on');var key=document.getElementById('apiKey').value.trim()
+var model=document.getElementById('aiModel').value
 localStorage.setItem('chess_ai_enabled',enabled?'true':'false')
 if(key)localStorage.setItem('chess_llm_key',key);else localStorage.removeItem('chess_llm_key')
+localStorage.setItem('chess_llm_model',model)
 closeAIModal();var badge=document.getElementById('aiBadge');badge.style.display=(enabled&&key)?'inline':'none'
 if(window.scene)window.scene.startGame()}
 function refreshAIBadge(){var badge=document.getElementById('aiBadge');badge.style.display=isAIEnabled()?'inline':'none'}
 function isAIEnabled(){return localStorage.getItem('chess_ai_enabled')==='true'&&!!localStorage.getItem('chess_llm_key')}
 async function aiMove(board,color){
-  // Opening book: check if current position matches a known opening
+  // 1️⃣ Opening book
   if(g_ply<24){for(var oi=0;oi<OPENINGS.length;oi++){var line=OPENINGS[oi];var totalMoves=line.length/4;if(g_ply<totalMoves){var match=true;for(var pi=0;pi<g_ply;pi++){var idx=pi*4;if(line[idx]!==g_moves[pi].fr||line[idx+1]!==g_moves[pi].fc||line[idx+2]!==g_moves[pi].tr||line[idx+3]!==g_moves[pi].tc){match=false;break}}if(match){var ni=g_ply*4;var nm=[line[ni],line[ni+1],line[ni+2],line[ni+3]];if(pMatch(board,nm[0],nm[1],color)){var vm=validMoves(nm[0],nm[1],board,color);for(var vi=0;vi<vm.length;vi++){if(vm[vi].r===nm[2]&&vm[vi].c===nm[3]){console.log('♟️ 棋谱走法 ply'+g_ply+':',nm);return{fr:nm[0],fc:nm[1],tr:nm[2],tc:nm[3]}}}}}}}}
   
-  // Show thinking message
-  document.getElementById('msg').textContent = '🤔 AI 思考中…';
-  if(window.scene && window.scene.msgT) window.scene.msgT.setText('🤔 AI 思考中…');
+  // 2️⃣ DeepSeek LLM (primary, need API key set)
+  var aiEnabled = localStorage.getItem('chess_ai_enabled')==='true';
+  var aiKey = localStorage.getItem('chess_llm_key');
+  if(aiEnabled && aiKey) {
+    document.getElementById('msg').textContent = '🤖 DeepSeek 思考中…';
+    if(window.scene && window.scene.msgT) window.scene.msgT.setText('🤖 DeepSeek 思考中…');
+    try {
+      var llmResult = await callLLMDirect(board, color);
+      if(llmResult) {
+        console.log('🤖 DeepSeek 走法:', llmResult);
+        return llmResult;
+      }
+    } catch(e) { console.error('DeepSeek 失败:', e.message); }
+  }
   
-  // Step 1: Iterative Deepening - search as deep as time allows (max 2.5s)
+  // 3️⃣ Pikafish engine (fallback)
+  document.getElementById('msg').textContent = '♟️ 皮卡鱼思考中…';
+  if(window.scene && window.scene.msgT) window.scene.msgT.setText('♟️ 皮卡鱼思考中…');
+  try {
+    var resp = await fetch('/api/chess-pikafish', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ board: board, depth: 10, color: color })
+    });
+    var data = await resp.json();
+    if(data.ok && data.move) {
+      console.log('♟️ 皮卡鱼走法:', data.move);
+      return data.move;
+    }
+    console.error('皮卡鱼返回错误:', data.error);
+  } catch(e) { console.error('皮卡鱼调用失败:', e.message); }
+  
+  // 4️⃣ alpha-beta iterative deepening (last resort)
+  document.getElementById('msg').textContent = '⚙️ 本地 AI 思考中…';
+  if(window.scene && window.scene.msgT) window.scene.msgT.setText('⚙️ 本地 AI 思考中…');
   var startMs=Date.now(),timeLimit=2500;
   var finalCandidates=[],prevCandidates=[];
   for(var searchDepth=2;searchDepth<=5;searchDepth++){
@@ -195,28 +238,27 @@ async function aiMove(board,color){
     if(foundAny&&candidates.length>0){finalCandidates=candidates.slice();prevCandidates=candidates}
     if(Date.now()-startMs>timeLimit)break
   }
-  // Fallback: use last completed depth's candidates
   if(finalCandidates.length===0&&prevCandidates.length>0)finalCandidates=prevCandidates;
-  
-  // Step 2: Try LLM to pick best among candidates
-  return new Promise(function(resolve){
-    callLLM(board,color,finalCandidates).then(function(llmMove){
-      if(llmMove){resolve(llmMove);return}
-      resolve(finalCandidates.length>0?finalCandidates[0]:null)
-    })
-  })
+  return finalCandidates.length>0?finalCandidates[0]:null
 }
 
 function pMatch(board,r,c,color){return r>=0&&r<10&&c>=0&&c<9&&board[r][c]&&board[r][c].color===color}
 function pieceName(p){var n={r:'车',h:'马',e:'相',a:'仕',k:'帅',c:'炮',p:'兵',R:'車',H:'馬',E:'象',A:'士',K:'將',C:'砲',P:'卒'};return n[p.type]||p.type}
 function coordDesc(fr,fc,tr,tc,color){var dir=color==='r'?'进':'退';var rDiff=tr-fr;if(rDiff===0)dir='平';else if((color==='r'&&rDiff<0)||(color==='b'&&rDiff>0))dir='退';var cDist=Math.abs(tc-fc);return '('+(8-fc+1)+')'+(cDist>0?'平':'')+'('+(8-tc+1)+')'}
-function callLLM(board,color,candidates){return new Promise(function(resolve){var key=localStorage.getItem('chess_llm_key');if(!key||localStorage.getItem('chess_ai_enabled')!=='true'){resolve(null);return}
+function callLLMDirect(board,color){return new Promise(function(resolve){var key=localStorage.getItem('chess_llm_key');if(!key||localStorage.getItem('chess_ai_enabled')!=='true'){resolve(null);return}
+  var model=localStorage.getItem('chess_llm_model')||'deepseek-v4-flash';
   var colorName=color==='r'?'红方':'黑方';var enemy=color==='r'?'黑方':'红方';
-  var boardStr='';for(var r=0;r<ROWS;r++){for(var c=0;c<COLS;c++){var p=board[r][c];boardStr+=p?pieceName(p):'．'}boardStr+='\n'}
-  var movesStr=candidates.slice(0,4).map(function(m,i){var p=board[m.fr][m.fc];var name=pieceName(p);return(i+1)+'. '+name+'从('+m.fr+','+m.fc+')走到('+m.tr+','+m.tc+')'}).join('\n')
-  var prompt='你是一个中国象棋特级大师。当前局面：\n\n'+boardStr+'\n轮到'+colorName+'走棋。\n\nAlpha-beta引擎推荐了以下走法（按优先级排序）：\n'+movesStr+'\n\n请从以上走法中选一个你认为最合理的，输出序号（1~4）。如果你认为某步棋有妙手或陷阱效果，优先选它。只输出数字，不要解释。'
-  fetch('/api/chess-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'deepseek-chat',messages:[{role:'user',content:prompt}],temperature:0.3,max_tokens:20})})
-  .then(function(r){return r.json()}).then(function(data){try{var text=data.choices[0].message.content.trim();var idx=parseInt(text);console.log('DeepSeek选:',text,'→候选',idx);if(idx>=1&&idx<=candidates.length){resolve(candidates[idx-1]);return}}catch(e){}resolve(null)})
+  // Format board as readable text
+  var boardStr='  零一二三四五六七八\n';
+  for(var r=0;r<ROWS;r++){boardStr+=(9-r)+' ';for(var c=0;c<COLS;c++){var p=board[r][c];boardStr+=p?(p.color==='r'?'\u001b[31m':'\u001b[34m')+pieceName(p)+'\u001b[0m':'．'}boardStr+='\n'}
+  // List all valid moves
+  var allMoves=[];
+  for(var r=0;r<ROWS;r++){for(var c=0;c<COLS;c++){var p=board[r][c];if(p&&p.color===color){var vm=validMoves(r,c,board,color);for(var i=0;i<vm.length;i++){allMoves.push({fr:r,fc:c,tr:vm[i].r,tc:vm[i].c,name:pieceName(p)+'('+r+','+c+')→('+vm[i].r+','+vm[i].c+') '+coordDesc(r,c,vm[i].r,vm[i].c,color)})}}}}
+  var movesStr=allMoves.slice(0,30).map(function(m,i){return(i+1)+'. '+m.name}).join('\n');
+  var prompt='你是中国象棋特级大师。当前'+colorName+'走棋。\n\n棋盘（行0-9从上到下，列0-8从左到右）：\n'+boardStr+'\n全部合法走法（前30步）：\n'+movesStr+'\n\n请从所有合法走法中选出最厉害的一步。输出格式：{\"fr\":行,\"fc\":列,\"tr\":行,\"tc\":列}\n只输出JSON，不要解释。';
+  console.log('🤖 调用DeepSeek, 共'+allMoves.length+'步合法走法...');
+  fetch('/api/chess-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:model,messages:[{role:'user',content:prompt}],temperature:0.3,max_tokens:100})})
+  .then(function(r){return r.json()}).then(function(data){try{var text=data.choices[0].message.content.trim();console.log('DeepSeek回复:',text);var m=JSON.parse(text.match(/\{[^}]+\}/)[0]);if(typeof m.fr==='number'&&typeof m.fc==='number'&&typeof m.tr==='number'&&typeof m.tc==='number'){resolve({fr:m.fr,fc:m.fc,tr:m.tr,tc:m.tc});return}}catch(e){}resolve(null)})
   .catch(function(){resolve(null)})})}
 
 // ===== PHASER SCENE =====
