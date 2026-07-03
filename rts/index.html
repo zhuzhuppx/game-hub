@@ -66,6 +66,8 @@ function uName(t){return{rifle:'🔫',tank:'🛡️'}[t]||t}
 
 function near(u,list){
   var b=null,bd=999;for(var i=0;i<list.length;i++){var t=list[i];var d=Math.hypot(t.x-u.x,t.y-u.y);if(d<=u.rng&&d<bd){bd=d;b=t}}return b}
+function closest(u,list){var b=null,bd=999;for(var i=0;i<list.length;i++){var t=list[i];var d=Math.hypot(t.x-u.x,t.y-u.y);if(d<bd){bd=d;b=t}}return b}
+function moveToward(u,t,spd){var dx=t.x-u.x,dy=t.y-u.y,d=Math.hypot(dx,dy);if(d>0.2){u.x+=(dx/d)*(spd||u.spd);u.y+=(dy/d)*(spd||u.spd);u.dx=dx;u.dy=dy}}
 
 function allTargets(o){var r=[];var src=o==='p'?E:P;
   for(var i=0;i<src.blds.length;i++){var b=src.blds[i];if(b.hp>0)r.push({x:b.x+0.5,y:b.y+0.5,hpRef:b})}
@@ -130,11 +132,33 @@ function tick(){
       else{var d=Math.hypot(u.tx-u.x,u.ty-u.y);if(d>u.rng){u.x+=(u.tx-u.x)/d*u.spd*dt;u.y+=(u.ty-u.y)/d*u.spd*dt;u.dx=u.tx-u.x;u.dy=u.ty-u.y}}
     }
   }
-  // Enemy units
+  // Enemy AI
+  var ehq=hqOf(E);var e_base_threat=ehq?cachedP.filter(function(t){return Math.hypot(t.x-ehq.x-0.5,t.y-ehq.y-0.5)<5}).length:0;
+  var e_alive=E.units.filter(function(u){return u.hp>0}).length;
+  var must_defend=e_base_threat>=2||e_alive<=3; // defend if player near base or low on troops
+  if(must_defend&&!E._defending){E._defending=true;msg('🛡️ 敌军回防！',2000)}
+  if(!must_defend)E._defending=false;
+  
   for(var i=E.units.length-1;i>=0;i--){var u=E.units[i];if(u.hp<=0){E.units.splice(i,1);continue}
     if(u.cd>0)u.cd-=dt;
-    if(u.cd<=0){var et=near(u,cachedE);if(et){et.hpRef.hp-=u.atk;u.cd=u.rate}}else{
-      var hq=hqOf(P);if(hq){var dx=hq.x+0.5-u.x,dy=hq.y+0.5-u.y,d=Math.hypot(dx,dy);if(d>1.5){u.x+=(dx/d)*u.spd*dt;u.y+=(dy/d)*u.spd*dt}}}
+    var et=near(u,cachedE); // any player target in range?
+    if(et){if(u.cd<=0){et.hpRef.hp-=u.atk;u.cd=u.rate}} // fire!
+    
+    if(must_defend&&ehq){
+      // DEFEND: move toward home base, attack intruders
+      var intruders=cachedP.filter(function(t){return Math.hypot(t.x-ehq.x-0.5,t.y-ehq.y-0.5)<5});
+      if(intruders.length&&u.cd<=0){
+        var ct=near(u,intruders);if(ct){ct.hpRef.hp-=u.atk;u.cd=u.rate;u.dx=ct.x-u.x;u.dy=ct.y-u.y;}
+        else{moveToward(u,closest(u,intruders))}
+      }else{
+        var distHome=Math.hypot(ehq.x+0.5-u.x,ehq.y+0.5-u.y);
+        if(distHome>4)moveToward(u,{x:ehq.x+0.5+Math.random()-0.5,y:ehq.y+0.5+Math.random()-0.5})
+      }
+    }else{
+      // ATTACK: push toward player HQ
+      var hq=hqOf(P);
+      if(!et&&hq){var dx=hq.x+0.5-u.x,dy=hq.y+0.5-u.y,d=Math.hypot(dx,dy);if(d>1.5){u.x+=(dx/d)*u.spd*dt;u.y+=(dy/d)*u.spd*dt;u.dx=dx;u.dy=dy}}
+    }
   }
   // AI spawn
   E.aiCd+=dt;if(E.aiCd>700){E.aiCd=0;E.wave++;
