@@ -43,28 +43,28 @@ c.style.width=(W*scale)+'px';c.style.height=(H*scale)+'px';
 
 // === MAP ===
 var map=[];
-// tile: 0=ground, 1=indestructible wall, 2=mineral
 for(var y=0;y<GH;y++){map[y]=[];for(var x=0;x<GW;x++)map[y][x]=0}
 function addWall(x,y){if(x>=0&&x<GW&&y>=0&&y<GH)map[y][x]=1}
-// Perimiter walls around each base (3x3 area), with one gap for entry
-// Player (HQ 0,0): walls around 0-3, 0-3, gap at (3,1)
-for(var x=1;x<=3;x++)addWall(x,0);for(var y=1;y<=3;y++){if(y!==1)addWall(3,y)}for(var x=0;x<=2;x++)addWall(x,3);for(var y=1;y<=2;y++)addWall(0,y);
-// E0 (HQ 17,11): walls around 14-17, 8-11, gap at (14,10)
-for(var x=14;x<=17;x++)addWall(x,8);for(var y=9;y<=11;y++){if(y!==10)addWall(14,y)}for(var x=14;x<=17;x++)addWall(x,12);for(var y=9;y<=11;y++)addWall(18,y);
-// E1 (HQ 17,0): walls around 14-17, 0-3, gap at (14,1)
-for(var x=14;x<=17;x++)addWall(x,3);for(var y=0;y<=2;y++){if(y!==1)addWall(14,y)}for(var x=14;x<=17;x++)addWall(x,-1);for(var y=0;y<=2;y++)addWall(18,y);
-// E2 (HQ 0,11): walls around 0-3, 8-11, gap at (3,10)
-for(var x=0;x<=3;x++)addWall(x,8);for(var y=9;y<=11;y++){if(y!==10)addWall(3,y)}for(var x=0;x<=3;x++)addWall(x,12);for(var y=9;y<=11;y++)addWall(-1,y);
-// Minerals spread everywhere except walls and base interiors
+// Bases: each 3x3 with HQ at corner, one gap
+// Player: HQ(0,0) base(0-2,0-2) gap(2,1)
+addWall(1,0);addWall(2,0);addWall(2,2);addWall(0,2);addWall(0,1);
+// E0: HQ(17,11) base(15-17,9-11) gap(15,10)
+addWall(16,9);addWall(17,9);addWall(17,10);addWall(17,11);addWall(16,11);addWall(15,11);addWall(15,9);
+// E1: HQ(17,0) base(15-17,0-2) gap(15,1)
+addWall(16,0);addWall(17,0);addWall(17,1);addWall(17,2);addWall(16,2);addWall(15,2);addWall(15,0);
+// E2: HQ(0,11) base(0-2,9-11) gap(2,10)
+addWall(1,11);addWall(2,11);addWall(2,9);addWall(0,9);addWall(0,10);
+
+// Minerals everywhere else
 var minerals={};var gems={};
 for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){
-  if(map[y][x]===0){map[y][x]=2;minerals[x+','+y]=10} // lighter mineral spread
+  if(map[y][x]===0){map[y][x]=2;minerals[x+','+y]=10}
 }
-// Remove minerals from base interiors (just ground)
-var baseInteriors=[[0,3,0,3],[14,17,8,11],[14,17,0,3],[0,3,8,11]];
-for(var bi=0;bi<baseInteriors.length;bi++){
-  var r=baseInteriors[bi];
-  for(var y=r[2];y<=r[3];y++)for(var x=r[0];x<=r[1];x++){if(y<GH&&x<GW){map[y][x]=0;delete minerals[x+','+y]}}
+// Clear base interiors
+var BI=[[0,2,0,2],[15,17,9,11],[15,17,0,2],[0,2,9,11]];
+for(var bi=0;bi<BI.length;bi++){
+  var r=BI[bi];
+  for(var y=r[2];y<=r[3];y++)for(var x=r[0];x<=r[1];x++){map[y][x]=0;delete minerals[x+','+y]}
 }
 var MIN_NUGGETS=10,MIN_REGEN=1; // lighter minerals
 var GEM_COLORS=[{c:'#ff4466',v:30},{c:'#44ccff',v:30},{c:'#aa44ff',v:40},{c:'#ff8844',v:25},{c:'#44ff88',v:20}];
@@ -441,13 +441,17 @@ function _tick(){
         if(canPass(rx,ry)){E.gold-=250;addBld('refinery',rx,ry,350,E.id);addUnit('harvester',rx+0.5,ry+0.5,E.id);break}}
       if(!hasB(E,'refinery'))E.aiCd=-20
     }else if(!hasB(E,'factory')&&E.gold>=400){
-      var offF=[[-2,0],[-2,-1],[-1,-2],[0,-2],[1,-1],[0,1],[-1,0],[1,0]];
+      var offF=(E===E1)?[[-2,1],[-2,2],[-1,2],[0,2],[1,1],[0,-1],[-1,0],[1,0]] // left+down
+        :(E===E2)?[[2,0],[2,-1],[1,-2],[0,-2],[-1,-1],[0,1],[1,0],[-1,0]] // right+up
+        :[[-2,0],[-2,-1],[-1,-2],[0,-2],[1,-1],[0,1],[-1,0],[1,0]]; // left+up (E0 default)
       var placed=false;
       for(var fi=0;fi<offF.length;fi++){var fx=ehq2.x+offF[fi][0],fy=ehq2.y+offF[fi][1];
         if(canPass(fx,fy)){E.gold-=400;addBld('factory',fx,fy,400,E.id);placed=true;break}}
       if(!placed)E.aiCd=-20
     }else if(!hasB(E,'barracks')&&E.gold>=200){
-      var offB=[[0,-1],[1,-1],[-2,-1],[-1,-2],[0,1],[1,0],[-1,0],[-2,0]];
+      var offB=(E===E1)?[[-1,1],[-2,1],[-1,2],[-2,2],[0,1],[0,2],[1,1],[-1,0]] // left+down
+        :(E===E2)?[[1,-1],[2,-1],[1,-2],[2,-2],[0,-1],[0,-2],[-1,-1],[1,0]] // right+up
+        :[[0,-1],[1,-1],[-2,-1],[-1,-2],[0,1],[1,0],[-1,0],[-2,0]]; // left+up (E0)
       placed=false;
       for(var bi=0;bi<offB.length;bi++){var bx=ehq2.x+offB[bi][0],by=ehq2.y+offB[bi][1];
         if(canPass(bx,by)){E.gold-=200;addBld('barracks',bx,by,300,E.id);placed=true;break}}
