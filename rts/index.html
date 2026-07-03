@@ -69,10 +69,7 @@ function hqOf(o){return o.blds.find(function(b){return b.t==='hq'&&b.hp>0})}
 function eSpawn(type){var eh=hqOf(E);if(!eh)return;
   var bType=type==='tank'?'factory':'barracks';
   var fb=E.blds.find(function(b){return b.t===bType&&b.hp>0});
-  var sx=eh.x+0.5,sy=eh.y+1.5;
-  if(fb){sx=fb.x+1.5;sy=fb.y+0.5;
-    var offs=[{x:1.5,y:0.5},{x:-0.5,y:0.5},{x:0.5,y:1.5},{x:0.5,y:-0.5}];
-    for(var oi=0;oi<offs.length;oi++){var tx=fb.x+offs[oi].x,ty=fb.y+offs[oi].y;if(canPass(tx,ty)){sx=tx;sy=ty;break}}}
+  var sx=fb?fb.x+0.5:eh.x+0.5,sy=fb?fb.y+0.5:eh.y+1.5;
   addUnit(type,sx,sy,'e');
   var nu=E.units[E.units.length-1];
   nu.st='moving';nu.tx=eh.x+0.5+Math.random()*2-1;nu.ty=eh.y+1.5+Math.random();nu._spawn=1}
@@ -96,8 +93,8 @@ function canPass(gx,gy,self){var ix=Math.floor(gx),iy=Math.floor(gy);
   var ox=Math.floor(self?self.x:gx),oy=Math.floor(self?self.y:gy);
   var all=P.blds.concat(E.blds);for(var i=0;i<all.length;i++){if(all[i].hp<=0)continue;
     if(ix===all[i].x&&iy===all[i].y){
-      // Allow friendly harvesters to pass through own buildings
-      if(self&&self.t==='harvester'&&all[i].o===self.o&&all[i].t==='refinery')continue;
+      // Allow friendly units to exit own production buildings and refinery
+      if(self&&all[i].o===self.o&&(all[i].t==='refinery'||all[i].t==='factory'||all[i].t==='barracks'))continue;
       if(!(self&&ix===ox&&iy===oy&&all[i].o===self.o))return false}}
   // check units (all sides, skip self and friendly harvesters)
   var allu=P.units.concat(E.units);for(var i=0;i<allu.length;i++){var ou=allu[i];if(ou.hp<=0||ou===self)continue;if(ou.t==='harvester'&&self&&self.t==='harvester'&&ou.o===self.o)continue;if(Math.floor(ou.x)===ix&&Math.floor(ou.y)===iy)return false}
@@ -148,14 +145,11 @@ function cmd(a){
     var cost=a==='tank'?200:100;if(P.gold<cost){msg('💰 金币不足！',1500);return}
     if(!hasB(P,a==='tank'?'factory':'barracks')){msg('❌ 需要先建造对应建筑',1500);return}
     if(P.units.length>=40){msg('👥 人口已满！',1500);return}
-    // Spawn at production building edge, then drive out
+    // Spawn inside production building, drive out
     var bType=a==='tank'?'factory':'barracks';
     var fb=P.blds.find(function(b){return b.t===bType&&b.hp>0});
-    var sx,sy;if(fb){sx=fb.x+1.5;sy=fb.y+0.5}else{var hq=hqOf(P);sx=hq.x+0.5;sy=hq.y+1.5}
+    var sx=fb?fb.x+0.5:1.5,sy=fb?fb.y+0.5:1.5;
     var hq=hqOf(P);var desX=hq.x+0.5+Math.random()*2-1,desY=hq.y+1.5+Math.random();
-    // Try alternate spawn positions if blocked
-    var offs=[{x:1.5,y:0.5},{x:-0.5,y:0.5},{x:0.5,y:1.5},{x:0.5,y:-0.5}];
-    if(fb)for(var oi=0;oi<offs.length;oi++){var tx=fb.x+offs[oi].x,ty=fb.y+offs[oi].y;if(canPass(tx,ty)){sx=tx;sy=ty;break}}
     addUnit(a,sx,sy,'p');P.gold-=cost;
     var nu=P.units[P.units.length-1];
     nu.st='moving';nu.tx=desX;nu.ty=desY;nu.dx=desX-sx;nu.dy=desY-sy;
