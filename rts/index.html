@@ -199,14 +199,16 @@ function _tick(){
   // Player units
   for(var i=P.units.length-1;i>=0;i--){var u=P.units[i];if(u.hp<=0){spawnFx(u.x*TS,u.y*TS,u.t==='tank'?'#ffaa22':'#ff8844',u.t==='tank'?12:6);if(u.t==='tank'&&typeof sfxExplode==='function')sfxExplode();P.units.splice(i,1);continue}
     if(u.cd>0)u.cd-=dt;
-    // Auto-acquire target while moving, idle, or marching in attacking state
-    if(u.t!=='harvester'){var t=nearUnit(u,cachedP)||near(u,cachedP);if(t){if(u.st!=='attacking'){u.st='attacking';if(u.cd<=0)u.cd=1}u.tx=t.x;u.ty=t.y;u.dx=t.x-u.x;u.dy=t.y-u.y}}
+    // Auto-acquire target
+    if(u.t!=='harvester'){var t=nearUnit(u,cachedP)||near(u,cachedP);if(t){if(u.st!=='attacking'){u.st='attacking'}u.tx=t.x;u.ty=t.y;u.dx=t.x-u.x;u.dy=t.y-u.y}}
     if(u.st==='moving'){var d=Math.hypot(u.tx-u.x,u.ty-u.y);if(d<0.3){u.st='idle'}else{moveToward(u,{x:u.tx,y:u.ty})}}
     else if(u.st==='attacking'){
+      // Always try to attack first if ready
+      if(u.cd<=0){var t=nearUnit(u,cachedP)||near(u,cachedP);if(t){var wasAlive=t.hpRef.hp>0;t.hpRef.hp-=u.atk;u.cd=u.rate;u.dx=t.x-u.x;u.dy=t.y-u.y;u.tx=t.x;u.ty=t.y;var m=muzzlePos(u);if(typeof sfxPew==='function')sfxPew();spawnBullet(m.x,m.y,t.x*TS,t.y*TS,'#ffff88');if(wasAlive&&t.hpRef.hp<=0)grantXp(u,t.hpRef.t==='tank'?15:8)}}
+      // Then move toward target
       var d=Math.hypot(u.tx-u.x,u.ty-u.y);
-      if(d>0.2){moveToward(u,{x:u.tx,y:u.ty})}
-      else if(u.cd<=0){var t=nearUnit(u,cachedP)||near(u,cachedP);if(t){var wasAlive=t.hpRef.hp>0;t.hpRef.hp-=u.atk;u.cd=u.rate;u.dx=t.x-u.x;u.dy=t.y-u.y;var m=muzzlePos(u);if(typeof sfxPew==='function')sfxPew();spawnBullet(m.x,m.y,t.x*TS,t.y*TS,'#ffff88');if(wasAlive&&t.hpRef.hp<=0)grantXp(u,t.hpRef.t==='tank'?15:8)}else{u.st='idle'}}
-    }
+      if(d>0.2)moveToward(u,{x:u.tx,y:u.ty})
+      else if(!(nearUnit(u,cachedP)||near(u,cachedP))){u.st='idle'}}
     // Auto-defend: ALL combat units rush to intercept
     if(u.t!=='harvester'){u._adCd=(u._adCd||0)+dt;
     if(u._adCd>25){u._adCd=0;
