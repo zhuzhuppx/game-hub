@@ -60,11 +60,12 @@ var minerals={};var gems={};
 for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){
   if(map[y][x]===0){map[y][x]=2;minerals[x+','+y]=10} // lighter mineral spread
 }
-// Remove minerals from base interiors
-for(var y=0;y<=3;y++)for(var x=0;x<=3;x++){map[y][x]=0;delete minerals[x+','+y]}
-for(var y=8;y<=12;y++)for(var x=14;x<=18;x++){map[y][x]=0;delete minerals[x+','+y]} // E0 base
-for(var y=0;y<=3;y++)for(var x=14;x<=18;x++){map[y][x]=0;delete minerals[x+','+y]} // E1 base
-for(var y=8;y<=12;y++)for(var x=0;x<=3;x++){map[y][x]=0;delete minerals[x+','+y]} // E2 base
+// Remove minerals from base interiors (just ground)
+var baseInteriors=[[0,3,0,3],[14,17,8,11],[14,17,0,3],[0,3,8,11]];
+for(var bi=0;bi<baseInteriors.length;bi++){
+  var r=baseInteriors[bi];
+  for(var y=r[2];y<=r[3];y++)for(var x=r[0];x<=r[1];x++){if(y<GH&&x<GW){map[y][x]=0;delete minerals[x+','+y]}}
+}
 var MIN_NUGGETS=10,MIN_REGEN=1; // lighter minerals
 var GEM_COLORS=[{c:'#ff4466',v:30},{c:'#44ccff',v:30},{c:'#aa44ff',v:40},{c:'#ff8844',v:25},{c:'#44ff88',v:20}];
 // Spawn initial gems
