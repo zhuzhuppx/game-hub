@@ -51,7 +51,7 @@ var E={gold:1000,units:[],blds:[],aiCd:50,attackReady:false};
 var moveSoundCd=0; // throttle movement sfx
 
 function addBld(t,x,y,hp,o){var b={t:t,x:x,y:y,hp:hp,mhp:hp,o:o};(o==='p'?P.blds:E.blds).push(b);return b}
-function addUnit(t,x,y,o){var s=t==='tank'?{hp:150,atk:28,rng:2.5,spd:0.025,rate:50}:t==='harvester'?{hp:200,atk:0,rng:0,spd:0.03,rate:999}:{hp:65,atk:12,rng:1.4,spd:0.028,rate:32};
+function addUnit(t,x,y,o){var s=t==='tank'?{hp:250,atk:35,rng:2.5,spd:0.025,rate:45}:t==='harvester'?{hp:200,atk:0,rng:0,spd:0.03,rate:999}:{hp:65,atk:10,rng:1.4,spd:0.028,rate:32};
   var u={id:uid++,t:t,x:x,y:y,hp:s.hp,mhp:s.hp,atk:s.atk,rng:s.rng,spd:s.spd,rate:s.rate,cd:0,o:o,st:'idle',tx:0,ty:0,dx:0,dy:0,xp:0,lv:1};
   (o==='p'?P.units:E.units).push(u);return u}
 
