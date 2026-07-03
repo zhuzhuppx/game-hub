@@ -123,8 +123,8 @@ function grantXp(u,amount){
   var need=u.lv*20;
   while(u.xp>=need&&u.lv<3){
     u.xp-=need;u.lv++;
-    u.mhp+=u.t==='tank'?50:15;u.hp=u.mhp;
-    u.atk+=u.t==='tank'?12:4; // tanks get big ATK boost
+    u.mhp+=u.t==='tank'?50:20;u.hp=u.mhp;
+    u.atk+=u.t==='tank'?12:6;
     u.spd+=u.t==='tank'?0.008:0.005;
     spawnFx(u.x*TS,u.y*TS,'#ffdd44',10);
     if(typeof sfxPowerUp==='function')sfxPowerUp()
