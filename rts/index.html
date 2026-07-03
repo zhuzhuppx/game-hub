@@ -462,8 +462,6 @@ function draw(){
       var alpha=0.4+twinkle*0.6;
       ctx.fillStyle='rgba(255,200,60,'+alpha+')';ctx.beginPath();ctx.arc(nx,ny,1.5+twinkle*0.8,0,Math.PI*2);ctx.fill();
     }
-    // Base dirt
-    ctx.fillStyle='rgba(85,102,32,0.3)';ctx.fillRect(gx+2,gy+2,TS-4,TS-4);
   }}
   // Buildings
   for(var i=0;i<P.blds.length;i++)drawBld(P.blds[i],'#3355aa','#2244cc','#5588ff');
