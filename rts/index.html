@@ -221,13 +221,15 @@ function tick(){
     msg('⚠️ 第'+E.wave+'波敌军来袭！',3000)}
   // Resources
   if(frame%50===0){P.gold+=5;E.gold+=8}
-  // Win/lose + building death fx
+  // Building death FX
   for(var i=P.blds.length-1;i>=0;i--){var b=P.blds[i];if(b.hp<=0&&!b._dead){b._dead=true;spawnBldFx(b);if(typeof sfxExplode==='function')sfxExplode()}}
   for(var i=E.blds.length-1;i>=0;i--){var b=E.blds[i];if(b.hp<=0&&!b._dead){b._dead=true;spawnBldFx(b);if(typeof sfxExplode==='function')sfxExplode()}}
-  var pAlive=P.blds.some(function(b){return b.hp>0});
-  var eAlive=E.blds.some(function(b){return b.hp>0});
-  if(!pAlive){over=true;msg('💀 失败！所有建筑被摧毁',99999)}
-  if(!eAlive){over=true;msg('🎉 胜利！敌方全灭',99999)}
+  // Win/lose — count alive buildings
+  var pa=0,ea=0;
+  for(var i=0;i<P.blds.length;i++)if(P.blds[i].hp>0)pa++;
+  for(var i=0;i<E.blds.length;i++)if(E.blds[i].hp>0)ea++;
+  if(pa===0){over=true;msg('💀 失败！所有建筑被摧毁',99999)}
+  if(ea===0){over=true;msg('🎉 胜利！敌方全灭',99999)}
   // Movement sound
   moveSoundCd-=dt;
   var anyTank=false,anyInf=false;
@@ -366,8 +368,14 @@ document.addEventListener('visibilitychange',function(){
 function loop(t){
   if(!over){
     var dt2=t-lastTick;
-    if(dt2>5000)lastTick=t; // cap delta, don't try to catch up after long sleep
+    if(dt2>5000)lastTick=t;
     if(dt2>=33){lastTick=t;tick()}
+    // Safety: win check every frame in case tick lags
+    var p2=0,e2=0;
+    for(var i=0;i<P.blds.length;i++)if(P.blds[i].hp>0)p2++;
+    for(var i=0;i<E.blds.length;i++)if(E.blds[i].hp>0)e2++;
+    if(p2===0){over=true;msg('💀 失败！所有建筑被摧毁',99999)}
+    if(e2===0){over=true;msg('🎉 胜利！敌方全灭',99999)}
   }
   draw();
   requestAnimationFrame(loop);
