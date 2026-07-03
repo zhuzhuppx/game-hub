@@ -71,7 +71,7 @@ function eSpawn(type){var eh=hqOf(E);if(!eh)return;
   var fb=E.blds.find(function(b){return b.t===bType&&b.hp>0});
   var sx=fb?fb.x+1:eh.x+0.5,sy=fb?fb.y+0.5:eh.y+1.5;
   var exits=[[1,0.5],[-0.5,0.5],[0.5,1.5],[0.5,-0.5]];
-  if(fb){for(var ei=0;ei<exits.length;ei++){var ex=fb.x+exits[ei][0],ey=fb.y+exits[ei][1];if(canPass(ex,ey)){sx=ex;sy=ey;break}};fb._spark=15}
+  if(fb){for(var ei=0;ei<exits.length;ei++){var ex=fb.x+exits[ei][0],ey=fb.y+exits[ei][1];if(canPass(ex,ey)){sx=ex;sy=ey;break}};fb._spark=45}
   addUnit(type,sx,sy,'e');
   var nu=E.units[E.units.length-1];
   nu.st='moving';nu.tx=eh.x+0.5+Math.random()*2-1;nu.ty=eh.y+1.5+Math.random();nu._spawn=1}
@@ -156,7 +156,7 @@ function cmd(a){
     var exits=[[1,0.5],[-0.5,0.5],[0.5,1.5],[0.5,-0.5]];
     if(fb)for(var ei=0;ei<exits.length;ei++){var ex=fb.x+exits[ei][0],ey=fb.y+exits[ei][1];if(canPass(ex,ey)){sx=ex;sy=ey;break}}
     addUnit(a,sx,sy,'p');P.gold-=cost;
-    if(fb)fb._spark=15; // building spawn animation
+    if(fb)fb._spark=45; // building spawn animation
     var desX=hq.x+0.5+Math.random()*2-1,desY=hq.y+1.5+Math.random();
     var nu=P.units[P.units.length-1];
     nu.st='moving';nu.tx=desX;nu.ty=desY;nu.dx=desX-sx;nu.dy=desY-sy;
@@ -195,7 +195,7 @@ function cmd(a){
     var sx=fac?fac.x+1:ref2.x+0.5,sy=fac?fac.y+0.5:ref2.y+0.5;
     var exits=[[1,0.5],[-0.5,0.5],[0.5,1.5],[0.5,-0.5]];
     if(fac)for(var ei=0;ei<exits.length;ei++){var ex=fac.x+exits[ei][0],ey=fac.y+exits[ei][1];if(canPass(ex,ey)){sx=ex;sy=ey;break}}
-    if(fac)fac._spark=15;
+    if(fac)fac._spark=45;
     addUnit('harvester',sx,sy,'p');P.gold-=150;
     var hv=P.units[P.units.length-1];hv._toRef={x:ref2.x+0.5,y:ref2.y+0.5};
     msg('✅ 矿车出动',2000);upd()}
@@ -366,7 +366,7 @@ function _tick(){
           var sx=efac?efac.x+1:ref.x+0.5,sy=efac?efac.y+0.5:ref.y+0.5;
           var exits=[[1,0.5],[-0.5,0.5],[0.5,1.5],[0.5,-0.5]];
           if(efac)for(var ei=0;ei<exits.length;ei++){var ex=efac.x+exits[ei][0],ey=efac.y+exits[ei][1];if(canPass(ex,ey)){sx=ex;sy=ey;break}}
-          if(efac)efac._spark=15;
+          if(efac)efac._spark=45;
           E.gold-=150;addUnit('harvester',sx,sy,'e');E.units[E.units.length-1]._toRef={x:ref.x+0.5,y:ref.y+0.5}}
       }else if(hasF&&E.gold>=200){E.gold-=200;eSpawn('tank')}
       else if(!hasF&&E.gold>=100){E.gold-=100;eSpawn('rifle')}
@@ -455,7 +455,7 @@ function drawBld(b,wall,roof,accent){
   else if(b.t==='barracks'){
     ctx.fillStyle=roof;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+s/2,y-s*0.2);ctx.lineTo(x+s,y);ctx.fill();
     // Door opens when spawning
-    var spark=(b._spark||0);if(spark>0){var dw=spark/15*6;ctx.fillStyle='#ffdd88';ctx.fillRect(x+s*0.35-dw,y+s*0.3,s*0.3+dw*2,s*0.35);
+    var spark=(b._spark||0);if(spark>0){var dw=spark/45*6;ctx.fillStyle='#ffdd88';ctx.fillRect(x+s*0.35-dw,y+s*0.3,s*0.3+dw*2,s*0.35);
       ctx.fillStyle='rgba(255,220,100,0.4)';ctx.fillRect(x,y,s,s);b._spark--}
     else{ctx.fillStyle='#886644';ctx.fillRect(x+s*0.2,y+s*0.4,s*0.15,s*0.15)}
     ctx.fillStyle=accent;ctx.fillRect(x+s*0.25,y+s*0.45,s*0.5,s*0.05)}
@@ -463,7 +463,7 @@ function drawBld(b,wall,roof,accent){
     ctx.fillStyle='#444';ctx.fillRect(x+s*0.35,y+s*0.2,s*0.15,s*0.3);
     // Chimney smoke + flash when spawning
     var spark=(b._spark||0);if(spark>0){ctx.fillStyle='rgba(255,180,60,0.3)';ctx.fillRect(x,y,s,s);
-      ctx.fillStyle='#666';ctx.beginPath();ctx.arc(x+s*0.42,y+s*0.12-spark*0.5,3+spark*0.3,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#666';ctx.beginPath();ctx.arc(x+s*0.42,y+s*0.12-spark*0.5,3+spark*0.1,0,Math.PI*2);ctx.fill();
       b._spark--}
     ctx.fillStyle='#555';ctx.beginPath();ctx.arc(x+s*0.42,y+s*0.12,4,0,Math.PI*2);ctx.fill()}
   else if(b.t==='refinery'){
