@@ -338,27 +338,27 @@ function _tick(){
     }
   }
   // AI build/train (same rules as player)
-  E.aiCd+=dt;if(E.aiCd>100){E.aiCd=0;
+  E.aiCd+=dt;if(E.aiCd>60){E.aiCd=0; // shorter cooldown for faster response
     var ehq2=hqOf(E);if(!ehq2)return;
-    // Build priority: refinery > barracks > factory > train
+    // Build priority: refinery > factory > barracks > train
     if(!hasB(E,'refinery')&&E.gold>=250){
       var offR=[[-1,0],[-1,-1],[0,-1],[1,-1],[-2,0],[0,-2],[-1,1],[1,0],[0,1],[-2,-1],[-2,1],[-1,-2]];
       for(var ri=0;ri<offR.length;ri++){var rx=ehq2.x+offR[ri][0],ry=ehq2.y+offR[ri][1];
         if(rx<0||rx>=GW||ry<0||ry>=GH)continue;
         if(canPass(rx,ry)){E.gold-=250;addBld('refinery',rx,ry,350,'e');addUnit('harvester',rx+0.5,ry+0.5,'e');break}}
-      if(!hasB(E,'refinery'))E.aiCd=-50
-    }else if(!hasB(E,'barracks')&&E.gold>=200){
-      var offB=[[0,-1],[1,-1],[-2,-1],[-1,-2],[0,1],[1,0],[-1,0],[-2,0]];
-      var placed=false;
-      for(var bi=0;bi<offB.length;bi++){var bx=ehq2.x+offB[bi][0],by=ehq2.y+offB[bi][1];
-        if(canPass(bx,by)){E.gold-=200;addBld('barracks',bx,by,300,'e');placed=true;break}}
-      if(!placed)E.aiCd=-50
+      if(!hasB(E,'refinery'))E.aiCd=-20
     }else if(!hasB(E,'factory')&&E.gold>=400){
       var offF=[[-2,0],[-2,-1],[-1,-2],[0,-2],[1,-1],[0,1],[-1,0],[1,0]];
-      placed=false;
+      var placed=false;
       for(var fi=0;fi<offF.length;fi++){var fx=ehq2.x+offF[fi][0],fy=ehq2.y+offF[fi][1];
         if(canPass(fx,fy)){E.gold-=400;addBld('factory',fx,fy,400,'e');placed=true;break}}
-      if(!placed)E.aiCd=-50
+      if(!placed)E.aiCd=-20
+    }else if(!hasB(E,'barracks')&&E.gold>=200){
+      var offB=[[0,-1],[1,-1],[-2,-1],[-1,-2],[0,1],[1,0],[-1,0],[-2,0]];
+      placed=false;
+      for(var bi=0;bi<offB.length;bi++){var bx=ehq2.x+offB[bi][0],by=ehq2.y+offB[bi][1];
+        if(canPass(bx,by)){E.gold-=200;addBld('barracks',bx,by,300,'e');placed=true;break}}
+      if(!placed)E.aiCd=-20
     }else if(E.units.length<40&&(hasB(E,'barracks')||hasB(E,'factory'))){
       var hasF=hasB(E,'factory'),hasR=hasB(E,'refinery');
       var aliveH=E.units.filter(function(u){return u.t==='harvester'&&u.hp>0}).length;
