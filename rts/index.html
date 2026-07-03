@@ -125,7 +125,7 @@ function grantXp(u,amount){
     u.xp-=need;u.lv++;
     u.mhp+=u.t==='tank'?50:15;u.hp=u.mhp;
     u.atk+=u.t==='tank'?12:4; // tanks get big ATK boost
-    u.rate=Math.max(12,u.rate-4);
+    u.spd+=u.t==='tank'?0.008:0.005;
     spawnFx(u.x*TS,u.y*TS,'#ffdd44',10);
     if(typeof sfxPowerUp==='function')sfxPowerUp()
     need=u.lv*20}
