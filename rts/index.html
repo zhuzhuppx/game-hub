@@ -404,38 +404,46 @@ function _tick(){
       for(var bi=0;bi<offB.length;bi++){var bx=ehq2.x+offB[bi][0],by=ehq2.y+offB[bi][1];
         if(canPass(bx,by)){E.gold-=200;addBld('barracks',bx,by,300,'e');placed=true;break}}
       if(!placed)E.aiCd=-20
-    }else if(E.units.length<40&&(hasB(E,'barracks')||hasB(E,'factory'))){
-      var hasF=hasB(E,'factory'),hasR=hasB(E,'refinery');
+    }else if(E.units.length<60&&(hasB(E,'barracks')||hasB(E,'factory'))){
+      var hasF=hasB(E,'factory'),hasR=hasB(E,'refinery'),hasBbar=hasB(E,'barracks');
       var aliveH=E.units.filter(function(u){return u.t==='harvester'&&u.hp>0}).length;
       var threat=cachedE.filter(function(t){var eh=hqOf(E);return eh&&Math.hypot(t.x-eh.x-0.5,t.y-eh.y-0.5)<5}).length;
-      // Priority 1: harvesters — always keep 5, build if low gold even skipping other things
-      if(hasR&&hasF&&E.gold>=150&&aliveH<5){
+      var mature=hasR&&hasF&&hasBbar&&aliveH>=6; // mature economy
+      // Priority 1: harvesters — no cap, always build if affordable
+      if(hasR&&hasF&&E.gold>=150){
         var ref=E.blds.find(function(b){return b.t==='refinery'&&b.hp>0});if(ref){
           var efac=E.blds.find(function(b){return b.t==='factory'&&b.hp>0});
           var sx=efac?efac.x-1:ref.x-0.5,sy=efac?efac.y-0.5:ref.y-0.5;
-          var exits=[[-0.5,-1.5],[0.5,-1.5],[-1.5,-0.5],[-0.5,-0.5],[-0.5,-2.5],[0.5,-2.5],[-1.5,-1.5],[0.5,0.5],[-2.5,-0.5],[-2.5,-1.5],[-1.5,-2.5],[0.5,-3.5]]; // red exits up
+          var exits=[[-0.5,-1.5],[0.5,-1.5],[-1.5,-0.5],[-0.5,-0.5],[-0.5,-2.5],[0.5,-2.5],[-1.5,-1.5],[0.5,0.5],[-2.5,-0.5],[-2.5,-1.5],[-1.5,-2.5],[0.5,-3.5]];
           if(efac)for(var ei=0;ei<exits.length;ei++){var ex=efac.x+exits[ei][0],ey=efac.y+exits[ei][1];if(canPass(ex,ey)){sx=ex;sy=ey;break}}
           if(efac)efac._spark=45;
           E.gold-=150;addUnit('harvester',sx,sy,'e');
-          // Find nearest refinery for _toRef
           var nearestRef=null,nrDist=999;
           var allRefs=E.blds.filter(function(b){return b.t==='refinery'&&b.hp>0});
           for(var ri2=0;ri2<allRefs.length;ri2++){var dr=Math.hypot(allRefs[ri2].x+0.5-sx,allRefs[ri2].y+0.5-sy);if(dr<nrDist){nrDist=dr;nearestRef=allRefs[ri2]}}
           if(nearestRef)E.units[E.units.length-1]._toRef={x:nearestRef.x+0.5,y:nearestRef.y+0.5};else E.units[E.units.length-1]._hs='go'}
-      // Priority 2: if under threat, build combat units
+      // Priority 2: if under threat, build combat units regardless
       }else if(threat>=2&&hasF&&E.gold>=200){E.gold-=200;eSpawn('tank')}
-      else if(threat>=2&&!hasF&&E.gold>=100){E.gold-=100;eSpawn('rifle')}
-      // Priority 3: build economy foundation — save for refinery/factory first if missing
-      // Priority 4: once economy is stable (gold>300 or harvesters>=3), build army
-      else if(E.gold>=400&&hasF&&aliveH>=2){E.gold-=200;eSpawn('tank')}
-      else if(E.gold>=300&&!hasF&&aliveH>=1){E.gold-=100;eSpawn('rifle')}
-      else if(hasF&&E.gold>=300&&E.units.filter(function(u){return u.t!=='harvester'}).length<2){E.gold-=100;eSpawn('rifle')}
+      else if(threat>=2&&!hasF&&hasBbar&&E.gold>=100){E.gold-=100;eSpawn('rifle')}
+      // Priority 3: only build army when mature (6+ harvesters, all buildings) and wealthy
+      else if(mature&&E.gold>=500&&hasF){E.gold-=200;eSpawn('tank')}
+      else if(mature&&E.gold>=300&&!hasF&&hasBbar){E.gold-=100;eSpawn('rifle')}
+      // Priority 4: emergency defense — very few combat units
+      else if(E.units.filter(function(u){return u.t!=='harvester'}).length<1&&hasBbar&&E.gold>=150){E.gold-=100;eSpawn('rifle')}
     }
   }
   // Resources (no auto-gold, mining only)
   // Building death FX
   for(var i=P.blds.length-1;i>=0;i--){var b=P.blds[i];if(b.hp<=0&&!b._dead){b._dead=true;spawnBldFx(b);if(typeof sfxExplode==='function')sfxExplode()}}
   for(var i=E.blds.length-1;i>=0;i--){var b=E.blds[i];if(b.hp<=0&&!b._dead){b._dead=true;spawnBldFx(b);if(typeof sfxExplode==='function')sfxExplode()}}
+  // AI difficulty: periodic free units (scales with game time)
+  E._waveCd=(E._waveCd||1800)+1;
+  if(E._waveCd>=1800){E._waveCd=0; // every 60 seconds
+    var eh=hqOf(E);if(eh&&hasB(E,'barracks')){
+      var n=2+Math.floor(frame/1800); // more over time
+      if(hasB(E,'factory')){for(var wi=0;wi<n;wi++)eSpawn(Math.random()<0.5?'tank':'rifle')}
+      else{for(var wi=0;wi<n;wi++)eSpawn('rifle')}
+    }}
   // Win/lose — count alive buildings
   var pa=0,ea=0;
   for(var i=0;i<P.blds.length;i++)if(P.blds[i].hp>0)pa++;
