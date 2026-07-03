@@ -151,19 +151,15 @@ function cmd(a){
   if(a==='refinery'){
     if(hasB(P,'refinery')){msg('❌ 已有精炼厂',1500);return}
     if(P.gold<300){msg('💰 金币不足！',1500);return}
-    // Place near closest mineral
-    var bestX=-1,bestY=-1,bestD=999;
-    for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){if(map[y][x]!==2)continue;
-      var d=Math.hypot(x-hqOf(P).x,y-hqOf(P).y);if(d<bestD){bestD=d;bestX=x;bestY=y}}
-    if(bestX<0){msg('❌ 无矿区',1500);return}
-    // Place adjacent to mineral
-    var off=[[1,0],[-1,0],[0,1],[0,-1]];
-    for(var i=0;i<off.length;i++){var nx=bestX+off[i][0],ny=bestY+off[i][1];
-      if(nx<0||nx>=GW||ny<0||ny>=GH)continue;if(map[ny][nx]===2||map[ny][nx]===1)continue;
+    // Place near HQ
+    var hq2=hqOf(P);if(!hq2)return;
+    var off=[[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,2],[0,-2],[1,1],[-1,1],[1,-1],[-1,-1]];
+    for(var i=0;i<off.length;i++){var nx=hq2.x+off[i][0],ny=hq2.y+off[i][1];
+      if(nx<0||nx>=GW||ny<0||ny>=GH)continue;
       var occ=P.blds.concat(E.blds).some(function(b){return b.x===nx&&b.y===ny});
       if(occ)continue;
       P.gold-=300;addBld('refinery',nx,ny,350,'p');msg('✅ 精炼厂建成',2000);upd();return}
-    msg('❌ 矿区旁无空地',1500)}
+    msg('❌ HQ旁无空地',1500)}
   if(a==='harvester'){
     if(!hasB(P,'refinery')){msg('❌ 需要先建造精炼厂',1500);return}
     if(P.gold<150){msg('💰 金币不足！',1500);return}
@@ -307,15 +303,11 @@ function _tick(){
     var ehq2=hqOf(E);if(!ehq2)return;
     // Build priority: refinery > barracks > factory > train
     if(!hasB(E,'refinery')&&E.gold>=300){
-      // Place near minerals
-      var bestX=-1,bestY=-1,bestD=999;
-      for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){if(map[y][x]!==2)continue;
-        var d2=Math.hypot(x-ehq2.x,y-ehq2.y);if(d2<bestD){bestD=d2;bestX=x;bestY=y}}
-      if(bestX>=0){var offR=[[1,0],[-1,0],[0,1],[0,-1]];
-        for(var ri=0;ri<offR.length;ri++){var rx=bestX+offR[ri][0],ry=bestY+offR[ri][1];
-          if(rx<0||rx>=GW||ry<0||ry>=GH||map[ry][rx]===2)continue;
-          if(canPass(rx,ry)){E.gold-=300;addBld('refinery',rx,ry,350,'e');break}}}
-      else{E.aiCd=-50}
+      var offR=[[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,2],[0,-2],[1,1],[-1,1],[1,-1],[-1,-1]];
+      for(var ri=0;ri<offR.length;ri++){var rx=ehq2.x+offR[ri][0],ry=ehq2.y+offR[ri][1];
+        if(rx<0||rx>=GW||ry<0||ry>=GH)continue;
+        if(canPass(rx,ry)){E.gold-=300;addBld('refinery',rx,ry,350,'e');break}}
+      if(!hasB(E,'refinery'))E.aiCd=-50
     }else if(!hasB(E,'barracks')&&E.gold>=200){
       var bx=ehq2.x+1,by=ehq2.y;if(canPass(bx,by)){E.gold-=200;addBld('barracks',bx,by,300,'e')}
       else{E.aiCd=-50} // retry sooner
@@ -324,14 +316,13 @@ function _tick(){
       else{E.aiCd=-50}
     }else if(E.units.length<40&&hasB(E,'barracks')){
       var hasF=hasB(E,'factory');
-      if(hasF&&E.gold>=200){E.gold-=200;eSpawn('tank')}
+      // Train harvesters first, then combat units
+      if(hasB(E,'refinery')&&E.gold>=150&&E.units.filter(function(u){return u.t==='harvester'&&u.hp>0}).length<2){
+        var ref=E.blds.find(function(b){return b.t==='refinery'&&b.hp>0});if(ref){
+          E.gold-=150;addUnit('harvester',ref.x+0.5,ref.y+0.5,'e')}
+      }else if(hasF&&E.gold>=200){E.gold-=200;eSpawn('tank')}
       else if(!hasF&&E.gold>=100){E.gold-=100;eSpawn('rifle')}
       else if(hasF&&E.gold>=100&&E.units.length<3){E.gold-=100;eSpawn('rifle')}
-    }
-    // AI also trains harvesters
-    if(hasB(E,'refinery')&&E.gold>=150&&E.units.filter(function(u){return u.t==='harvester'&&u.hp>0}).length<2){
-      var ref=E.blds.find(function(b){return b.t==='refinery'&&b.hp>0});if(ref){
-        E.gold-=150;addUnit('harvester',ref.x+0.5,ref.y+0.5,'e')}
     }
   }
   // Resources (no auto-gold, mining only)
