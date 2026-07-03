@@ -178,8 +178,10 @@ function _tick(){
       if(u.cd<=0){var t=nearUnit(u,cachedP)||near(u,cachedP);if(t){var wasAlive=t.hpRef.hp>0;t.hpRef.hp-=u.atk;u.cd=u.rate;u.dx=t.x-u.x;u.dy=t.y-u.y;var m=muzzlePos(u);if(typeof sfxPew==='function')sfxPew();spawnBullet(m.x,m.y,t.x*TS,t.y*TS,'#ffff88');if(wasAlive&&t.hpRef.hp<=0)grantXp(u,t.hpRef.t==='tank'?15:8)}else{u.st='idle'}}
       else{var d=Math.hypot(u.tx-u.x,u.ty-u.y);if(d>u.rng){moveToward(u,{x:u.tx,y:u.ty})}}
     }
-    // Auto-defend: idle or moving units deploy to perimeter
+    // Auto-defend: idle or moving units deploy to perimeter (cooldown per unit)
     if(u.st==='idle'||u.st==='moving'){
+      u._adCd=(u._adCd||0)+dt;
+      if(u._adCd>30){u._adCd=0;
       var phq=hqOf(P);if(phq){
         var nearE2=cachedP.filter(function(e){return Math.hypot(e.x-phq.x-0.5,e.y-phq.y-0.5)<10});
         if(nearE2.length){
@@ -191,7 +193,7 @@ function _tick(){
             defX+=(Math.random()-0.5)*2;defY+=(Math.random()-0.5)*2;
             u.st='attacking';u.tx=defX;u.ty=defY;u.dx=adx;u.dy=ady}
         }
-      }
+      }}
     }
   }
   // Enemy AI
