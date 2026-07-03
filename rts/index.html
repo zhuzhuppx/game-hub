@@ -430,7 +430,7 @@ function _tick(){
         :[[-1,0],[-1,-1],[0,-1],[1,-1],[-2,0],[0,-2],[-1,1],[1,0],[0,1],[-2,-1],[-2,1],[-1,-2]];
       for(var ri=0;ri<offR.length;ri++){var rx=ehq2.x+offR[ri][0],ry=ehq2.y+offR[ri][1];
         if(rx<0||rx>=GW||ry<0||ry>=GH)continue;
-        if(canPass(rx,ry)){E.gold-=250;addBld('refinery',rx,ry,350,E.id);addUnit('harvester',rx+0.5,ry+0.5,E.idbreak}}
+        if(canPass(rx,ry)){E.gold-=250;addBld('refinery',rx,ry,350,E.id);addUnit('harvester',rx+0.5,ry+0.5,E.id);break}}
       if(!hasB(E,'refinery'))E.aiCd=-20
     }else if(!hasB(E,'factory')&&E.gold>=400){
       var offF=(E===E1)?[[-2,1],[-2,2],[-1,2],[0,2],[1,1],[0,-1],[-1,0],[1,0]] // left+down
