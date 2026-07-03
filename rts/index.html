@@ -219,30 +219,16 @@ function _tick(){
     }}}
     // Harvester mining logic
     if(u.t==='harvester'&&u.hp>0){
-      if(u._mineTime>0){u._mineTime-=dt;if(u._mineTime<=0){
+      if(!u._hs)u._hs='go';
+      if(u._hs==='mine'){u._mt=(u._mt||90)-dt;if(u._mt<=0){u._hs='back';u._mt=0}}
+      else if(u._hs==='back'){
         var ref=P.blds.find(function(b){return b.t==='refinery'&&b.hp>0});
-        if(ref){u.st='moving';u.tx=ref.x+0.5;u.ty=ref.y+0.5;u.dx=u.tx-u.x;u.dy=u.ty-u.y;u._returning=true}
-      }}
-      else if(u.st==='idle'){
-        var nearestOre=null,bestD=999;
-        for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){if(map[y][x]!==2)continue;
-          var d=Math.hypot(x+0.5-u.x,y+0.5-u.y);if(d<bestD){bestD=d;nearestOre={x:x+0.5,y:y+0.5}}}
-        if(nearestOre){
-          var dd=Math.hypot(nearestOre.x-u.x,nearestOre.y-u.y);
-          if(dd<0.3){u._mineTime=90;u.st='idle'}
-          else{u.st='moving';u.tx=nearestOre.x;u.ty=nearestOre.y;u.dx=u.tx-u.x;u.dy=u.ty-u.y;u._returning=false;moveToward(u,{x:nearestOre.x,y:nearestOre.y})}
-        }
+        if(ref){var db=Math.hypot(ref.x+0.5-u.x,ref.y+0.5-u.y);if(db<0.5){P.gold+=100;u._hs='go';upd()}else moveToward(u,{x:ref.x+0.5,y:ref.y+0.5})}
       }
-      else if(u.st==='moving'&&u._returning){
-        var ref=P.blds.find(function(b){return b.t==='refinery'&&b.hp>0});
-        if(ref){
-          var dd2=Math.hypot(ref.x+0.5-u.x,ref.y+0.5-u.y);
-          if(dd2<0.5){P.gold+=100;u.st='idle';u._returning=false;upd()}
-          else{moveToward(u,{x:ref.x+0.5,y:ref.y+0.5})}
-        }
-      }
-      else if(u.st==='moving'&&!u._returning){
-        moveToward(u,{x:u.tx,y:u.ty})
+      if(u._hs==='go'){
+        var no=null,bd=999;
+        for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){if(map[y][x]!==2)continue;var d=Math.hypot(x+0.5-u.x,y+0.5-u.y);if(d<bd){bd=d;no={x:x+0.5,y:y+0.5}}}
+        if(no){var dd=Math.hypot(no.x-u.x,no.y-u.y);if(dd<0.3){u._hs='mine';u._mt=90}else moveToward(u,no)}
       }
       continue;
     }
@@ -262,32 +248,18 @@ function _tick(){
   
   for(var i=E.units.length-1;i>=0;i--){var u=E.units[i];if(u.hp<=0){spawnFx(u.x*TS,u.y*TS,u.t==='tank'?'#ff6644':'#ff4444',u.t==='tank'?12:6);if(u.t==='tank'&&typeof sfxExplode==='function')sfxExplode();E.units.splice(i,1);continue}
     if(u.cd>0)u.cd-=dt;
-    // Enemy harvester mining
+    // Enemy harvester
     if(u.t==='harvester'&&u.hp>0){
-      if(u._mineTime>0){u._mineTime-=dt;if(u._mineTime<=0){
+      if(!u._hs)u._hs='go';
+      if(u._hs==='mine'){u._mt=(u._mt||90)-dt;if(u._mt<=0){u._hs='back';u._mt=0}}
+      else if(u._hs==='back'){
         var refE=E.blds.find(function(b){return b.t==='refinery'&&b.hp>0});
-        if(refE){u.st='moving';u.tx=refE.x+0.5;u.ty=refE.y+0.5;u.dx=u.tx-u.x;u.dy=u.ty-u.y;u._returning=true}
-      }}
-      else if(u.st==='idle'){
-        var nearestOreE=null,bestDE=999;
-        for(var y3=0;y3<GH;y3++)for(var x3=0;x3<GW;x3++){if(map[y3][x3]!==2)continue;
-          var d3=Math.hypot(x3+0.5-u.x,y3+0.5-u.y);if(d3<bestDE){bestDE=d3;nearestOreE={x:x3+0.5,y:y3+0.5}}}
-        if(nearestOreE){
-          var ddE=Math.hypot(nearestOreE.x-u.x,nearestOreE.y-u.y);
-          if(ddE<0.3){u._mineTime=90;u.st='idle'}
-          else{u.st='moving';u.tx=nearestOreE.x;u.ty=nearestOreE.y;u.dx=u.tx-u.x;u.dy=u.ty-u.y;u._returning=false;moveToward(u,{x:nearestOreE.x,y:nearestOreE.y})}
-        }
+        if(refE){var db=Math.hypot(refE.x+0.5-u.x,refE.y+0.5-u.y);if(db<0.5){E.gold+=100;u._hs='go'}else moveToward(u,{x:refE.x+0.5,y:refE.y+0.5})}
       }
-      else if(u.st==='moving'&&u._returning){
-        var refE=E.blds.find(function(b){return b.t==='refinery'&&b.hp>0});
-        if(refE){
-          var ddE2=Math.hypot(refE.x+0.5-u.x,refE.y+0.5-u.y);
-          if(ddE2<0.5){E.gold+=100;u.st='idle';u._returning=false}
-          else{moveToward(u,{x:refE.x+0.5,y:refE.y+0.5})}
-        }
-      }
-      else if(u.st==='moving'&&!u._returning){
-        moveToward(u,{x:u.tx,y:u.ty})
+      if(u._hs==='go'){
+        var no=null,bd=999;
+        for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){if(map[y][x]!==2)continue;var d=Math.hypot(x+0.5-u.x,y+0.5-u.y);if(d<bd){bd=d;no={x:x+0.5,y:y+0.5}}}
+        if(no){var dd=Math.hypot(no.x-u.x,no.y-u.y);if(dd<0.3){u._hs='mine';u._mt=90}else moveToward(u,no)}
       }
       continue;
     }
