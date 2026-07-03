@@ -13,7 +13,7 @@
 .back{color:#8888cc;text-decoration:none;font-size:14px;position:absolute;bottom:12px;left:12px;z-index:100;background:rgba(0,0,0,0.5);padding:4px 10px;border-radius:6px}
 </style>
 <div class="wrap">
-<div class="hud"><span>💰 <b id="gold">1000</b></span><span>⚡ <b id="power">100</b></span><span id="sel">👆 点击己方单位选中</span></div>
+<div class="hud"><span>💰 <b id="gold">1000</b></span><span id="sel"></span></div>
 <canvas id="c"></canvas>
 <div class="info" id="info"></div>
 <div class="btns">
@@ -153,7 +153,6 @@ function cmd(a){
 
 function upd(){
   document.getElementById('gold').textContent=P.gold;
-  document.getElementById('power').textContent=P.power;
   document.getElementById('btnB').disabled=P.gold<200||over||hasB(P,'barracks');
   document.getElementById('btnF').disabled=P.gold<400||over||hasB(P,'factory');
   document.getElementById('btnR').disabled=!hasB(P,'barracks')||P.gold<100||over;
@@ -296,7 +295,7 @@ function draw(){
     ctx.beginPath();ctx.arc(sx,sy,TS*0.5,0,Math.PI*2);ctx.stroke();ctx.lineWidth=1;
     ctx.strokeStyle='rgba(255,220,60,0.15)';ctx.lineWidth=4;ctx.beginPath();ctx.arc(sx,sy,TS*0.54,0,Math.PI*2);ctx.stroke();ctx.lineWidth=1;
     var n=sel.t?bName(sel.t):uName(sel.t);document.getElementById('sel').textContent='选中: '+n+' HP:'+(sel.hp||sel.mhp)+'/'+(sel.mhp||sel.hp)}
-  else{document.getElementById('sel').textContent='👆 点击己方单位选中'}
+  else{document.getElementById('sel').textContent=''}
   upd();
 }
 
