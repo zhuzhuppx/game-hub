@@ -86,7 +86,11 @@ function canPass(gx,gy,self){var ix=Math.floor(gx),iy=Math.floor(gy);
   if(ix<0||ix>=GW||iy<0||iy>=GH)return false;
   // check buildings (allow leaving own tile)
   var ox=Math.floor(self?self.x:gx),oy=Math.floor(self?self.y:gy);
-  var all=P.blds.concat(E.blds);for(var i=0;i<all.length;i++){if(all[i].hp<=0)continue;if(ix===all[i].x&&iy===all[i].y&&!(self&&ix===ox&&iy===oy&&all[i].o===self.o))return false}
+  var all=P.blds.concat(E.blds);for(var i=0;i<all.length;i++){if(all[i].hp<=0)continue;
+    if(ix===all[i].x&&iy===all[i].y){
+      // Allow friendly harvesters to pass through own buildings
+      if(self&&self.t==='harvester'&&all[i].o===self.o&&all[i].t==='refinery')continue;
+      if(!(self&&ix===ox&&iy===oy&&all[i].o===self.o))return false}}
   // check units (all sides, skip self and friendly harvesters)
   var allu=P.units.concat(E.units);for(var i=0;i<allu.length;i++){var ou=allu[i];if(ou.hp<=0||ou===self)continue;if(ou.t==='harvester'&&self&&self.t==='harvester'&&ou.o===self.o)continue;if(Math.floor(ou.x)===ix&&Math.floor(ou.y)===iy)return false}
   return true}
@@ -223,7 +227,7 @@ function _tick(){
       if(u._hs==='mine'){u._mt=(u._mt||90)-dt;if(u._mt<=0){u._hs='back';u._mt=0}}
       else if(u._hs==='back'){
         var ref=P.blds.find(function(b){return b.t==='refinery'&&b.hp>0});
-        if(ref){var db=Math.hypot(ref.x+0.5-u.x,ref.y+0.5-u.y);if(db<0.5){P.gold+=100;u._hs='go';upd()}else moveToward(u,{x:ref.x+0.5,y:ref.y+0.5})}
+        if(ref){var db=Math.hypot(ref.x+0.5-u.x,ref.y+0.5-u.y);if(db<1.2){P.gold+=100;u._hs='go';upd()}else moveToward(u,{x:ref.x+0.5,y:ref.y+0.5})}
       }
       if(u._hs==='go'){
         var no=null,bd=999;
@@ -254,7 +258,7 @@ function _tick(){
       if(u._hs==='mine'){u._mt=(u._mt||90)-dt;if(u._mt<=0){u._hs='back';u._mt=0}}
       else if(u._hs==='back'){
         var refE=E.blds.find(function(b){return b.t==='refinery'&&b.hp>0});
-        if(refE){var db=Math.hypot(refE.x+0.5-u.x,refE.y+0.5-u.y);if(db<0.5){E.gold+=100;u._hs='go'}else moveToward(u,{x:refE.x+0.5,y:refE.y+0.5})}
+        if(refE){var db=Math.hypot(refE.x+0.5-u.x,refE.y+0.5-u.y);if(db<1.2){E.gold+=100;u._hs='go'}else moveToward(u,{x:refE.x+0.5,y:refE.y+0.5})}
       }
       if(u._hs==='go'){
         var no=null,bd=999;
