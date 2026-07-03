@@ -454,11 +454,10 @@ function _tick(){
       var aliveH=E.units.filter(function(u){return u.t==='harvester'&&u.hp>0}).length;
       var threat=cachedE.filter(function(t){var eh=hqOf(E);return eh&&Math.hypot(t.x-eh.x-0.5,t.y-eh.y-0.5)<5}).length;
       var mature=hasR&&hasF&&hasBbar&&aliveH>=6; // mature economy
-      // Priority 1: harvesters — no cap, always build if affordable
+      // Priority 1: harvesters — always build if affordable
       if(hasR&&hasF&&E.gold>=150){
         var ref=E.blds.find(function(b){return b.t==='refinery'&&b.hp>0});if(ref){
           var efac=E.blds.find(function(b){return b.t==='factory'&&b.hp>0});
-          // Per-faction harvester exits
           var sx,sy,exits;
           if(E===E1){sx=efac?efac.x-1:ref.x-0.5;sy=efac?efac.y+1:ref.y+1.5;exits=[[-0.5,1.5],[0.5,1.5],[-1.5,0.5],[-0.5,0.5],[-0.5,2.5],[0.5,2.5],[-1.5,1.5],[0.5,-0.5],[-2.5,0.5],[-2.5,1.5],[-1.5,2.5],[0.5,3.5]]}
           else if(E===E2){sx=efac?efac.x+1:ref.x+1.5;sy=efac?efac.y-0.5:ref.y-0.5;exits=[[1.5,-0.5],[1.5,-1.5],[0.5,-1.5],[0.5,-0.5],[2.5,-0.5],[2.5,-1.5],[1.5,-2.5],[0.5,0.5],[2.5,0.5],[2.5,-2.5],[1.5,0.5],[3.5,-0.5]]}
@@ -470,13 +469,14 @@ function _tick(){
           var allRefs=E.blds.filter(function(b){return b.t==='refinery'&&b.hp>0});
           for(var ri2=0;ri2<allRefs.length;ri2++){var dr=Math.hypot(allRefs[ri2].x+0.5-sx,allRefs[ri2].y+0.5-sy);if(dr<nrDist){nrDist=dr;nearestRef=allRefs[ri2]}}
           if(nearestRef)E.units[E.units.length-1]._toRef={x:nearestRef.x+0.5,y:nearestRef.y+0.5};else E.units[E.units.length-1]._hs='go'}
-      // Priority 2: if under threat, build combat units regardless
-      }else if(threat>=2&&hasF&&E.gold>=200){E.gold-=200;eSpawn('tank',E)}
+      }
+      // Priority 2: if under threat, build combat units
+      if(threat>=2&&hasF&&E.gold>=200){E.gold-=200;eSpawn('tank',E)}
       else if(threat>=2&&!hasF&&hasBbar&&E.gold>=100){E.gold-=100;eSpawn('rifle',E)}
-      // Priority 3: only build army when mature (6+ harvesters, all buildings) and wealthy
+      // Priority 3: build army when mature (6+ harvesters, all buildings) and wealthy
       else if(mature&&E.gold>=500&&hasF){E.gold-=200;eSpawn('tank',E)}
       else if(mature&&E.gold>=300&&!hasF&&hasBbar){E.gold-=100;eSpawn('rifle',E)}
-      // Priority 4: emergency defense — very few combat units
+      // Priority 4: at least some defense
       else if(E.units.filter(function(u){return u.t!=='harvester'}).length<1&&hasBbar&&E.gold>=150){E.gold-=100;eSpawn('rifle',E)}
     }
   }
