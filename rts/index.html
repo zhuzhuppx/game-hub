@@ -244,10 +244,12 @@ function _tick(){
       continue;
     }
   }
-  // Passive gold if no harvesters (prevent deadlock)
-  if(hasB(P,'refinery')&&!P.units.some(function(u){return u.t==='harvester'&&u.hp>0})){P._noHarv=(P._noHarv||0)+1;if(P._noHarv>=60){P.gold+=30;P._noHarv=0;upd()}}else P._noHarv=0;
+  // Passive gold if no harvesters (prevent deadlock) — needs HQ alive
+  var phq2=hqOf(P);
+  if(phq2&&!P.units.some(function(u){return u.t==='harvester'&&u.hp>0})){P._noHarv=(P._noHarv||0)+1;if(P._noHarv>=90){P.gold+=20;P._noHarv=0;upd()}}else P._noHarv=0;
   // Enemy AI
-  if(hasB(E,'refinery')&&!E.units.some(function(u){return u.t==='harvester'&&u.hp>0})){E._noHarv=(E._noHarv||0)+1;if(E._noHarv>=60){E.gold+=30;E._noHarv=0}}else E._noHarv=0;
+  var ehq2E=hqOf(E);
+  if(ehq2E&&!E.units.some(function(u){return u.t==='harvester'&&u.hp>0})){E._noHarv=(E._noHarv||0)+1;if(E._noHarv>=90){E.gold+=20;E._noHarv=0}}else E._noHarv=0;
   var ehq=hqOf(E);var e_base_threat=ehq?cachedE.filter(function(t){return Math.hypot(t.x-ehq.x-0.5,t.y-ehq.y-0.5)<5}).length:0;
   var must_defend=e_base_threat>=2;
   if(must_defend&&!E._defending){E._defending=true;msg('🛡️ 敌军回防！',2000)}
