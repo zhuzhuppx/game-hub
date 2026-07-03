@@ -70,11 +70,11 @@ function eSpawn(type){var eh=hqOf(E);if(!eh)return;
   var bType=type==='tank'?'factory':'barracks';
   var fb=E.blds.find(function(b){return b.t===bType&&b.hp>0});
   var sx=fb?fb.x+1:eh.x+0.5,sy=fb?fb.y+0.5:eh.y+1.5;
-  var exits=[[1,0.5],[-0.5,0.5],[0.5,1.5],[0.5,-0.5]];
+  var exits=[[1,0.5],[-0.5,0.5],[0.5,1.5],[0.5,-0.5],[2,0.5],[-1.5,0.5],[0.5,2.5],[0.5,-1.5],[1.5,1.5],[-0.5,1.5],[1.5,-0.5],[-0.5,-0.5]];
   if(fb){for(var ei=0;ei<exits.length;ei++){var ex=fb.x+exits[ei][0],ey=fb.y+exits[ei][1];if(canPass(ex,ey)){sx=ex;sy=ey;break}};fb._spark=45}
   addUnit(type,sx,sy,'e');
   var nu=E.units[E.units.length-1];
-  nu.st='moving';nu.tx=eh.x+0.5+Math.random()*2-1;nu.ty=eh.y+1.5+Math.random();nu._spawn=1}
+  nu.st='moving';nu.tx=Math.min(GW-1.5,Math.max(0.5,eh.x+0.5+Math.random()*2-1));nu.ty=Math.min(GH-1.5,Math.max(0.5,eh.y-1.5+Math.random()));nu._spawn=1}
 function msg(s,t){var el=document.getElementById('info');el.textContent=s;if(t)setTimeout(function(){if(el.textContent===s)el.textContent=''},t)}
 function bName(t){return{hq:'🏛️',barracks:'🏠',factory:'🏭',refinery:'🏗️'}[t]||t}
 function uName(t){return{rifle:'🔫',tank:'🛡️',harvester:'⛏️'}[t]||t}
@@ -87,6 +87,7 @@ function moveToward(u,t,spd){var dx=t.x-u.x,dy=t.y-u.y,d=Math.hypot(dx,dy);if(d>
   var ox=u.x,oy=u.y;
   // wall slide: try straight first, then axis-aligned
   if(canPass(nx,ny,u)){u.x=nx;u.y=ny}else if(canPass(u.x,ny,u)){u.y=ny}else if(canPass(nx,u.y,u)){u.x=nx}
+  u.x=Math.min(GW-0.01,Math.max(0.01,u.x));u.y=Math.min(GH-0.01,Math.max(0.01,u.y)); // clamp
   if(u.x!==ox||u.y!==oy)u._moved=true;
   u.dx=dx;u.dy=dy}}
 function canPass(gx,gy,self){var ix=Math.floor(gx),iy=Math.floor(gy);
@@ -153,12 +154,12 @@ function cmd(a){
     var fb=P.blds.find(function(b){return b.t===bType&&b.hp>0});
     var hq=hqOf(P);
     var sx=fb?fb.x+1:1.5,sy=fb?fb.y+0.5:1.5;
-    // Try alternate exit positions
-    var exits=[[1,0.5],[-0.5,0.5],[0.5,1.5],[0.5,-0.5]];
+    // Try positions around building, prefer above/below/left/right
+    var exits=[[1,0.5],[-0.5,0.5],[0.5,1.5],[0.5,-0.5],[2,0.5],[-1.5,0.5],[0.5,2.5],[0.5,-1.5],[1.5,1.5],[-0.5,1.5],[1.5,-0.5],[-0.5,-0.5]];
     if(fb)for(var ei=0;ei<exits.length;ei++){var ex=fb.x+exits[ei][0],ey=fb.y+exits[ei][1];if(canPass(ex,ey)){sx=ex;sy=ey;break}}
     addUnit(a,sx,sy,'p');P.gold-=cost;
     if(fb)fb._spark=45; // building spawn animation
-    var desX=hq.x+0.5+Math.random()*2-1,desY=hq.y+1.5+Math.random();
+    var desX=Math.min(GW-1.5,Math.max(0.5,hq.x+0.5+Math.random()*2-1)),desY=Math.min(GH-1.5,Math.max(0.5,hq.y+1.5+Math.random()));
     var nu=P.units[P.units.length-1];
     nu.st='moving';nu.tx=desX;nu.ty=desY;nu.dx=desX-sx;nu.dy=desY-sy;
     nu._spawn=1;
@@ -194,7 +195,7 @@ function cmd(a){
     // Spawn next to factory, drive to refinery
     var fac=P.blds.find(function(b){return b.t==='factory'&&b.hp>0});
     var sx=fac?fac.x+1:ref2.x+0.5,sy=fac?fac.y+0.5:ref2.y+0.5;
-    var exits=[[1,0.5],[-0.5,0.5],[0.5,1.5],[0.5,-0.5]];
+    var exits=[[1,0.5],[-0.5,0.5],[0.5,1.5],[0.5,-0.5],[2,0.5],[-1.5,0.5],[0.5,2.5],[0.5,-1.5],[1.5,1.5],[-0.5,1.5],[1.5,-0.5],[-0.5,-0.5]];
     if(fac)for(var ei=0;ei<exits.length;ei++){var ex=fac.x+exits[ei][0],ey=fac.y+exits[ei][1];if(canPass(ex,ey)){sx=ex;sy=ey;break}}
     if(fac)fac._spark=45;
     addUnit('harvester',sx,sy,'p');P.gold-=150;
@@ -365,7 +366,7 @@ function _tick(){
         var ref=E.blds.find(function(b){return b.t==='refinery'&&b.hp>0});if(ref){
           var efac=E.blds.find(function(b){return b.t==='factory'&&b.hp>0});
           var sx=efac?efac.x+1:ref.x+0.5,sy=efac?efac.y+0.5:ref.y+0.5;
-          var exits=[[1,0.5],[-0.5,0.5],[0.5,1.5],[0.5,-0.5]];
+          var exits=[[1,0.5],[-0.5,0.5],[0.5,1.5],[0.5,-0.5],[2,0.5],[-1.5,0.5],[0.5,2.5],[0.5,-1.5],[1.5,1.5],[-0.5,1.5],[1.5,-0.5],[-0.5,-0.5]];
           if(efac)for(var ei=0;ei<exits.length;ei++){var ex=efac.x+exits[ei][0],ey=efac.y+exits[ei][1];if(canPass(ex,ey)){sx=ex;sy=ey;break}}
           if(efac)efac._spark=45;
           E.gold-=150;addUnit('harvester',sx,sy,'e');E.units[E.units.length-1]._toRef={x:ref.x+0.5,y:ref.y+0.5}}
