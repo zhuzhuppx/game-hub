@@ -1,11 +1,11 @@
 <!DOCTYPE html><html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"><title>红警·小规模冲突</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <script src="/sfx.js"></script><style>
-*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a1a;color:#ccc;font-family:system-ui;min-height:100dvh;display:flex;align-items:center;justify-content:center}
+*{margin:0;padding:0;box-sizing:border-box}html,body{overflow:hidden;height:100%}body{background:#0a0a1a;color:#ccc;font-family:system-ui;display:flex;align-items:center;justify-content:center}
 .wrap{width:100%;padding:6px;display:flex;flex-direction:column;gap:4px;align-items:center}
 .hud{display:flex;align-items:center;justify-content:space-between;width:100%;font-size:13px}
 .hud span{color:#aaa}.hud b{color:#ffcc44}#sel{color:#8888cc;font-size:11px}
-#c{width:100%;border-radius:8px;touch-action:none;border:1px solid rgba(255,255,255,0.05);display:block}
+#c{max-width:100%;max-height:calc(100vh - 170px);border-radius:8px;touch-action:none;border:1px solid rgba(255,255,255,0.05);display:block}
 .info{font-size:12px;color:#ff8844;min-height:18px;text-align:center;font-weight:600}
 .btns{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
 .btns button{padding:5px 10px;border:none;border-radius:6px;background:rgba(255,170,68,0.12);color:#ffaa44;font-size:12px;cursor:pointer;touch-action:manipulation}
@@ -33,7 +33,7 @@
 <a class="back" href="/">← 返回</a></div>
 <script>
 // === CONSTANTS ===
-var GW=18,GH=12,TS=Math.max(30,Math.floor(Math.min(window.innerWidth-16,window.innerHeight-100)/Math.max(GW,GH*1.5))), W=GW*TS, H=GH*TS;
+var GW=18,GH=12,TS=Math.max(30,Math.floor(Math.min(window.innerWidth-16,window.innerHeight-160)/Math.max(GW,GH*1.5))), W=GW*TS, H=GH*TS;
 var c=document.getElementById('c'),ctx=c.getContext('2d');
 c.width=W;c.height=H;
 
