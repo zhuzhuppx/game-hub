@@ -183,13 +183,13 @@ function _tick(){
       u._adCd=(u._adCd||0)+dt;
       if(u._adCd>30){u._adCd=0;
       var phq=hqOf(P);if(phq){
-        var nearE2=cachedP.filter(function(e){return Math.hypot(e.x-phq.x-0.5,e.y-phq.y-0.5)<10});
+        var nearE2=cachedP.filter(function(e){return Math.hypot(e.x-phq.x-0.5,e.y-phq.y-0.5)<4.5});
         if(nearE2.length){
-          // Deploy toward closest enemy, 4 tiles from HQ
+          // Deploy to fence (~2.5 tiles from HQ) toward closest enemy
           var et=closest(u,nearE2);
           var adx=et.x-phq.x-0.5,ady=et.y-phq.y-0.5,ad=Math.hypot(adx,ady);
-          if(ad>0.01){var defX=phq.x+0.5+(adx/ad)*4;var defY=phq.y+0.5+(ady/ad)*4;
-            // Spread along defense line
+          if(ad>0.01){var defX=phq.x+0.5+(adx/ad)*2.5;var defY=phq.y+0.5+(ady/ad)*2.5;
+            // Spread along fence line
             defX+=(Math.random()-0.5)*2;defY+=(Math.random()-0.5)*2;
             u.st='attacking';u.tx=defX;u.ty=defY;u.dx=adx;u.dy=ady}
         }
