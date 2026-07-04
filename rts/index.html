@@ -50,7 +50,7 @@ for(var y=0;y<GH;y++){map[y]=[];for(var x=0;x<GW;x++)map[y][x]=0}
 // Minerals everywhere else
 var minerals={};var gems={};
 for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){
-  if(map[y][x]===0){map[y][x]=2;minerals[x+','+y]=10}
+  if(map[y][x]===0){map[y][x]=2;minerals[x+','+y]=8}
 }
 // Clear base interiors
 var BI=[[0,2,0,2],[15,17,9,11],[15,17,0,2],[0,2,9,11]];
@@ -58,7 +58,7 @@ for(var bi=0;bi<BI.length;bi++){
   var r=BI[bi];
   for(var y=r[2];y<=r[3];y++)for(var x=r[0];x<=r[1];x++){map[y][x]=0;delete minerals[x+','+y]}
 }
-var MIN_NUGGETS=10,MIN_REGEN=1; // lighter minerals
+var MIN_NUGGETS=8,MIN_REGEN=1; // slower regen: 1 nugget per 10s
 var GEM_COLORS=[{c:'#ff4466',v:30},{c:'#44ccff',v:30},{c:'#aa44ff',v:40},{c:'#ff8844',v:25},{c:'#44ff88',v:20}];
 // Spawn initial gems
 function spawnGems(){
@@ -241,6 +241,8 @@ function cmd(a){
     if(!hasB(P,'refinery')){msg('❌ 需要先建造精炼厂',1500);return}
     if(!hasB(P,'factory')){msg('❌ 需要先建造工厂',1500);return}
     if(P.gold<150){msg('💰 金币不足！',1500);return}
+    var aliveH=P.units.filter(function(u){return u.t==='harvester'&&u.hp>0}).length;
+    if(aliveH>=4){msg('⛏️ 矿车已满(最多4辆)',1500);return}
     var ref2=P.blds.find(function(b){return b.t==='refinery'&&b.hp>0});if(!ref2)return;
     // Spawn next to factory, drive to refinery
     var fac=P.blds.find(function(b){return b.t==='factory'&&b.hp>0});
@@ -342,18 +344,18 @@ function _tick(){
   }
   // Mineral regeneration and gem spawn
   mineralTick=(mineralTick||0)+1;
-  if(mineralTick>=180){mineralTick=0;
+  if(mineralTick>=300){mineralTick=0;
     for(var k in minerals){minerals[k]=Math.min(MIN_NUGGETS,minerals[k]+MIN_REGEN);
       var parts=k.split(',');map[+parts[1]][+parts[0]]=minerals[k]>0?2:0}
     // Occasionally spawn gems
     if(Math.random()<0.3){var gx,gy;do{gx=Math.floor(Math.random()*GW);gy=Math.floor(Math.random()*GH)}while(map[gy][gx]!==2);var gk=gx+','+gy;if(!gems[gk])gems[gk]=[];gems[gk].push(GEM_COLORS[Math.floor(Math.random()*GEM_COLORS.length)])}}
   // Passive gold income — always on while HQ is alive
   var phq2=hqOf(P);
-  if(phq2){P._goldTick=(P._goldTick||0)+1;if(P._goldTick>=90){P.gold+=10;P._goldTick=0;upd()}}else P._goldTick=0;
+  if(phq2){P._goldTick=(P._goldTick||0)+1;if(P._goldTick>=90){P.gold+=5;P._goldTick=0;upd()}}else P._goldTick=0;
   // Enemy AI — per faction
   ALL_ENEMIES.forEach(function(E){
   var ehq2E=hqOf(E);
-  if(ehq2E){E._goldTick=(E._goldTick||0)+1;if(E._goldTick>=90){E.gold+=10;E._goldTick=0}}else E._goldTick=0;
+  if(ehq2E){E._goldTick=(E._goldTick||0)+1;if(E._goldTick>=90){E.gold+=5;E._goldTick=0}}else E._goldTick=0;
   var ehq=hqOf(E);var e_base_threat=ehq?cachedE.filter(function(t){return Math.hypot(t.x-ehq.x-0.5,t.y-ehq.y-0.5)<5}).length:0;
   var must_defend=e_base_threat>=2;
   if(must_defend&&!E._defending){E._defending=true;msg('🛡️ '+E.id+' 回防！',2000)}
@@ -452,9 +454,9 @@ function _tick(){
       var hasF=hasB(E,'factory'),hasR=hasB(E,'refinery'),hasBbar=hasB(E,'barracks');
       var aliveH=E.units.filter(function(u){return u.t==='harvester'&&u.hp>0}).length;
       var threat=cachedE.filter(function(t){var eh=hqOf(E);return eh&&Math.hypot(t.x-eh.x-0.5,t.y-eh.y-0.5)<5}).length;
-      var mature=hasR&&hasF&&hasBbar&&aliveH>=6; // mature economy
-      // Priority 1: harvesters — always build if affordable
-      if(hasR&&hasF&&E.gold>=150){
+      var mature=hasR&&hasF&&hasBbar&&aliveH>=4; // mature economy (4+ harvesters)
+      // Priority 1: harvesters — capped at 4 per faction
+      if(hasR&&hasF&&aliveH<4&&E.gold>=150){
         var ref=E.blds.find(function(b){return b.t==='refinery'&&b.hp>0});if(ref){
           var efac=E.blds.find(function(b){return b.t==='factory'&&b.hp>0});
           var sx,sy,exits;
@@ -470,12 +472,14 @@ function _tick(){
           if(nearestRef)E.units[E.units.length-1]._toRef={x:nearestRef.x+0.5,y:nearestRef.y+0.5};else E.units[E.units.length-1]._hs='go'}
       }
       // Priority 2: if under threat, build combat units
-      if(threat>=2&&hasF&&E.gold>=200){E.gold-=200;eSpawn('tank',E)}
-      else if(threat>=2&&!hasF&&hasBbar&&E.gold>=100){E.gold-=100;eSpawn('rifle',E)}
-      // Priority 3: build army when mature (6+ harvesters, all buildings) and wealthy
-      else if(mature&&E.gold>=500&&hasF){E.gold-=200;eSpawn('tank',E)}
-      else if(mature&&E.gold>=300&&!hasF&&hasBbar){E.gold-=100;eSpawn('rifle',E)}
-      // Priority 4: at least some defense
+      if(threat>=1&&hasF&&E.gold>=200){E.gold-=200;eSpawn('tank',E)}
+      else if(threat>=1&&!hasF&&hasBbar&&E.gold>=100){E.gold-=100;eSpawn('rifle',E)}
+      // Priority 3: build army when mature (4+ harvesters, all buildings)
+      else if(mature&&E.gold>=400&&hasF){E.gold-=200;eSpawn('tank',E)}
+      else if(mature&&E.gold>=200&&!hasF&&hasBbar){E.gold-=100;eSpawn('rifle',E)}
+      // Priority 4: early harassment — build at least 2 combat units even if not mature
+      else if(hasBbar&&E.gold>=300&&E.units.filter(function(u){return u.t!=='harvester'&&u.hp>0}).length<2){E.gold-=100;eSpawn('rifle',E)}
+      // Priority 5: at least some defense
       else if(E.units.filter(function(u){return u.t!=='harvester'}).length<1&&hasBbar&&E.gold>=150){E.gold-=100;eSpawn('rifle',E)}
     }
   }
@@ -641,44 +645,53 @@ function drawBld(b,wall,roof,accent){
 function drawUnit(u,col,accent){
   if(u.hp<=0)return;
   if(!isFinite(u.x)||!isFinite(u.y)||u.x<0||u.y<0||u.x>GW||u.y>GH)return;
-  var cx=u.x*TS,cy=u.y*TS,r=TS*0.3;
-  // Level upgrades appearance (different per faction)
-  if(u.lv>=3){col='#ffaa22';accent='#ff8800'} // gold legendary at lv3+
-  else if(u.lv>=2){col=u.o==='p'?'#88ccff':'#ff8844';accent=u.o==='p'?'#4488ff':'#cc4400'} // elite
-  var sc=1+u.lv*0.06; // scale up with level
-  // Drop shadow
+  var cx=u.x*TS,cy=u.y*TS,r=TS*0.3,s=TS;
+  if(u.lv>=3){col='#ffaa22';accent='#ff8800'}
+  else if(u.lv>=2){col=u.o==='p'?'#88ccff':'#ff8844';accent=u.o==='p'?'#4488ff':'#cc4400'}
+  var sc=1+u.lv*0.06;
   ctx.fillStyle='rgba(0,0,0,0.3)';ctx.beginPath();ctx.ellipse(cx+TS/2,cy+TS-2,r*1.2,r*0.3,0,0,Math.PI*2);ctx.fill();
   ctx.save();ctx.translate(cx+TS/2,cy+TS/2);ctx.scale(sc,sc);
-  // Direction
-  var angle=0;if(u.dx||u.dy)angle=Math.atan2(u.dy,u.dx);else angle=u.o==='p'?0:Math.PI;
+  var angle=u.dx||u.dy?Math.atan2(u.dy,u.dx):u.o==='p'?0:Math.PI;
   ctx.rotate(angle);
   if(u.t==='tank'){
-    var tr=r*1.3;
-    ctx.fillStyle=col;ctx.fillRect(-tr,-tr*0.55,tr*1.8,tr*1.1);
-    ctx.fillStyle='#333';ctx.fillRect(-tr,-tr*0.75,tr*1.8,tr*0.22);ctx.fillRect(-tr,tr*0.5,tr*1.8,tr*0.22);
-    ctx.fillStyle=accent;ctx.beginPath();ctx.arc(0,-tr*0.08,tr*0.48,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#555';ctx.fillRect(tr*0.35,-tr*0.13,tr*1.3,tr*0.18)}
+    var tr=r*1.2;
+    ctx.fillStyle='#222';ctx.fillRect(-tr*1.0,-tr*0.75,tr*2.0,tr*0.16);ctx.fillRect(-tr*1.0,tr*0.59,tr*2.0,tr*0.16);
+    ctx.fillStyle='#444';for(var ti=0;ti<3;ti++){ctx.fillRect(-tr*0.9+ti*tr*0.6,-tr*0.72,tr*0.2,tr*0.1);ctx.fillRect(-tr*0.9+ti*tr*0.6,tr*0.62,tr*0.2,tr*0.1)}
+    ctx.fillStyle=col;ctx.fillRect(-tr*0.85,-tr*0.58,tr*1.7,tr*1.16);
+    var bg=ctx.createLinearGradient(0,-tr*0.58,0,tr*0.58);bg.addColorStop(0,accent);bg.addColorStop(0.5,col);bg.addColorStop(1,'#222');
+    ctx.fillStyle=bg;ctx.fillRect(-tr*0.75,-tr*0.5,tr*1.5,tr*1.0);
+    ctx.fillStyle=accent;ctx.beginPath();ctx.arc(0,0,tr*0.4,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=col;ctx.beginPath();ctx.arc(0,0,tr*0.3,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#444';ctx.fillRect(tr*0.05,-tr*0.08,tr*0.9,tr*0.16);
+    ctx.fillStyle='#333';ctx.fillRect(tr*0.05,-tr*0.06,tr*0.9,tr*0.12);
+    ctx.fillStyle='#111';ctx.fillRect(tr*0.85,-tr*0.1,tr*0.15,tr*0.2)}
   else if(u.t==='harvester'){
-    // Body
-    ctx.fillStyle=accent;ctx.fillRect(-r*0.8,-r*0.6,r*1.6,r*1.2);
-    // Ore cargo when loaded - bright gold, drawn before trim
-    if(u._hs==='back'||u._hs==='unload'){ctx.fillStyle='#ffd700';ctx.fillRect(-r*0.7,-r*0.55,r*1.4,r*0.95)}
-    else{ctx.fillStyle='#555';ctx.fillRect(-r*0.3,-r*0.1,r*1.0,r*0.06)}
-    // Trim on top of ore
-    ctx.fillStyle=col;ctx.fillRect(-r*0.8,-r*0.8,r*1.6,r*0.25);
-    ctx.fillStyle='#aa8844';ctx.beginPath();ctx.arc(r*0.5,-r*0.3,r*0.35,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#333';ctx.fillRect(-r*0.8,r*0.5,r*1.6,r*0.15)}
+    ctx.fillStyle='#222';ctx.fillRect(-r*0.95,-r*0.7,r*1.9,r*0.15);ctx.fillRect(-r*0.95,r*0.55,r*1.9,r*0.15);
+    ctx.fillStyle=col;ctx.fillRect(-r*0.8,-r*0.55,r*1.6,r*1.1);
+    if(u._hs==='back'||u._hs==='unload'){ctx.fillStyle='#ffd700';ctx.fillRect(-r*0.65,-r*0.45,r*1.3,r*0.8)}
+    ctx.fillStyle=accent;ctx.fillRect(-r*0.7,-r*0.7,r*0.9,r*0.3);
+    ctx.fillStyle='#555';ctx.fillRect(r*0.3,-r*0.3,r*0.5,r*0.35);
+    ctx.fillStyle='#333';ctx.fillRect(r*0.35,-r*0.25,r*0.4,r*0.25);
+    ctx.fillStyle='#111';for(var wi=-1;wi<=1;wi++){ctx.beginPath();ctx.arc(wi*r*0.5,r*0.65,r*0.2,0,Math.PI*2);ctx.fill();ctx.fillStyle='#444';ctx.beginPath();ctx.arc(wi*r*0.5,r*0.65,r*0.08,0,Math.PI*2);ctx.fill();ctx.fillStyle='#111'}}
   else{
-    ctx.fillStyle=col;ctx.beginPath();ctx.arc(0,0,r*0.6,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle=accent;ctx.beginPath();ctx.arc(0,-r*0.4,r*0.35,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#aaa';ctx.fillRect(r*0.2,-r*0.5,r*1.1,r*0.12)}
+    var rr=r*0.65;
+    ctx.fillStyle='#222';ctx.fillRect(-rr*0.3,rr*0.35,rr*0.25,rr*0.2);ctx.fillRect(rr*0.05,rr*0.35,rr*0.25,rr*0.2);
+    ctx.fillStyle=col;ctx.fillRect(-rr*0.25,rr*0.05,rr*0.2,rr*0.35);ctx.fillRect(rr*0.05,rr*0.05,rr*0.2,rr*0.35);
+    ctx.fillStyle=col;ctx.fillRect(-rr*0.4,-rr*0.3,rr*0.8,rr*0.45);
+    ctx.fillStyle=accent;ctx.fillRect(-rr*0.35,-rr*0.25,rr*0.7,rr*0.15);
+    ctx.fillStyle=col;ctx.fillRect(-rr*0.55,-rr*0.2,rr*0.2,rr*0.3);
+    ctx.fillStyle=col;ctx.fillRect(rr*0.25,-rr*0.2,rr*0.55,rr*0.1);
+    ctx.fillStyle='#444';ctx.fillRect(rr*0.3,-rr*0.15,rr*1.0,rr*0.08);
+    ctx.fillStyle='#333';ctx.fillRect(rr*0.8,-rr*0.17,rr*0.2,rr*0.12);
+    ctx.fillStyle='#ffcc88';ctx.beginPath();ctx.arc(0,-rr*0.45,rr*0.25,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#555';ctx.beginPath();ctx.arc(0,-rr*0.48,rr*0.28,Math.PI,0);ctx.fill();
+    ctx.fillStyle=accent;ctx.fillRect(-rr*0.28,-rr*0.48,rr*0.56,rr*0.08);
+    ctx.fillStyle='#111';ctx.fillRect(-rr*0.05,-rr*0.42,rr*0.06,rr*0.06)}
   ctx.restore();
-  // Level star
-  if(u.lv>1){ctx.fillStyle='#ffdd44';ctx.font='bold 9px system-ui';ctx.textAlign='center';ctx.fillText('★'.repeat(Math.min(u.lv,3)),cx+TS/2,cy-2)}
-  // HP bar
+  if(u.lv>1){ctx.fillStyle='#ffdd44';ctx.font='bold '+(s*0.14)+'px system-ui';ctx.textAlign='center';ctx.fillText('★'.repeat(Math.min(u.lv,3)),cx+s/2,cy-4)}
   var pct=u.hp/u.mhp;
-  ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(cx+1,cy+TS-6,TS-2,3);
-  ctx.fillStyle=pct>0.5?'#44ff44':'#ff2222';ctx.fillRect(cx+1,cy+TS-6,(TS-2)*pct,3);
+  ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(cx+2,cy+s-5,s-4,3);
+  ctx.fillStyle=pct>0.5?'#44ff44':'#ff2222';ctx.fillRect(cx+2,cy+s-5,(s-4)*pct,3);
 }
 
 // === INPUT ===
