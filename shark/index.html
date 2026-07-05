@@ -283,12 +283,13 @@ function tick(){
   for(var ci=0;ci<chestList.length;ci++){
     var ch=chestList[ci];
     var ct=Math.ceil(ch.timer/30);
+    var ctStr=ct>=60?Math.floor(ct/60)+'m'+(ct%60)+'s':ct+'s';
     ctx.fillStyle='#8b6914';ctx.fillRect(ch.x-12,ch.y-8,24,16);
     ctx.fillStyle=ch.unlocked?'#ffd700':'#6a4a0a';ctx.fillRect(ch.x-10,ch.y-6,20,12);
     ctx.fillStyle='#aa8830';ctx.fillRect(ch.x-8,ch.y-4,16,3);
     ctx.fillStyle='#ffd700';ctx.fillRect(ch.x-2,ch.y-6,4,12);
     if(ch.unlocked){ctx.fillStyle='#fff';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('🔑',ch.x,ch.y-12)}
-    ctx.fillStyle='#fff';ctx.font='10px system-ui';ctx.textAlign='center';ctx.fillText(ct+'s',ch.x,ch.y+18);
+    ctx.fillStyle='#fff';ctx.font='10px system-ui';ctx.textAlign='center';ctx.fillText(ctStr,ch.x,ch.y+18);
   }
   
   // Shark AI
@@ -379,7 +380,7 @@ function tick(){
   // Chest spawn & logic
   chestSpawnTimer--;
   if(chestSpawnTimer<=0&&chestList.length<1){
-    chestList.push({x:80+Math.random()*(W-160),y:60+Math.random()*(H-140),timer:600,unlocked:false});
+    chestList.push({x:80+Math.random()*(W-160),y:60+Math.random()*(H-140),timer:1800+Math.random()*3600,unlocked:false});
     chestSpawnTimer=600+Math.random()*600; // next chest in 20-40s
     msg('📦 海上漂来一个宝箱！',2000);
   }
@@ -519,12 +520,13 @@ function draw(){
   for(var ci=0;ci<chestList.length;ci++){
     var ch=chestList[ci];
     var ct=Math.ceil(ch.timer/30);
+    var ctStr=ct>=60?Math.floor(ct/60)+'m'+(ct%60)+'s':ct+'s';
     ctx.fillStyle='#8b6914';ctx.fillRect(ch.x-12,ch.y-8,24,16);
     ctx.fillStyle=ch.unlocked?'#ffd700':'#6a4a0a';ctx.fillRect(ch.x-10,ch.y-6,20,12);
     ctx.fillStyle='#aa8830';ctx.fillRect(ch.x-8,ch.y-4,16,3);
     ctx.fillStyle='#ffd700';ctx.fillRect(ch.x-2,ch.y-6,4,12);
     if(ch.unlocked){ctx.fillStyle='#fff';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('🔑',ch.x,ch.y-12)}
-    ctx.fillStyle='#fff';ctx.font='10px system-ui';ctx.textAlign='center';ctx.fillText(ct+'s',ch.x,ch.y+18);
+    ctx.fillStyle='#fff';ctx.font='10px system-ui';ctx.textAlign='center';ctx.fillText(ctStr,ch.x,ch.y+18);
   }
   
   // Shark
