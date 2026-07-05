@@ -46,9 +46,9 @@ var ISLAND_X=W/2,ISLAND_Y=H/2-10,ISLAND_R=45;
 // === GAME STATE ===
 var player={x:W/2,y:H-25,hp:100,mhp:100,gems:0,speed:2.8,radius:14,gun:false,gunCd:0,gunDmg:8,speedBoost:0,hasKnife:false,knifeCd:0,shieldTime:0,hasFlame:false};
 var shark={x:W/2+120,y:H/2-50,hp:150,mhp:150,speed:1.0,radius:22,state:'patrol',targetX:0,targetY:0,atkCd:0,hunger:50};
-var gemList=[],bulletList=[],particleList=[],bloodList=[],fishList=[],foodList=[],boatList=[];
+var gemList=[],bulletList=[],particleList=[],bloodList=[],fishList=[],foodList=[],boatList=[],chestList=[];
 var keys={},mouse={x:0,y:0,down:false};
-var score=0,gameOver=false,win=false;
+var score=0,gameOver=false,win=false,chestSpawnTimer=600; // first chest at 20s
 var WIN_GEMS=30;
 var sharkRespawnTimer=0,spawnDelay=180; // 6s respawn
 
@@ -278,9 +278,24 @@ function tick(){
     var fc=['🍎','🍗','🧀'][fd.type];
     ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText(fc,fd.x,fd.y+4);
   }
+
+  // Treasure chests
+  for(var ci=0;ci<chestList.length;ci++){
+    var ch=chestList[ci];
+    var ct=Math.ceil(ch.timer/30);
+    ctx.fillStyle='#8b6914';ctx.fillRect(ch.x-12,ch.y-8,24,16);
+    ctx.fillStyle=ch.unlocked?'#ffd700':'#6a4a0a';ctx.fillRect(ch.x-10,ch.y-6,20,12);
+    ctx.fillStyle='#aa8830';ctx.fillRect(ch.x-8,ch.y-4,16,3);
+    ctx.fillStyle='#ffd700';ctx.fillRect(ch.x-2,ch.y-6,4,12);
+    if(ch.unlocked){ctx.fillStyle='#fff';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('🔑',ch.x,ch.y-12)}
+    ctx.fillStyle='#fff';ctx.font='10px system-ui';ctx.textAlign='center';ctx.fillText(ct+'s',ch.x,ch.y+18);
+  }
   
   // Shark AI
   if(shark.hp<=0){
+    if(sharkRespawnTimer===0){ // Just died
+      for(var ci=0;ci<chestList.length;ci++){if(!chestList[ci].unlocked){chestList[ci].unlocked=true;msg('🔑 获得宝箱钥匙！快去开箱',2500)}}
+    }
     sharkRespawnTimer++;
     if(sharkRespawnTimer>=spawnDelay){
       shark.hp=shark.mhp;shark.x=ISLAND_X+(Math.random()-0.5)*200;shark.y=ISLAND_Y+(Math.random()-0.5)*200;
@@ -360,6 +375,29 @@ function tick(){
     fishList.push({x:50+Math.random()*(W-100),y:60+Math.random()*(H-120),vx:(Math.random()-0.5)*0.8,vy:(Math.random()-0.5)*0.8,radius:5,color:'#'+['88ccff','ffaa66','aadd88','ffcc88','88ddcc'][Math.floor(Math.random()*5)]});
   }
   if(shark.hp>0){shark.hunger=Math.max(0,shark.hunger-0.05)}
+
+  // Chest spawn & logic
+  chestSpawnTimer--;
+  if(chestSpawnTimer<=0&&chestList.length<1){
+    chestList.push({x:80+Math.random()*(W-160),y:60+Math.random()*(H-140),timer:600,unlocked:false});
+    chestSpawnTimer=600+Math.random()*600; // next chest in 20-40s
+    msg('📦 海上漂来一个宝箱！',2000);
+  }
+  for(var ci=chestList.length-1;ci>=0;ci--){
+    var ch=chestList[ci];
+    ch.timer--;
+    // Player collects unlocked chest
+    if(ch.unlocked&&dist(player,ch)<player.radius+20){
+      var loot=Math.floor(Math.random()*4);
+      if(loot===0){player.gunDmg=Math.min(30,player.gunDmg+8);msg('🔫 武器箱！伤害+8',2000)}
+      else if(loot===1){player.speed+=0.3;msg('⚡ 速度药剂！永久+0.3',2000)}
+      else if(loot===2){player.hp=player.mhp;msg('❤️ 满血复活！',2000)}
+      else{score+=3;msg('💎 获得3颗宝石！',2000)}
+      chestList.splice(ci,1);updateUI();
+    }
+    // Expired
+    if(ch.timer<=0){chestList.splice(ci,1)}
+  }
 
   // Speed boost countdown
   if(player.speedBoost>0)player.speedBoost--;
@@ -475,6 +513,18 @@ function draw(){
     var fd=foodList[i];
     var fc=['🍎','🍗','🧀'][fd.type];
     ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText(fc,fd.x,fd.y+4);
+  }
+
+  // Treasure chests
+  for(var ci=0;ci<chestList.length;ci++){
+    var ch=chestList[ci];
+    var ct=Math.ceil(ch.timer/30);
+    ctx.fillStyle='#8b6914';ctx.fillRect(ch.x-12,ch.y-8,24,16);
+    ctx.fillStyle=ch.unlocked?'#ffd700':'#6a4a0a';ctx.fillRect(ch.x-10,ch.y-6,20,12);
+    ctx.fillStyle='#aa8830';ctx.fillRect(ch.x-8,ch.y-4,16,3);
+    ctx.fillStyle='#ffd700';ctx.fillRect(ch.x-2,ch.y-6,4,12);
+    if(ch.unlocked){ctx.fillStyle='#fff';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('🔑',ch.x,ch.y-12)}
+    ctx.fillStyle='#fff';ctx.font='10px system-ui';ctx.textAlign='center';ctx.fillText(ct+'s',ch.x,ch.y+18);
   }
   
   // Shark
