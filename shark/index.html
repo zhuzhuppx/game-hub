@@ -29,7 +29,9 @@
 <div id="msg"></div>
 <canvas id="c"></canvas>
 <a class="back" href="/">← 返回</a><button id="restart" onclick="location.reload()">🔄 重开</button>
-<div id="shop"><button class="close" onclick="document.getElementById('shop').style.display='none'">✕</button><h3>🏪 宝石商店</h3><div id="shopScore" style="color:#ffcc44;font-size:12px;margin-bottom:8px">可用：0💎</div><button class="btn" id="btnHeal" onclick="buyHeal()">❤️ 血包 +50HP — 1💎</button><button class="btn" id="btnGun" onclick="buyGun()">🔫 强化武器 伤害+5 — 2💎</button><button class="btn" id="btnKnife" onclick="buyKnife()">🔪 匕首(自动近战) — 2💎</button><button class="btn" id="btnBomb" onclick="buyBomb()">💣 手雷 范围40伤 — 3💎</button><button class="btn" id="btnShield" onclick="buyShield()">🛡️ 护盾 5秒无敌 — 2💎</button><button class="btn" id="btnSpeed" onclick="buySpeed()">⚡ 加速靴 20秒 — 1💎</button><div style="color:#888;font-size:11px;margin-top:6px">靠近岸边篮子即可打开商店</div></div>
+<div id="shop"><button class="close" onclick="document.getElementById('shop').style.display='none'">✕</button><h3>🏪 宝石商店</h3><div id="shopScore" style="color:#ffcc44;font-size:12px;margin-bottom:8px">可用：0💎</div><button class="btn" id="btnHeal" onclick="buyHeal()">❤️ 血包 +50HP — 1💎</button><button class="btn" id="btnGun" onclick="buyGun()">🔫 强化武器 伤害+5 — 2💎</button><button class="btn" id="btnKnife" onclick="buyKnife()">🔪 匕首(自动近战) — 2💎</button><button class="btn" id="btnBomb" onclick="buyBomb()">💣 手雷 范围40伤 — 3💎</button><button class="btn" id="btnShield" onclick="buyShield()">🛡️ 护盾 5秒无敌 — 2💎</button><button class="btn" id="btnSpeed" onclick="buySpeed()">⚡ 加速靴 20秒 — 1💎</button>
+<button class="btn" id="btnBoat" onclick="buyBoat()">⛵ 炮艇(自动开炮) — 10💎</button>
+<button class="btn" id="btnShip" onclick="buyShip()">🚢 战舰(重炮+高血) — 20💎</button><div style="color:#888;font-size:11px;margin-top:6px">靠近岸边篮子即可打开商店</div></div>
 <div id="joystick"><div class="knob" id="knob"></div></div>
 <button id="btnShoot" ontouchstart="doShoot(event)" onmousedown="doShoot(event)">🔫</button>
 </div>
@@ -43,7 +45,7 @@ var ISLAND_X=W/2,ISLAND_Y=H/2-10,ISLAND_R=45;
 // === GAME STATE ===
 var player={x:W/2,y:H-25,hp:100,mhp:100,gems:0,speed:2.8,radius:14,gun:false,gunCd:0,gunDmg:8,speedBoost:0,hasKnife:false,knifeCd:0,shieldTime:0};
 var shark={x:W/2+120,y:H/2-50,hp:150,mhp:150,speed:1.0,radius:22,state:'patrol',targetX:0,targetY:0,atkCd:0,hunger:50};
-var gemList=[],bulletList=[],particleList=[],bloodList=[],fishList=[],foodList=[];
+var gemList=[],bulletList=[],particleList=[],bloodList=[],fishList=[],foodList=[],boatList=[];
 var keys={},mouse={x:0,y:0,down:false};
 var score=0,gameOver=false,win=false;
 var WIN_GEMS=6;
@@ -79,7 +81,7 @@ function msg(s,t){var el=document.getElementById('msg');el.textContent=s;if(t)se
 
 // === SHOP ===
 function openShop(){
-  if(score>0||player.gunDmg>8||player.speedBoost>0||player.hasKnife){
+  if(score>0||player.gunDmg>8||player.speedBoost>0||player.hasKnife||boatList.length>0){
     document.getElementById('shop').style.display='block';
     updateShopUI();
   }
@@ -93,6 +95,8 @@ function updateShopUI(){
   document.getElementById('btnBomb').disabled=score<3;
   document.getElementById('btnShield').disabled=score<2;
   document.getElementById('btnSpeed').disabled=score<1;
+  document.getElementById('btnBoat').disabled=score<10;
+  document.getElementById('btnShip').disabled=score<20;
 }
 function s_click(){
   var el=document.getElementById('shop');
@@ -106,6 +110,16 @@ function buyGun(){
 }
 function buySpeed(){
   if(score>=1){score--;player.speedBoost=600;msg('⚡ 加速20秒！',2000);updateShopUI();updateUI()}
+}
+function buyBoat(){
+  if(score>=10){score-=10;
+    boatList.push({x:W/2,y:H-40,hp:80,mhp:80,type:'boat',cannonCd:0,speed:1.5,targetX:0,targetY:0});
+    msg('⛵ 炮艇出动！',2000);updateShopUI();updateUI()}
+}
+function buyShip(){
+  if(score>=20){score-=20;
+    boatList.push({x:W/2,y:H-50,hp:200,mhp:200,type:'ship',cannonCd:0,speed:1.0,targetX:0,targetY:0});
+    msg('🚢 战舰下水！',2000);updateShopUI();updateUI()}
 }
 function buyKnife(){
   if(score>=2&&!player.hasKnife){score-=2;player.hasKnife=true;msg('🔪 匕首装备！靠近鲨鱼自动攻击',2000);updateShopUI();updateUI()}
@@ -340,6 +354,30 @@ function tick(){
   if(player.speedBoost>0)player.speedBoost--;
   if(player.shieldTime>0)player.shieldTime--;
 
+  // Boat AI
+  for(var bi=boatList.length-1;bi>=0;bi--){
+    var b=boatList[bi];
+    // Follow player
+    var bdx=player.x-b.x,bdy=player.y-b.y,bd=Math.hypot(bdx,bdy)||1;
+    if(bd>60){b.x+=bdx/bd*b.speed;b.y+=bdy/bd*b.speed}
+    // Shoot shark
+    b.cannonCd=Math.max(0,b.cannonCd-1);
+    if(shark.hp>0&&b.cannonCd<=0&&dist(b,shark)<350){
+      var bdx2=shark.x-b.x,bdy2=shark.y-b.y,bd2=Math.hypot(bdx2,bdy2)||1;
+      bulletList.push({x:b.x,y:b.y,vx:bdx2/bd2*7,vy:bdy2/bd2*7,life:50});
+      b.cannonCd=b.type==='ship'?25:45;
+    }
+    // Shark attacks boat
+    if(shark.hp>0&&dist(b,shark)<shark.radius+b.radius+5){
+      b.hp-=b.type==='ship'?3:6;
+      if(b.hp<=0){boatList.splice(bi,1);msg('💥 船只被摧毁！',1500)}
+    }
+    // Clamp to bounds
+    if(b.x<30)b.x=30;if(b.x>W-30)b.x=W-30;
+    if(b.y<40)b.y=40;if(b.y>H-30)b.y=H-30;
+    b.radius=b.type==='ship'?16:12;
+  }
+
   // Particles
   for(var i=bloodList.length-1;i>=0;i--){
     var p=bloodList[i];p.life--;p.x+=p.vx;p.y+=p.vy;p.vy+=0.1;
@@ -453,6 +491,26 @@ function draw(){
     var shpPct=shark.hp/shark.mhp;
     ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(shark.x-25,shark.y-shark.radius-14,50,6);
     ctx.fillStyle=shpPct>0.5?'#44ff44':'#ff2222';ctx.fillRect(shark.x-25,shark.y-shark.radius-14,50*shpPct,6);
+  }
+
+  // Boats
+  for(var bi=0;bi<boatList.length;bi++){
+    var b=boatList[bi];
+    var isShip=b.type==='ship';
+    ctx.save();ctx.translate(b.x,b.y);
+    var ba=shark.hp>0?Math.atan2(shark.y-b.y,shark.x-b.x):0;
+    ctx.fillStyle='#5a3a1a';ctx.fillRect(-(isShip?14:10),-6,isShip?28:20,12);
+    ctx.fillStyle='#8b6914';ctx.fillRect(-(isShip?12:8),-5,isShip?24:16,10);
+    // Cannon
+    ctx.save();ctx.translate(isShip?10:7,0);ctx.rotate(ba);
+    ctx.fillStyle='#333';ctx.fillRect(0,-2.5,isShip?14:10,isShip?5:4);
+    ctx.fillStyle='#555';ctx.fillRect(isShip?13:9,-1.5,3,3);
+    ctx.restore();
+    // HP bar
+    var bhpPct=b.hp/b.mhp;
+    ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(-(isShip?14:10),-(isShip?14:12),isShip?28:20,3);
+    ctx.fillStyle=bhpPct>0.5?'#44ff44':'#ff2222';ctx.fillRect(-(isShip?14:10),-(isShip?14:12),(isShip?28:20)*bhpPct,3);
+    ctx.restore();
   }
   
   // Player
