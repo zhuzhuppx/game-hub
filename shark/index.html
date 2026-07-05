@@ -13,7 +13,7 @@
 #restart:hover{background:rgba(200,150,50,0.25);color:#ffaa44}
 </style>
 <div class="wrap">
-<div class="hud"><span>❤️</span><b id="hp">100</b><span>💎</span><b id="gems">0/8</b><span>🦈</span><b id="sharkhp">150</b><span>🏆</span><b id="score">0</b></div>
+<div class="hud"><span>❤️</span><b id="hp">100</b><span>💎</span><b id="gems">0</b><span>🦈</span><b id="sharkhp">150</b><span>🏆</span><b id="score">0/6</b></div>
 <div id="msg"></div>
 <canvas id="c"></canvas>
 <a class="back" href="/">← 返回</a><button id="restart" onclick="location.reload()">🔄 重开</button>
@@ -35,14 +35,11 @@ var WIN_GEMS=6;
 var sharkRespawnTimer=0,spawnDelay=180; // 6s respawn
 
 // === INIT GEMS ===
-function spawnGems(){
-  gemList=[];
-  for(var i=0;i<WIN_GEMS+2;i++){
-    var ang=Math.random()*Math.PI*2,dist=15+Math.random()*(ISLAND_R-25);
-    gemList.push({x:ISLAND_X+Math.cos(ang)*dist,y:ISLAND_Y+Math.sin(ang)*dist,radius:8,sparkle:Math.random()*Math.PI*2});
-  }
+function spawnGem(){
+  var ang=Math.random()*Math.PI*2,dist=15+Math.random()*(ISLAND_R-25);
+  gemList=[{x:ISLAND_X+Math.cos(ang)*dist,y:ISLAND_Y+Math.sin(ang)*dist,radius:8,sparkle:Math.random()*Math.PI*2}];
 }
-spawnGems();
+spawnGem();
 shark.targetX=shark.x;shark.targetY=shark.y;
 
 // === HELPERS ===
@@ -50,9 +47,9 @@ function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
 function msg(s,t){var el=document.getElementById('msg');el.textContent=s;if(t)setTimeout(function(){if(el.textContent===s)el.textContent=''},t)}
 function updateUI(){
   document.getElementById('hp').textContent=Math.max(0,player.hp);
-  document.getElementById('gems').textContent=player.gems+'/'+WIN_GEMS;
+  document.getElementById('gems').textContent=player.gems>0?'💎':'';
   document.getElementById('sharkhp').textContent=Math.max(0,shark.hp);
-  document.getElementById('score').textContent=score;
+  document.getElementById('score').textContent=score+'/6';
 }
 
 // === INPUT ===
@@ -96,12 +93,10 @@ function tick(){
     }
   }
   
-  // Collect gems on island
-  if(onIsland){
-    for(var i=gemList.length-1;i>=0;i--){
-      if(dist(player,gemList[i])<player.radius+gemList[i].radius){
-        if(player.gems<WIN_GEMS+2){player.gems++;gemList.splice(i,1);if(typeof sfxPew==='function')sfxPew(1)}
-      }
+  // Collect gem on island (only 1 at a time)
+  if(onIsland&&gemList.length>0&&player.gems===0){
+    if(dist(player,gemList[0])<player.radius+gemList[0].radius){
+      player.gems=1;gemList=[];if(typeof sfxPew==='function')sfxPew(1)
     }
   }
   
@@ -110,7 +105,7 @@ function tick(){
     score+=player.gems;
     player.gems=0;
     msg('🎉 宝石已运回！',2000);
-    if(gemList.length<3)spawnGems();
+    spawnGem();
   }
   
   // Gun: player has gun when carrying gems
@@ -313,7 +308,7 @@ function draw(){
   if(player.gems>0){
     ctx.fillStyle='#ff66aa';ctx.globalAlpha=0.5+Math.sin(Date.now()*0.01)*0.3;
     ctx.beginPath();ctx.arc(8,-15,5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
-    ctx.fillStyle='#fff';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText(player.gems,8,-12);
+    ctx.fillStyle='#fff';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('💎',8,-13);
   }
   ctx.restore();
   // HP bar
