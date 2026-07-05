@@ -35,7 +35,7 @@
 </div>
 <script>
 // === CONSTANTS ===
-var W=Math.min(800,window.innerWidth-20),H=Math.min(600,window.innerHeight-200);
+var W=Math.min(800,Math.max(300,window.innerWidth-20)),H=Math.min(600,Math.max(200,window.innerHeight-200));
 var c=document.getElementById('c'),ctx=c.getContext('2d');
 c.width=W;c.height=H;
 var ISLAND_X=W/2,ISLAND_Y=H/2-10,ISLAND_R=45;
@@ -271,6 +271,7 @@ function tick(){
   
   var dShark=dist(player,shark);
   if(shark.hp>0){
+    var hungry=shark.hunger<30;
     if(dShark<350&&!onIsland&&!nearBasket&&!hungry){ // Chase only when not hungry
       shark.state='chase';
       var ang=Math.atan2(player.y-shark.y,player.x-shark.x);
@@ -334,7 +335,6 @@ function tick(){
     fishList.push({x:50+Math.random()*(W-100),y:60+Math.random()*(H-120),vx:(Math.random()-0.5)*0.8,vy:(Math.random()-0.5)*0.8,radius:5,color:'#'+['88ccff','ffaa66','aadd88','ffcc88','88ddcc'][Math.floor(Math.random()*5)]});
   }
   if(shark.hp>0){shark.hunger=Math.max(0,shark.hunger-0.05)}
-  var hungry=shark.hunger<30;
 
   // Speed boost countdown
   if(player.speedBoost>0)player.speedBoost--;
@@ -448,18 +448,7 @@ function draw(){
     // Teeth
     ctx.fillStyle='#fff';
     for(var ti=0;ti<3;ti++){ctx.beginPath();ctx.moveTo(shark.radius*0.7+ti*6,shark.radius*0.05);ctx.lineTo(shark.radius*0.6+ti*6,shark.radius*0.25);ctx.lineTo(shark.radius*0.8+ti*6,shark.radius*0.25);ctx.fill()}
-    // Knife if equipped
-  if(player.hasKnife){
-    ctx.fillStyle='#ccc';ctx.fillRect(-12,-3,2,10);
-    ctx.fillStyle='#888';ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-15,-5);ctx.lineTo(-8,5);ctx.stroke();
-    ctx.fillStyle='#5a3a1a';ctx.fillRect(-8,7,4,3);
-  }
-  // Shield visual
-  if(player.shieldTime>0){
-    ctx.strokeStyle='rgba(100,200,255,'+(0.4+Math.sin(Date.now()*0.02)*0.3)+')';ctx.lineWidth=3;
-    ctx.beginPath();ctx.arc(0,0,player.radius+6,0,Math.PI*2);ctx.stroke();
-  }
-  ctx.restore();
+    ctx.restore();
     // HP bar
     var shpPct=shark.hp/shark.mhp;
     ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(shark.x-25,shark.y-shark.radius-14,50,6);
