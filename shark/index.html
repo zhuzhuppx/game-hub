@@ -57,7 +57,7 @@ var ISLAND_X=W/2,ISLAND_Y=H/2-10,ISLAND_R=45;
 // === GAME STATE ===
 var player={x:W/2,y:H-25,hp:100,mhp:100,gems:0,speed:2.8,radius:14,gun:false,gunCd:0,gunDmg:8,speedBoost:0,hasKnife:false,knifeCd:0,shieldTime:0,hasFlame:false,hasScope:false,adrenaline:0};
 var shark={x:W/2+120,y:H/2-50,hp:150,mhp:150,speed:1.0,radius:22,state:'patrol',targetX:0,targetY:0,atkCd:0,hunger:50};
-var gemList=[],bulletList=[],particleList=[],bloodList=[],fishList=[],foodList=[],boatList=[],chestList=[],mineList=[],torpedoList=[];
+var gemList=[],bulletList=[],particleList=[],bloodList=[],fishList=[],boatList=[],chestList=[],mineList=[],torpedoList=[];
 var keys={},mouse={x:0,y:0,down:false};
 var score=0,gameOver=false,win=false,chestSpawnTimer=600; // first chest at 20s
 var WIN_GEMS=30;
@@ -70,20 +70,12 @@ function spawnGem(){
 }
 spawnGem();
 initFish();
-initFood();
 shark.targetX=shark.x;shark.targetY=shark.y;
 
 function initFish(){
   fishList=[];
   for(var i=0;i<8;i++){
     fishList.push({x:50+Math.random()*(W-100),y:60+Math.random()*(H-120),vx:(Math.random()-0.5)*0.8,vy:(Math.random()-0.5)*0.8,radius:5,color:'#'+['88ccff','ffaa66','aadd88','ffcc88','88ddcc'][i%5]});
-  }
-}
-function initFood(){
-  foodList=[];
-  for(var i=0;i<5;i++){
-    var ang=Math.random()*Math.PI*2,dist=8+Math.random()*(ISLAND_R-15);
-    foodList.push({x:ISLAND_X+Math.cos(ang)*dist,y:ISLAND_Y+Math.sin(ang)*dist,radius:5,type:i%3});
   }
 }
 
@@ -248,19 +240,6 @@ function tick(){
       player.gems=1;gemList=[];if(typeof sfxPew==='function')sfxPew(1)
     }
   }
-  // Collect food on island
-  if(onIsland){
-    for(var fi=foodList.length-1;fi>=0;fi--){
-      if(dist(player,foodList[fi])<player.radius+foodList[fi].radius){
-        shark.hunger=Math.max(0,shark.hunger-15);foodList.splice(fi,1);
-        msg('🍖 偷走了鲨鱼的食物！',1500);
-      }
-    }
-  }
-  if(foodList.length<3&&Math.random()<0.01){
-    var ang=Math.random()*Math.PI*2,dist2=8+Math.random()*(ISLAND_R-15);
-    foodList.push({x:ISLAND_X+Math.cos(ang)*dist2,y:ISLAND_Y+Math.sin(ang)*dist2,radius:5,type:Math.floor(Math.random()*3)});
-  }
   
   // Deliver gems to any basket (all 4 sides)
   if(nearBasket&&player.gems>0){
@@ -301,13 +280,6 @@ function tick(){
     }
   }
   
-  // Food on island
-  for(var i=0;i<foodList.length;i++){
-    var fd=foodList[i];
-    var fc=['🍎','🍗','🧀'][fd.type];
-    ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText(fc,fd.x,fd.y+4);
-  }
-
   // Treasure chests
   for(var ci=0;ci<chestList.length;ci++){
     var ch=chestList[ci];
@@ -570,13 +542,6 @@ function draw(){
     ctx.fillStyle='#fff';ctx.globalAlpha=pulse;ctx.beginPath();ctx.arc(g.x-g.radius*0.3,g.y-g.radius*0.3,g.radius*0.4,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
   }
   
-  // Food on island
-  for(var i=0;i<foodList.length;i++){
-    var fd=foodList[i];
-    var fc=['🍎','🍗','🧀'][fd.type];
-    ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText(fc,fd.x,fd.y+4);
-  }
-
   // Treasure chests
   for(var ci=0;ci<chestList.length;ci++){
     var ch=chestList[ci];
