@@ -1,0 +1,328 @@
+<!DOCTYPE html><html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"><title>豌豆战僵尸</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<script src="/sfx.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}html,body{overflow:hidden;height:100dvh}body{background:linear-gradient(180deg,#1a0a2e 0%,#2a1a3e 100%);color:#ccc;font-family:system-ui}
+.wrap{height:100dvh;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative}
+.hud{display:flex;align-items:center;justify-content:center;gap:10px;font-size:13px;flex-shrink:0;padding:4px 12px;background:rgba(0,0,0,0.3);border-radius:8px;width:90%;max-width:600px;flex-wrap:wrap}
+.hud b{color:#ffcc44}#msg{font-size:12px;color:#ff8844;font-weight:600;min-height:20px;line-height:20px;text-align:center;flex-shrink:0}
+#c{max-width:95vw;max-height:70vh;border-radius:8px;touch-action:none;border:2px solid rgba(255,255,255,0.08);box-shadow:0 2px 20px rgba(0,0,0,0.4);cursor:crosshair}
+.back{color:#8888cc;text-decoration:none;font-size:14px;position:absolute;bottom:12px;left:12px;z-index:100;background:rgba(0,0,0,0.5);padding:4px 10px;border-radius:6px}
+.back:hover{background:rgba(100,100,200,0.2);color:#aaaaff}
+#restart{color:#cc8844;font-size:14px;position:absolute;bottom:12px;right:12px;z-index:100;background:rgba(0,0,0,0.5);padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-family:system-ui}
+#restart:hover{background:rgba(200,150,50,0.25);color:#ffaa44}
+#btnShoot{display:flex;align-items:center;justify-content:center;position:absolute;bottom:70px;right:30px;width:70px;height:70px;background:rgba(100,255,60,0.3);border-radius:50%;border:2px solid rgba(100,200,60,0.5);z-index:150;font-size:24px;color:#fff;touch-action:manipulation;cursor:pointer}
+#joystick{position:absolute;bottom:50px;left:30px;width:100px;height:100px;background:rgba(255,255,255,0.08);border-radius:50%;border:2px solid rgba(255,255,255,0.15);z-index:150;touch-action:none}
+#joystick .knob{position:absolute;width:40px;height:40px;background:rgba(255,255,255,0.3);border-radius:50%;top:30px;left:30px;pointer-events:none}
+@media(min-width:768px){#joystick,#btnShoot{display:none}}
+.camp-btn{background:rgba(100,80,40,0.3);border:1px solid #886644;color:#ffcc44;padding:2px 10px;border-radius:6px;cursor:pointer;font-size:13px;font-family:system-ui}
+.camp-btn:disabled{opacity:0.4;cursor:default}
+</style>
+<div class="wrap">
+<div class="hud">
+<span>❤️</span><b id="hp">100</b>
+<span>💰</span><b id="gold">20</b>
+<span>🌊</span><b id="wave">1</b>
+<span>💀</span><b id="kills">0</b>
+<button class="camp-btn" id="campBtn" onclick="buildCamp()">🏕️ 建营地(20💰)</button>
+<span id="campHp" style="color:#88cc88;font-size:12px">—</span>
+</div>
+<div id="msg"></div>
+<canvas id="c"></canvas>
+<a class="back" href="/">← 返回</a><button id="restart" onclick="location.reload()">🔄 重开</button>
+<div id="joystick"><div class="knob" id="knob"></div></div>
+<button id="btnShoot" ontouchstart="doShoot(event)" onmousedown="doShoot(event)">🌱</button>
+</div>
+<script>
+// === CONSTANTS ===
+var W=Math.min(800,Math.max(300,window.innerWidth-20)),H=Math.min(600,Math.max(200,window.innerHeight-200));
+var c=document.getElementById('c'),ctx=c.getContext('2d');
+c.width=W;c.height=H;
+
+// === GAME STATE ===
+var player={x:W/2,y:H-60,hp:100,mhp:100,speed:2.5,radius:12};
+var gold=20,kills=0,wave=1,gameOver=false,win=false;
+var camp=null; // {x,y,hp:200,mhp:200}
+var zombies=[],peas=[],particles=[],frozenList=[];
+var keys={},mouse={x:0,y:0,down:false,_clicked:false};
+var waveTimer=180; // 6 seconds before first wave
+var zombieSpawnCd=0;
+var frozenTimer=300; // frozen survivor spawn timer
+
+// === CAMP ===
+function buildCamp(){
+  if(gold>=20&&!camp){
+    gold-=20;camp={x:W/2,y:H-30,hp:200,mhp:200};
+    document.getElementById('campBtn').disabled=true;
+    msg('🏕️ 营地搭建完成！',2000);
+    updateUI();
+  }
+}
+
+// === HELPERS ===
+function msg(t,d){var m=document.getElementById('msg');m.textContent=t;setTimeout(function(){if(m.textContent===t)m.textContent=''},d||2000)}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function rnd(min,max){return min+Math.random()*(max-min)}
+
+// === SPAWN ZOMBIE ===
+function spawnZombie(){
+  var side=Math.floor(Math.random()*4);
+  var zx,zy;
+  if(side===0){zx=rnd(0,W);zy=-20}
+  else if(side===1){zx=W+20;zy=rnd(0,H)}
+  else if(side===2){zx=rnd(0,W);zy=H+20}
+  else{zx=-20;zy=rnd(0,H)}
+  var hp=10+wave*5,speed=0.3+wave*0.08;
+  zombies.push({x:zx,y:zy,hp:hp,mhp:hp,speed:Math.min(speed,1.5),radius:14,atkCd:0,type:Math.random()<0.15?'big':'normal'});
+  if(zombies[zombies.length-1].type==='big'){var z=zombies[zombies.length-1];z.hp*=2;z.mhp*=2;z.radius=18;z.speed*=0.7}
+}
+
+// === FROZEN SURVIVOR ===
+function spawnFrozen(){
+  var fx=rnd(40,W-40),fy=rnd(100,H-100);
+  frozenList.push({x:fx,y:fy,thawTimer:180}); // 6s to thaw
+  msg('❄️ 路边发现冻僵的人！靠近可解救',2500);
+}
+
+// === INPUT ===
+document.addEventListener('keydown',function(e){keys[e.key.toLowerCase()]=true});
+document.addEventListener('keyup',function(e){keys[e.key.toLowerCase()]=false});
+c.addEventListener('mousemove',function(e){var r=c.getBoundingClientRect();mouse.x=(e.clientX-r.left)*(W/r.width);mouse.y=(e.clientY-r.top)*(H/r.height)});
+c.addEventListener('mousedown',function(e){mouse.down=true;mouse._clicked=true;sfxResume()});
+c.addEventListener('mouseup',function(){mouse.down=false});
+
+// Joystick
+var joy={active:false,dx:0,dy:0};
+var jstick=document.getElementById('joystick'),knob=document.getElementById('knob');
+jstick.addEventListener('touchstart',function(e){e.preventDefault();joy.active=true;updateJoy(e)});
+jstick.addEventListener('touchmove',function(e){e.preventDefault();updateJoy(e)});
+jstick.addEventListener('touchend',function(){joy.active=false;joy.dx=0;joy.dy=0;knob.style.transform='translate(0,0)'});
+function updateJoy(e){
+  var r=jstick.getBoundingClientRect(),cx=r.width/2,cy=r.height/2;
+  var tx=e.touches[0].clientX-r.left-cx,ty=e.touches[0].clientY-r.top-cy;
+  var dist2=Math.hypot(tx,ty),maxR=35;
+  if(dist2>maxR){tx=tx/dist2*maxR;ty=ty/dist2*maxR}
+  joy.dx=tx/maxR;joy.dy=ty/maxR;
+  knob.style.transform='translate('+tx+'px,'+ty+'px)';
+}
+function doShoot(e){e.preventDefault();mouse._clicked=true;sfxResume()}
+function updateUI(){
+  document.getElementById('hp').textContent=Math.max(0,player.hp);
+  document.getElementById('gold').textContent=gold;
+  document.getElementById('wave').textContent=wave;
+  document.getElementById('kills').textContent=kills;
+  document.getElementById('campBtn').disabled=camp!==null||gold<20;
+  if(camp)document.getElementById('campHp').textContent='🏕️ '+Math.max(0,camp.hp);
+  else document.getElementById('campHp').textContent='—';
+}
+
+// === TICK ===
+function tick(){
+  if(gameOver){draw();return}
+  var mx=0,my=0;
+  if(keys['w']||keys['arrowup']||(mouse.down&&mouse.y<player.y-10))my=-1;
+  if(keys['s']||keys['arrowdown']||(mouse.down&&mouse.y>player.y+10))my=1;
+  if(keys['a']||keys['arrowleft']||(mouse.down&&mouse.x<player.x-10))mx=-1;
+  if(keys['d']||keys['arrowright']||(mouse.down&&mouse.x>player.x+10))mx=1;
+  if(joy.active){mx=joy.dx;my=joy.dy}
+  var dm=Math.hypot(mx,my);
+  if(dm>1){mx/=dm;my/=dm}
+  player.x+=mx*player.speed*(joy.active?1.5:1);
+  player.y+=my*player.speed*(joy.active?1.5:1);
+  player.x=Math.max(player.radius,Math.min(W-player.radius,player.x));
+  player.y=Math.max(player.radius,Math.min(H-player.radius,player.y));
+
+  // Shoot peas
+  if(mouse._clicked){
+    var nearest=null,nd=Infinity;
+    for(var i=0;i<zombies.length;i++){var d=dist(player,zombies[i]);if(d<nd){nd=d;nearest=zombies[i]}}
+    if(nearest&&nd<400){
+      var dx=nearest.x-player.x,dy=nearest.y-player.y,dd=Math.hypot(dx,dy);
+      peas.push({x:player.x,y:player.y-8,vx:dx/dd*6,vy:dy/dd*6,life:40});
+      if(typeof sfxPew==='function')sfxPew(0);
+    }
+  }
+  mouse._clicked=false;
+
+  // Peas
+  for(var i=peas.length-1;i>=0;i--){
+    var p=peas[i];p.life--;
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.life<=0||p.x<0||p.x>W||p.y<0||p.y>H){peas.splice(i,1);continue}
+    var hit=false;
+    for(var j=zombies.length-1;j>=0;j--){
+      if(dist(p,zombies[j])<zombies[j].radius+3){
+        zombies[j].hp-=15;hit=true;peas.splice(i,1);
+        for(var k=0;k<3;k++)particles.push({x:p.x,y:p.y,vx:(Math.random()-0.5)*3,vy:(Math.random()-0.5)*3,life:10,color:'#88ff44'});
+        if(zombies[j].hp<=0){
+          gold+=3+(zombies[j].type==='big'?5:0);kills++;particles.push({x:zombies[j].x,y:zombies[j].y,vx:0,vy:-2,life:20,color:'#ff8844'});
+          zombies.splice(j,1);
+          if(kills>=wave*8){wave++;waveTimer=120;msg('🌊 第'+wave+'波僵尸来袭！',2500)}
+        }
+        break;
+      }
+    }
+    if(hit)continue;
+  }
+
+  // Zombies
+  zombieSpawnCd--;
+  waveTimer--;
+  if(waveTimer<=0&&zombieSpawnCd<=0&&zombies.length<wave*6){
+    spawnZombie();zombieSpawnCd=30+Math.random()*30;
+  }
+  for(var i=0;i<zombies.length;i++){
+    var z=zombies[i];
+    var target=player;var td=dist(z,player);
+    if(camp&&camp.hp>0){var cd=dist(z,camp);if(cd<td){target=camp;td=cd}}
+    var ang=Math.atan2(target.y-z.y,target.x-z.x);
+    z.x+=Math.cos(ang)*z.speed;z.y+=Math.sin(ang)*z.speed;
+    z.atkCd=Math.max(0,z.atkCd-1);
+    if(td<z.radius+target.radius+4&&z.atkCd<=0){
+      z.atkCd=40;
+      if(target===player){player.hp-=8;particles.push({x:player.x,y:player.y,vx:(Math.random()-0.5)*4,vy:(Math.random()-0.5)*4,life:12,color:'#ff4444'})}
+      else if(camp){camp.hp-=5}
+    }
+    if(target===player&&player.hp<=0){gameOver=true;msg('💀 你被僵尸吃掉了！',99999);stopSfx()}
+    if(camp&&camp.hp<=0){camp=null;msg('💥 营地被摧毁了！',2000)}
+  }
+
+  // Frozen survivors
+  frozenTimer--;
+  if(frozenTimer<=0){spawnFrozen();frozenTimer=600+Math.random()*600}
+  for(var i=frozenList.length-1;i>=0;i--){
+    var fr=frozenList[i];
+    fr.thawTimer--;
+    if(fr.thawTimer<=0){frozenList.splice(i,1);continue}
+    if(dist(player,fr)<player.radius+12){
+      gold+=5;frozenList.splice(i,1);
+      msg('🧊 救了一个人！+5💰',2000);
+    }
+  }
+
+  // Particles
+  for(var i=particles.length-1;i>=0;i--){
+    var pt=particles[i];pt.life--;pt.x+=pt.vx;pt.y+=pt.vy;
+    if(pt.life<=0)particles.splice(i,1);
+  }
+
+  updateUI();draw();
+}
+
+// === DRAW ===
+function draw(){
+  // Dark ground
+  var grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'#1a2a1a');grad.addColorStop(0.5,'#2a3a2a');grad.addColorStop(1,'#1a2a1a');
+  ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+
+  // Road (horizontal and vertical paths)
+  ctx.fillStyle='#3a3020';ctx.fillRect(0,H*0.3-15,W,30);
+  ctx.fillRect(W*0.3-15,0,30,H);
+  ctx.strokeStyle='#4a4030';ctx.lineWidth=1;ctx.strokeRect(0,H*0.3-15,W,30);
+  ctx.strokeRect(W*0.3-15,0,30,H);
+
+  // Road markings
+  ctx.setLineDash([8,12]);ctx.strokeStyle='#5a5040';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(0,H*0.3);ctx.lineTo(W,H*0.3);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(W*0.3,0);ctx.lineTo(W*0.3,H);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Particles
+  for(var i=0;i<particles.length;i++){
+    var pt=particles[i];
+    ctx.fillStyle=pt.color;ctx.globalAlpha=pt.life/20;
+    ctx.beginPath();ctx.arc(pt.x,pt.y,2,0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Peas
+  for(var i=0;i<peas.length;i++){
+    var p=peas[i];
+    ctx.fillStyle='#44cc44';ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#88ff88';ctx.beginPath();ctx.arc(p.x-1,p.y-1,2,0,Math.PI*2);ctx.fill();
+  }
+
+  // Frozen people
+  for(var i=0;i<frozenList.length;i++){
+    var fr=frozenList[i];
+    var alpha=fr.thawTimer/180;
+    ctx.fillStyle='rgba(150,200,255,'+(0.3+alpha*0.7)+')';
+    ctx.beginPath();ctx.arc(fr.x,fr.y,10,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(200,230,255,'+alpha+')';ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle='#fff';ctx.font='10px system-ui';ctx.textAlign='center';
+    ctx.fillText('❄️',fr.x,fr.y+3);
+    // Thaw bar
+    ctx.fillStyle='rgba(255,255,255,0.3)';ctx.fillRect(fr.x-10,fr.y-16,20,3);
+    ctx.fillStyle='#88ccff';ctx.fillRect(fr.x-10,fr.y-16,20*alpha,3);
+  }
+
+  // Camp
+  if(camp){
+    ctx.fillStyle='#5a3a1a';ctx.fillRect(camp.x-20,camp.y-15,40,30);
+    ctx.fillStyle='#7a5a2a';ctx.fillRect(camp.x-15,camp.y-10,30,25);
+    ctx.fillStyle='#4a2a0a';ctx.beginPath();ctx.moveTo(camp.x-22,camp.y-15);ctx.lineTo(camp.x,camp.y-28);ctx.lineTo(camp.x+22,camp.y-15);ctx.fill();
+    ctx.fillStyle='#ffcc44';ctx.font='14px system-ui';ctx.textAlign='center';ctx.fillText('🏕️',camp.x,camp.y+5);
+    // HP bar
+    var chp=camp.hp/camp.mhp;
+    ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(camp.x-16,camp.y-32,32,4);
+    ctx.fillStyle=chp>0.5?'#44cc44':chp>0.25?'#ccaa44':'#cc4444';
+    ctx.fillRect(camp.x-16,camp.y-32,32*chp,4);
+  }
+
+  // Zombies
+  for(var i=0;i<zombies.length;i++){
+    var z=zombies[i];
+    ctx.save();ctx.translate(z.x,z.y);
+    // Body
+    ctx.fillStyle=z.type==='big'?'#5a2a2a':'#4a4a3a';
+    ctx.fillRect(-z.radius,z.radius*0.3,z.radius*2,z.radius*1.4);
+    // Head
+    ctx.fillStyle='#6a6a5a';ctx.beginPath();ctx.arc(0,-z.radius*0.2,z.radius*0.8,0,Math.PI*2);ctx.fill();
+    // Eyes
+    ctx.fillStyle='#ff4444';ctx.beginPath();ctx.arc(-3,-z.radius*0.3,2,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(3,-z.radius*0.3,2,0,Math.PI*2);ctx.fill();
+    // Arms
+    ctx.fillStyle=z.type==='big'?'#5a2a2a':'#4a4a3a';
+    ctx.fillRect(-z.radius-4,-2,6,12);ctx.fillRect(z.radius-2,-2,6,12);
+    // HP bar
+    ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(-z.radius,z.radius*1.8,z.radius*2,3);
+    var zhp=z.hp/z.mhp;
+    ctx.fillStyle=zhp>0.5?'#cc4444':zhp>0.25?'#cc8844':'#cc4444';
+    ctx.fillRect(-z.radius,z.radius*1.8,z.radius*2*zhp,3);
+    ctx.restore();
+  }
+
+  // Player
+  ctx.save();ctx.translate(player.x,player.y);
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,0.3)';ctx.beginPath();ctx.ellipse(0,player.radius*0.8,player.radius*0.7,3,0,0,Math.PI*2);ctx.fill();
+  // Body (pea)
+  ctx.fillStyle='#44cc44';ctx.beginPath();ctx.arc(0,0,player.radius,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#66ee66';ctx.beginPath();ctx.arc(-3,-3,5,0,Math.PI*2);ctx.fill();
+  // Eyes
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(-4,-2,4,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(4,-2,4,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#222';ctx.beginPath();ctx.arc(-3,-1,2,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(5,-1,2,0,Math.PI*2);ctx.fill();
+  // Mouth (shooting tube)
+  ctx.fillStyle='#2a8a2a';ctx.fillRect(8,-2,6,4);
+  ctx.restore();
+
+  // Game over
+  if(gameOver){
+    ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#ff4444';ctx.font='bold 28px system-ui';ctx.textAlign='center';ctx.fillText('💀 游戏结束',W/2,H/2-10);
+    ctx.fillStyle='#ccc';ctx.font='14px system-ui';ctx.fillText('点击重开按钮',W/2,H/2+20);
+  }
+
+  requestAnimationFrame(tick);
+}
+
+function stopSfx(){if(typeof sfxStopAll==='function')sfxStopAll()}
+function sfxResume(){if(typeof sfxResumeAll==='function')sfxResumeAll()}
+
+updateUI();
+tick();
+</script>
+</html>
