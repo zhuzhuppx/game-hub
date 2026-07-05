@@ -29,7 +29,7 @@
 <div id="msg"></div>
 <canvas id="c"></canvas>
 <a class="back" href="/">← 返回</a><button id="restart" onclick="location.reload()">🔄 重开</button>
-<div id="shop"><button class="close" onclick="document.getElementById('shop').style.display='none'">✕</button><h3>🏪 宝石商店</h3><div id="shopScore" style="color:#ffcc44;font-size:12px;margin-bottom:8px">可用：0💎</div><button class="btn" id="btnHeal" onclick="buyHeal()">❤️ 血包 +50HP — 1💎</button><button class="btn" id="btnGun" onclick="buyGun()">🔫 强化武器 伤害+5 — 2💎</button><button class="btn" id="btnSpeed" onclick="buySpeed()">⚡ 加速靴 20秒 — 1💎</button><div style="color:#888;font-size:11px;margin-top:6px">靠近岸边篮子即可打开商店</div></div>
+<div id="shop"><button class="close" onclick="document.getElementById('shop').style.display='none'">✕</button><h3>🏪 宝石商店</h3><div id="shopScore" style="color:#ffcc44;font-size:12px;margin-bottom:8px">可用：0💎</div><button class="btn" id="btnHeal" onclick="buyHeal()">❤️ 血包 +50HP — 1💎</button><button class="btn" id="btnGun" onclick="buyGun()">🔫 强化武器 伤害+5 — 2💎</button><button class="btn" id="btnKnife" onclick="buyKnife()">🔪 匕首(自动近战) — 2💎</button><button class="btn" id="btnBomb" onclick="buyBomb()">💣 手雷 范围40伤 — 3💎</button><button class="btn" id="btnShield" onclick="buyShield()">🛡️ 护盾 5秒无敌 — 2💎</button><button class="btn" id="btnSpeed" onclick="buySpeed()">⚡ 加速靴 20秒 — 1💎</button><div style="color:#888;font-size:11px;margin-top:6px">靠近岸边篮子即可打开商店</div></div>
 <div id="joystick"><div class="knob" id="knob"></div></div>
 <button id="btnShoot" ontouchstart="doShoot(event)" onmousedown="doShoot(event)">🔫</button>
 </div>
@@ -41,7 +41,7 @@ c.width=W;c.height=H;
 var ISLAND_X=W/2,ISLAND_Y=H/2-10,ISLAND_R=45;
 
 // === GAME STATE ===
-var player={x:W/2,y:H-25,hp:100,mhp:100,gems:0,speed:2.8,radius:14,gun:false,gunCd:0,gunDmg:8,speedBoost:0};
+var player={x:W/2,y:H-25,hp:100,mhp:100,gems:0,speed:2.8,radius:14,gun:false,gunCd:0,gunDmg:8,speedBoost:0,hasKnife:false,knifeCd:0,shieldTime:0};
 var shark={x:W/2+120,y:H/2-50,hp:150,mhp:150,speed:1.0,radius:22,state:'patrol',targetX:0,targetY:0,atkCd:0};
 var gemList=[],bulletList=[],particleList=[],bloodList=[];
 var keys={},mouse={x:0,y:0,down:false};
@@ -63,7 +63,7 @@ function msg(s,t){var el=document.getElementById('msg');el.textContent=s;if(t)se
 
 // === SHOP ===
 function openShop(){
-  if(score>0||player.gunDmg>8||player.speedBoost>0){
+  if(score>0||player.gunDmg>8||player.speedBoost>0||player.hasKnife){
     document.getElementById('shop').style.display='block';
     updateShopUI();
   }
@@ -73,6 +73,9 @@ function updateShopUI(){
   document.getElementById('shopScore').textContent='可用：'+score+'💎';
   document.getElementById('btnHeal').disabled=score<1||player.hp>=player.mhp;
   document.getElementById('btnGun').disabled=score<2||player.gunDmg>=20;
+  document.getElementById('btnKnife').disabled=score<2||player.hasKnife;
+  document.getElementById('btnBomb').disabled=score<3;
+  document.getElementById('btnShield').disabled=score<2;
   document.getElementById('btnSpeed').disabled=score<1;
 }
 function s_click(){
@@ -87,6 +90,17 @@ function buyGun(){
 }
 function buySpeed(){
   if(score>=1){score--;player.speedBoost=600;msg('⚡ 加速20秒！',2000);updateShopUI();updateUI()}
+}
+function buyKnife(){
+  if(score>=2&&!player.hasKnife){score-=2;player.hasKnife=true;msg('🔪 匕首装备！靠近鲨鱼自动攻击',2000);updateShopUI();updateUI()}
+}
+function buyBomb(){
+  if(score>=3){score-=3;shark.hp-=40;msg('💣 炸掉鲨鱼40HP！',2000);
+    for(var j=0;j<12;j++)bloodList.push({x:shark.x,y:shark.y,vx:(Math.random()-0.5)*8,vy:(Math.random()-0.5)*8-3,life:25});
+    updateShopUI();updateUI()}
+}
+function buyShield(){
+  if(score>=2){score-=2;player.shieldTime=150;msg('🛡️ 5秒无敌！',2000);updateShopUI();updateUI()}
 }
 
 // === TOUCH JOYSTICK ===
@@ -229,10 +243,17 @@ function tick(){
       
       // Attack player
       shark.atkCd=Math.max(0,shark.atkCd-1);
+      player.knifeCd=Math.max(0,player.knifeCd-1);
+      // Knife auto-attack
+      if(player.hasKnife&&player.knifeCd<=0&&dShark<shark.radius+player.radius+20&&shark.hp>0){
+        shark.hp-=10;player.knifeCd=60;
+        for(var j=0;j<3;j++)bloodList.push({x:shark.x,y:shark.y,vx:(Math.random()-0.5)*4,vy:(Math.random()-0.5)*4-2,life:12});
+      }
       if(dShark<shark.radius+player.radius+8&&shark.atkCd<=0){
-        player.hp-=12;shark.atkCd=30;
+        if(player.shieldTime>0){shark.atkCd=30} // shield blocks but shark still recoils
+        else{player.hp-=12;shark.atkCd=30;
         for(var j=0;j<4;j++)bloodList.push({x:player.x,y:player.y,vx:(Math.random()-0.5)*5,vy:(Math.random()-0.5)*5-2,life:18});
-        if(typeof sfxExplode==='function')sfxExplode();
+        if(typeof sfxExplode==='function')sfxExplode()}
       }
     }else if(shark.state==='chase'){
       shark.state='patrol';
@@ -264,6 +285,7 @@ function tick(){
   
   // Speed boost countdown
   if(player.speedBoost>0)player.speedBoost--;
+  if(player.shieldTime>0)player.shieldTime--;
 
   // Particles
   for(var i=bloodList.length-1;i>=0;i--){
@@ -359,7 +381,18 @@ function draw(){
     // Teeth
     ctx.fillStyle='#fff';
     for(var ti=0;ti<3;ti++){ctx.beginPath();ctx.moveTo(shark.radius*0.7+ti*6,shark.radius*0.05);ctx.lineTo(shark.radius*0.6+ti*6,shark.radius*0.25);ctx.lineTo(shark.radius*0.8+ti*6,shark.radius*0.25);ctx.fill()}
-    ctx.restore();
+    // Knife if equipped
+  if(player.hasKnife){
+    ctx.fillStyle='#ccc';ctx.fillRect(-12,-3,2,10);
+    ctx.fillStyle='#888';ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-15,-5);ctx.lineTo(-8,5);ctx.stroke();
+    ctx.fillStyle='#5a3a1a';ctx.fillRect(-8,7,4,3);
+  }
+  // Shield visual
+  if(player.shieldTime>0){
+    ctx.strokeStyle='rgba(100,200,255,'+(0.4+Math.sin(Date.now()*0.02)*0.3)+')';ctx.lineWidth=3;
+    ctx.beginPath();ctx.arc(0,0,player.radius+6,0,Math.PI*2);ctx.stroke();
+  }
+  ctx.restore();
     // HP bar
     var shpPct=shark.hp/shark.mhp;
     ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(shark.x-25,shark.y-shark.radius-14,50,6);
@@ -396,6 +429,17 @@ function draw(){
     ctx.fillStyle='#ff66aa';ctx.globalAlpha=0.5+Math.sin(Date.now()*0.01)*0.3;
     ctx.beginPath();ctx.arc(8,-15,5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
     ctx.fillStyle='#fff';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('💎',8,-13);
+  }
+  // Knife if equipped
+  if(player.hasKnife){
+    ctx.fillStyle='#ccc';ctx.fillRect(-12,-3,2,10);
+    ctx.fillStyle='#888';ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-15,-5);ctx.lineTo(-8,5);ctx.stroke();
+    ctx.fillStyle='#5a3a1a';ctx.fillRect(-8,7,4,3);
+  }
+  // Shield visual
+  if(player.shieldTime>0){
+    ctx.strokeStyle='rgba(100,200,255,'+(0.4+Math.sin(Date.now()*0.02)*0.3)+')';ctx.lineWidth=3;
+    ctx.beginPath();ctx.arc(0,0,player.radius+6,0,Math.PI*2);ctx.stroke();
   }
   ctx.restore();
   // HP bar
