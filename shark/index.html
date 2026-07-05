@@ -25,7 +25,7 @@
 @media(min-width:768px){#joystick,#btnShoot{display:none}}
 </style>
 <div class="wrap">
-<div class="hud"><span>❤️</span><b id="hp">100</b><span>💎</span><b id="gems">0</b><span>🦈</span><b id="sharkhp">150</b><span>🏆</span><b id="score">0/6</b><button id="shopBtn" onclick="s_click()" style="background:rgba(100,80,40,0.3);border:1px solid #886644;color:#ffcc44;padding:2px 10px;border-radius:6px;cursor:pointer;font-size:13px;font-family:system-ui">🏪 商店</button></div>
+<div class="hud"><span>❤️</span><b id="hp">100</b><span>💎</span><b id="gems">0</b><span>🦈</span><b id="sharkhp">150</b><span>🍖</span><b id="hunger">50</b><span>🏆</span><b id="score">0/6</b><button id="shopBtn" onclick="s_click()" style="background:rgba(100,80,40,0.3);border:1px solid #886644;color:#ffcc44;padding:2px 10px;border-radius:6px;cursor:pointer;font-size:13px;font-family:system-ui">🏪 商店</button></div>
 <div id="msg"></div>
 <canvas id="c"></canvas>
 <a class="back" href="/">← 返回</a><button id="restart" onclick="location.reload()">🔄 重开</button>
@@ -42,8 +42,8 @@ var ISLAND_X=W/2,ISLAND_Y=H/2-10,ISLAND_R=45;
 
 // === GAME STATE ===
 var player={x:W/2,y:H-25,hp:100,mhp:100,gems:0,speed:2.8,radius:14,gun:false,gunCd:0,gunDmg:8,speedBoost:0,hasKnife:false,knifeCd:0,shieldTime:0};
-var shark={x:W/2+120,y:H/2-50,hp:150,mhp:150,speed:1.0,radius:22,state:'patrol',targetX:0,targetY:0,atkCd:0};
-var gemList=[],bulletList=[],particleList=[],bloodList=[];
+var shark={x:W/2+120,y:H/2-50,hp:150,mhp:150,speed:1.0,radius:22,state:'patrol',targetX:0,targetY:0,atkCd:0,hunger:50};
+var gemList=[],bulletList=[],particleList=[],bloodList=[],fishList=[],foodList=[];
 var keys={},mouse={x:0,y:0,down:false};
 var score=0,gameOver=false,win=false;
 var WIN_GEMS=6;
@@ -55,7 +55,24 @@ function spawnGem(){
   gemList=[{x:ISLAND_X+Math.cos(ang)*dist,y:ISLAND_Y+Math.sin(ang)*dist,radius:8,sparkle:Math.random()*Math.PI*2}];
 }
 spawnGem();
+initFish();
+initFood();
 shark.targetX=shark.x;shark.targetY=shark.y;
+
+// === INIT FISH ===
+function initFish(){
+  fishList=[];
+  for(var i=0;i<8;i++){
+    fishList.push({x:50+Math.random()*(W-100),y:60+Math.random()*(H-120),vx:(Math.random()-0.5)*0.8,vy:(Math.random()-0.5)*0.8,radius:5,life:999,color:'#'+['88ccff','ffaa66','aadd88','ffcc88','88ddcc'][i%5]});
+  }
+}
+function initFood(){
+  foodList=[];
+  for(var i=0;i<5;i++){
+    var ang=Math.random()*Math.PI*2,dist=8+Math.random()*(ISLAND_R-15);
+    foodList.push({x:ISLAND_X+Math.cos(ang)*dist,y:ISLAND_Y+Math.sin(ang)*dist,radius:5,type:i%3});
+  }
+}
 
 // === HELPERS ===
 function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
@@ -123,6 +140,7 @@ function updateUI(){
   document.getElementById('hp').textContent=Math.max(0,player.hp);
   document.getElementById('gems').textContent=player.gems>0?'💎':'';
   document.getElementById('sharkhp').textContent=Math.max(0,shark.hp);
+  document.getElementById('hunger').textContent=Math.round(shark.hunger);
   document.getElementById('score').textContent=score+'/6';
   var sb=document.getElementById('shopBtn');
   var nb=typeof nearBasket!=='undefined'&&nearBasket;
@@ -185,6 +203,20 @@ function tick(){
       player.gems=1;gemList=[];if(typeof sfxPew==='function')sfxPew(1)
     }
   }
+  // Collect food on island
+  if(onIsland){
+    for(var fi=foodList.length-1;fi>=0;fi--){
+      if(dist(player,foodList[fi])<player.radius+foodList[fi].radius){
+        shark.hunger=Math.max(0,shark.hunger-15);foodList.splice(fi,1);
+        msg('🍖 偷走了鲨鱼的食物！',1500);
+      }
+    }
+  }
+  // Regrow food
+  if(foodList.length<3&&Math.random()<0.01){
+    var ang=Math.random()*Math.PI*2,dist=8+Math.random()*(ISLAND_R-15);
+    foodList.push({x:ISLAND_X+Math.cos(ang)*dist,y:ISLAND_Y+Math.sin(ang)*dist,radius:5,type:Math.floor(Math.random()*3)});
+  }
   
   // Deliver gems to any basket (all 4 sides)
   if(nearBasket&&player.gems>0){
@@ -223,6 +255,13 @@ function tick(){
     }
   }
   
+  // Food on island
+  for(var i=0;i<foodList.length;i++){
+    var fd=foodList[i];
+    var fc=['🍎','🍗','🧀'][fd.type];
+    ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText(fc,fd.x,fd.y+4);
+  }
+  
   // Shark AI
   if(shark.hp<=0){
     sharkRespawnTimer++;
@@ -235,7 +274,7 @@ function tick(){
   
   var dShark=dist(player,shark);
   if(shark.hp>0){
-    if(dShark<300&&!onIsland&&!nearBasket){ // Chase player, but safe on island and at baskets
+    if(dShark<350&&!onIsland&&!nearBasket&&!hungry){ // Chase player (not when hungry)
       shark.state='chase';
       var ang=Math.atan2(player.y-shark.y,player.x-shark.x);
       shark.x+=Math.cos(ang)*shark.speed*(dShark<120?1.5:1.0);
@@ -259,7 +298,13 @@ function tick(){
       shark.state='patrol';
       shark.targetX=ISLAND_X+(Math.random()-0.5)*250;
       shark.targetY=ISLAND_Y+(Math.random()-0.5)*250;
-    }else{ // Patrol around island
+    }else{ // Patrol or hunt fish
+      if(hungry&&fishList.length>0){
+        // Hunt nearest fish
+        var nf=null,nd=9999;
+        for(var fi2=0;fi2<fishList.length;fi2++){var dd2=dist(shark,fishList[fi2]);if(dd2<nd){nd=dd2;nf=fishList[fi2]}}
+        if(nf){var da2=Math.atan2(nf.y-shark.y,nf.x-shark.x);shark.x+=Math.cos(da2)*shark.speed*1.2;shark.y+=Math.sin(da2)*shark.speed*1.2}
+      }else{
       var dT=dist(shark,{x:shark.targetX,y:shark.targetY});
       if(dT<10||shark.targetX===0){
         shark.targetX=ISLAND_X+Math.cos(Math.random()*Math.PI*2)*(ISLAND_R+60+Math.random()*120);
@@ -283,6 +328,41 @@ function tick(){
     }
   }
   
+  // Fish movement + shark hunger
+  for(var fi=0;fi<fishList.length;fi++){
+    var f=fishList[fi];
+    f.x+=f.vx;f.y+=f.vy;
+    if(f.x<30||f.x>W-30)f.vx*=-1;
+    if(f.y<40||f.y>H-50)f.vy*=-1;
+    f.vx+=(Math.random()-0.5)*0.1;f.vy+=(Math.random()-0.5)*0.1;
+    // Food on island
+  for(var i=0;i<foodList.length;i++){
+    var fd=foodList[i];
+    var fc=['🍎','🍗','🧀'][fd.type];
+    ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText(fc,fd.x,fd.y+4);
+  }
+  
+  // Shark eats fish when hungry
+    if(shark.hp>0&&dist(shark,f)<shark.radius+f.radius+5){
+      if(shark.hunger<80){shark.hunger=Math.min(100,shark.hunger+20);fishList.splice(fi,1);fi--}
+      else{// bounce fish away when full
+        var fa=Math.atan2(f.y-shark.y,f.x-shark.x);f.vx=Math.cos(fa)*2;f.vy=Math.sin(fa)*2}
+    }
+  }
+  if(fishList.length<5&&Math.random()<0.02){
+    fishList.push({x:50+Math.random()*(W-100),y:60+Math.random()*(H-120),vx:(Math.random()-0.5)*0.8,vy:(Math.random()-0.5)*0.8,radius:5,life:999,color:'#'+['88ccff','ffaa66','aadd88','ffcc88','88ddcc'][Math.floor(Math.random()*5)]});
+  }
+  // Food on island
+  for(var i=0;i<foodList.length;i++){
+    var fd=foodList[i];
+    var fc=['🍎','🍗','🧀'][fd.type];
+    ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText(fc,fd.x,fd.y+4);
+  }
+  
+  // Shark hunger decay
+  if(shark.hp>0){shark.hunger=Math.max(0,shark.hunger-0.05)}
+  var hungry=shark.hunger<30;
+
   // Speed boost countdown
   if(player.speedBoost>0)player.speedBoost--;
   if(player.shieldTime>0)player.shieldTime--;
@@ -334,6 +414,13 @@ function draw(){
     ctx.fillStyle='#ffd700';ctx.font='bold 9px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🧺',b.x,b.y);
   }
   
+  // Fish in sea
+  for(var i=0;i<fishList.length;i++){
+    var f=fishList[i];
+    ctx.fillStyle=f.color;ctx.beginPath();ctx.ellipse(f.x,f.y,f.radius,f.radius*0.5,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(f.x+f.radius*0.5,f.y-f.radius*0.2,1.5,0,Math.PI*2);ctx.fill();
+  }
+  
   // Palm trees
   for(var ti=0;ti<4;ti++){
     var tx=80+ti*180,ty=H-25;
@@ -359,6 +446,13 @@ function draw(){
     var pulse=Math.sin(g.sparkle)*0.3+0.7;
     ctx.fillStyle='rgba(255,100,200,'+(0.6+pulse*0.4)+')';ctx.beginPath();ctx.arc(g.x,g.y,g.radius*pulse,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#fff';ctx.globalAlpha=pulse;ctx.beginPath();ctx.arc(g.x-g.radius*0.3,g.y-g.radius*0.3,g.radius*0.4,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+  }
+  
+  // Food on island
+  for(var i=0;i<foodList.length;i++){
+    var fd=foodList[i];
+    var fc=['🍎','🍗','🧀'][fd.type];
+    ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText(fc,fd.x,fd.y+4);
   }
   
   // Shark
