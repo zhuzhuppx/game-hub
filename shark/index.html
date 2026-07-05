@@ -19,12 +19,19 @@
 .back:hover{background:rgba(100,100,200,0.2);color:#aaaaff}
 #restart{color:#cc8844;font-size:14px;position:absolute;bottom:12px;right:12px;z-index:100;background:rgba(0,0,0,0.5);padding:4px 12px;border-radius:6px;border:none;cursor:pointer;transition:all 0.2s;font-family:system-ui}
 #restart:hover{background:rgba(200,150,50,0.25);color:#ffaa44}
-#shop{display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(10,20,40,0.95);border:2px solid #886644;border-radius:12px;padding:16px;z-index:200;min-width:240px;max-width:90vw;max-height:75vh;overflow-y:auto;text-align:center}
-#shop h3{color:#ffcc44;margin-bottom:8px;font-size:16px}
-#shop .btn{display:block;width:100%;margin:6px 0;padding:8px 12px;background:rgba(100,80,40,0.4);border:1px solid #886644;border-radius:8px;color:#ddd;font-size:13px;cursor:pointer;font-family:system-ui;transition:all 0.2s;white-space:nowrap}
-#shop .btn:hover{background:rgba(180,140,60,0.4);color:#fff}
-#shop .btn:disabled{opacity:0.4;cursor:default}
-#shop .cat{color:#8ab4f8;font-size:11px;margin:10px 0 4px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:2px}
+#shop{display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(10,20,40,0.97);border:2px solid #886644;border-radius:12px;padding:16px;z-index:200;min-width:300px;max-width:92vw;max-height:80vh;overflow-y:auto}
+#shop h3{color:#ffcc44;margin-bottom:4px;font-size:16px;text-align:center}
+#shop .grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+#shop .card{display:flex;align-items:center;gap:6px;padding:6px 8px;background:rgba(100,80,40,0.25);border:1px solid rgba(136,102,68,0.4);border-radius:6px;cursor:pointer;transition:all 0.15s;text-align:left;font-family:system-ui;font-size:11px;color:#ccc;min-width:0;border:none}
+#shop .card:hover{background:rgba(180,140,60,0.35);border-color:#aa8855}
+#shop .card:disabled{opacity:0.3;cursor:default;background:rgba(60,40,20,0.3)}
+#shop .card .ic{font-size:18px;flex-shrink:0;width:26px;text-align:center}
+#shop .card .info{flex:1;min-width:0}
+#shop .card .name{font-size:11px;color:#eee;font-weight:600}
+#shop .card .desc{font-size:10px;color:#999}
+#shop .card .price{font-size:12px;color:#ffcc44;font-weight:700;flex-shrink:0}
+#shop .cat{color:#8ab4f8;font-size:11px;margin:10px 0 4px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:3px;grid-column:1/-1}
+#shop .close{color:#888;background:none;border:none;font-size:16px;cursor:pointer;float:right;padding:0 4px;line-height:1}
 #shop .close:hover{color:#fff}
 #joystick{position:absolute;bottom:50px;left:30px;width:100px;height:100px;background:rgba(255,255,255,0.08);border-radius:50%;border:2px solid rgba(255,255,255,0.15);z-index:150;touch-action:none}
 #joystick .knob{position:absolute;width:40px;height:40px;background:rgba(255,255,255,0.3);border-radius:50%;top:30px;left:30px;transition:transform 0.05s;pointer-events:none}
@@ -44,25 +51,27 @@
 <div id="msg"></div>
 <canvas id="c"></canvas>
 <a class="back" href="/">← 返回</a><button id="restart" onclick="location.reload()">🔄 重开</button>
-<div id="shop"><button class="close" onclick="document.getElementById('shop').style.display='none'">✕</button><h3>🏪 军事商店</h3><div id="shopScore" style="color:#ffcc44;font-size:12px;margin-bottom:4px">可用：0💎</div>
+<div id="shop"><button class="close" onclick="document.getElementById('shop').style.display='none'">✕</button><h3>🏪 军事商店</h3><div id="shopScore" style="color:#ffcc44;font-size:12px;margin-bottom:6px;text-align:center">可用：0💎</div>
+<div class="grid">
 <div class="cat">🩹 补给</div>
-<button class="btn" id="btnHeal" onclick="buyHeal()">❤️ 血包 +50HP — 1💎</button>
-<button class="btn" id="btnShield" onclick="buyShield()">🛡️ 护盾 5秒无敌 — 2💎</button>
-<button class="btn" id="btnAdrenaline" onclick="buyAdrenaline()">💉 肾上腺素 8s无敌+神速 — 1💎</button>
-<button class="btn" id="btnSpeed" onclick="buySpeed()">⚡ 加速靴 20秒 — 1💎</button>
+<button class="card" id="btnHeal" onclick="buyHeal()"><span class="ic">❤️</span><span class="info"><div class="name">血包</div><div class="desc">+50HP</div></span><span class="price">1💎</span></button>
+<button class="card" id="btnShield" onclick="buyShield()"><span class="ic">🛡️</span><span class="info"><div class="name">护盾</div><div class="desc">5秒无敌</div></span><span class="price">2💎</span></button>
+<button class="card" id="btnAdrenaline" onclick="buyAdrenaline()"><span class="ic">💉</span><span class="info"><div class="name">肾上腺素</div><div class="desc">8s无敌+神速</div></span><span class="price">1💎</span></button>
+<button class="card" id="btnSpeed" onclick="buySpeed()"><span class="ic">⚡</span><span class="info"><div class="name">加速靴</div><div class="desc">20秒加速</div></span><span class="price">1💎</span></button>
 <div class="cat">⚔️ 武器</div>
-<button class="btn" id="btnGun" onclick="buyGun()">🔫 强化武器 伤害+5 — 2💎</button>
-<button class="btn" id="btnScope" onclick="buyScope()">🎯 瞄准镜 射程翻倍 — 3💎</button>
-<button class="btn" id="btnKnife" onclick="buyKnife()">🔪 匕首(自动近战) — 2💎</button>
-<button class="btn" id="btnFlame" onclick="buyFlame()">🔥 喷火枪(近程灼烧) — 4💎</button>
+<button class="card" id="btnGun" onclick="buyGun()"><span class="ic">🔫</span><span class="info"><div class="name">强化武器</div><div class="desc">伤害+5</div></span><span class="price">2💎</span></button>
+<button class="card" id="btnScope" onclick="buyScope()"><span class="ic">🎯</span><span class="info"><div class="name">瞄准镜</div><div class="desc">射程翻倍</div></span><span class="price">3💎</span></button>
+<button class="card" id="btnKnife" onclick="buyKnife()"><span class="ic">🔪</span><span class="info"><div class="name">匕首</div><div class="desc">自动近战</div></span><span class="price">2💎</span></button>
+<button class="card" id="btnFlame" onclick="buyFlame()"><span class="ic">🔥</span><span class="info"><div class="name">喷火枪</div><div class="desc">近程灼烧</div></span><span class="price">4💎</span></button>
 <div class="cat">💣 爆破</div>
-<button class="btn" id="btnBomb" onclick="buyBomb()">💣 手雷 范围40伤 — 3💎</button>
-<button class="btn" id="btnMine" onclick="buyMine()">💥 水雷(触碰爆炸) — 2💎</button>
-<button class="btn" id="btnTorpedo" onclick="buyTorpedo()">🚀 鱼雷(追踪50伤) — 3💎</button>
+<button class="card" id="btnBomb" onclick="buyBomb()"><span class="ic">💣</span><span class="info"><div class="name">手雷</div><div class="desc">范围40伤</div></span><span class="price">3💎</span></button>
+<button class="card" id="btnMine" onclick="buyMine()"><span class="ic">💥</span><span class="info"><div class="name">水雷</div><div class="desc">触碰爆炸</div></span><span class="price">2💎</span></button>
+<button class="card" id="btnTorpedo" onclick="buyTorpedo()"><span class="ic">🚀</span><span class="info"><div class="name">鱼雷</div><div class="desc">追踪50伤</div></span><span class="price">3💎</span></button>
 <div class="cat">🚢 舰船</div>
-<button class="btn" id="btnBoat" onclick="buyBoat()">⛵ 炮艇(自动开炮) — 10💎</button>
-<button class="btn" id="btnShip" onclick="buyShip()">🚢 战舰(重炮+高血) — 10💎</button>
-<div style="color:#888;font-size:11px;margin-top:6px">靠近岸边篮子即可打开商店</div></div>
+<button class="card" id="btnBoat" onclick="buyBoat()"><span class="ic">⛵</span><span class="info"><div class="name">炮艇</div><div class="desc">自动开炮</div></span><span class="price">10💎</span></button>
+<button class="card" id="btnShip" onclick="buyShip()"><span class="ic">🚢</span><span class="info"><div class="name">战舰</div><div class="desc">重炮+高血</div></span><span class="price">10💎</span></button>
+</div>
+<div style="color:#888;font-size:10px;margin-top:6px;text-align:center">靠近岸边篮子即可打开商店</div></div>
 <div id="joystick"><div class="knob" id="knob"></div></div>
 <button id="btnShoot" ontouchstart="doShoot(event)" onmousedown="doShoot(event)">🔫</button>
 </div>
