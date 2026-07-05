@@ -174,8 +174,14 @@ function tick(){
       shark.x+=Math.cos(da)*shark.speed*0.7;
       shark.y+=Math.sin(da)*shark.speed*0.7;
     }
-    // Clamp shark near island
-    if(dist(shark,{x:ISLAND_X,y:ISLAND_Y})>350){
+    // Clamp shark near island (keep out of island + don't go too far)
+    var sd=dist(shark,{x:ISLAND_X,y:ISLAND_Y});
+    if(sd<ISLAND_R+shark.radius+15){
+      var sa=Math.atan2(shark.y-ISLAND_Y,shark.x-ISLAND_X);
+      shark.x=ISLAND_X+Math.cos(sa)*(ISLAND_R+shark.radius+15);
+      shark.y=ISLAND_Y+Math.sin(sa)*(ISLAND_R+shark.radius+15);
+    }
+    if(sd>350){
       var sa=Math.atan2(shark.y-ISLAND_Y,shark.x-ISLAND_X);
       shark.x=ISLAND_X+Math.cos(sa)*340;
       shark.y=ISLAND_Y+Math.sin(sa)*340;
