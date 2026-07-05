@@ -336,7 +336,7 @@ function tick(){
   
   var dShark=dist(player,shark);
   if(shark.hp>0){
-    var hungry=shark.hunger<30;
+    var hungry=shark.hunger<15;
     if(dShark<350&&!onIsland&&!nearBasket&&!hungry){ // Chase only when not hungry
       shark.state='chase';
       var ang=Math.atan2(player.y-shark.y,player.x-shark.x);
@@ -404,7 +404,7 @@ function tick(){
   if(fishList.length<5&&Math.random()<0.02){
     fishList.push({x:50+Math.random()*(W-100),y:60+Math.random()*(H-120),vx:(Math.random()-0.5)*0.8,vy:(Math.random()-0.5)*0.8,radius:5,color:'#'+['88ccff','ffaa66','aadd88','ffcc88','88ddcc'][Math.floor(Math.random()*5)]});
   }
-  if(shark.hp>0){shark.hunger=Math.max(0,shark.hunger-0.05)}
+  if(shark.hp>0){shark.hunger=Math.max(0,shark.hunger-0.025)}
 
   // Chest spawn & logic
   chestSpawnTimer--;
