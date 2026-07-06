@@ -12,12 +12,17 @@ body{display:flex;flex-direction:column}
 .topbar .btn-logout{background:rgba(255,255,255,0.06);color:#888}
 .topbar .btn-logout:hover{background:rgba(255,255,255,0.1);color:#aaa}
 .main{flex:1;display:flex;overflow:hidden}
-.preview{flex:1;display:flex;flex-direction:column;background:#111;min-width:0}
+.preview{flex:1;display:flex;flex-direction:column;background:#111;min-width:0;position:relative}
 .preview-header{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid #1a1a1a;flex-shrink:0}
 .preview-header .name{font-size:13px;color:#fff;display:flex;align-items:center;gap:6px}
 .preview-header .dot{width:7px;height:7px;border-radius:50%;background:#44cc44}
 .preview-header .vers{font-size:12px;color:#ffcc44;font-weight:600}
 .preview-frame{flex:1;border:none;background:#1a2a1a}
+.preview-hints{position:absolute;bottom:10px;left:10px;right:10px;background:rgba(30,30,40,0.95);border:1px solid #444;border-radius:12px;padding:10px 12px;z-index:10;animation:fadeIn 0.3s}
+.hint-label{font-size:12px;color:#ffcc44;margin-bottom:8px;font-weight:600}
+.hint-btns{display:flex;flex-wrap:wrap;gap:6px}
+.hint-btns button{background:rgba(255,255,255,0.08);border:1px solid #555;color:#ddd;padding:6px 12px;border-radius:16px;font-size:12px;cursor:pointer;font-family:system-ui;transition:all 0.15s}
+.hint-btns button:hover{background:rgba(74,108,247,0.3);border-color:#4a6cf7;color:#fff}
 .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#333;gap:8px}
 .empty .big{font-size:56px}.empty p{font-size:14px}
 .chat-panel{width:340px;min-width:280px;display:flex;flex-direction:column;border-left:1px solid #222;background:#1a1a1a;flex-shrink:0}
@@ -81,6 +86,10 @@ body{display:flex;flex-direction:column}
     </div>
     <div id="emptyState" class="empty"><div class="big">🎮</div><p>在右边聊天，游戏会在这里显示</p></div>
     <iframe id="previewFrame" class="preview-frame" style="display:none"></iframe>
+    <div class="preview-hints" id="previewHints" style="display:none">
+      <div class="hint-label">💡 想升级游戏吗？</div>
+      <div class="hint-btns" id="hintBtns"></div>
+    </div>
   </div>
   <div class="chat-panel">
     <div class="chat-title">
@@ -180,6 +189,7 @@ function addMsg(text,isUser){
 }
 
 function quickSend(text){
+  document.getElementById('previewHints').style.display='none';
   document.getElementById('input').value=text;
   send();
 }
@@ -228,8 +238,9 @@ async function send(){
     var display=reply.replace(/```html[\s\S]*?```/g,'[游戏已更新到左边预览]');
     addMsg(display,false);
 
-    // 代码生成后，给出迭代建议按钮（AI 文本里也应该有建议）
+    // 代码生成后，给出迭代建议按钮
     if(codeMatch){
+      // 聊天区建议
       var s=document.createElement('div');s.className='suggestions';s.id='suggestions';
       s.innerHTML='<button onclick="quickSend(\'好的，继续升级！\')">🚀 继续升级</button>'+
         '<button onclick="quickSend(\'加个Boss吧\')">👾 加Boss</button>'+
@@ -237,6 +248,18 @@ async function send(){
         '<button onclick="quickSend(\'加个排行榜\')">🏆 加排行榜</button>';
       document.getElementById('msgs').appendChild(s);
       document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
+
+      // 游戏预览区浮动建议
+      var hints=document.getElementById('previewHints');
+      var btnDiv=document.getElementById('hintBtns');
+      btnDiv.innerHTML='<button onclick="quickSend(\'好的，继续升级！\')">🚀 继续升级</button>'+
+        '<button onclick="quickSend(\'加个Boss吧\')">👾 加Boss</button>'+
+        '<button onclick="quickSend(\'让难度慢慢增加\')">📈 难度递增</button>'+
+        '<button onclick="quickSend(\'加个排行榜\')">🏆 加排行榜</button>';
+      hints.style.display='block';
+      // 15秒后自动隐藏，不打扰游玩
+      clearTimeout(window._hintTimeout);
+      window._hintTimeout=setTimeout(function(){hints.style.display='none'},15000);
     }
 
     // 如果 AI 在提问（没有给出代码），加上提示
