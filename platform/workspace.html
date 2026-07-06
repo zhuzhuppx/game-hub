@@ -379,7 +379,7 @@ async function send(){
     var reply=data.choices[0].message.content;
     messages.push({role:'assistant',content:reply});
 
-    var codeMatch=reply.match(/```html\n?([\s\S]*?)```/);
+    var codeMatch=reply.match(/```\s*(?:html)?\s*\n?([\s\S]*?)```/);
     if(codeMatch){
       gameCode=codeMatch[1];
       if(!gameStarted){gameStarted=true;
@@ -403,10 +403,9 @@ async function send(){
       // 首次生成自动打开预览
       if(version===1){openPreview()}
     }
-    // 有代码 → 只显示文字不显示代码
-    var display=reply.replace(/```html[\s\S]*?```/g,'');
-    // 如果去掉代码后只剩空格/换行，给个简短提示
-    if(!display.trim()){display='✅ 游戏已更新！'}
+    // 有代码 → 只显示文字，去掉所有代码块
+    var display=reply.replace(/```[\s\S]*?```/g,'');
+    if(!display.trim()){display='✅ 游戏已更新！点击 👁️ 预览'}
     addMsg(display,false);
 
     // 代码生成后，在聊天区追加预览按钮
