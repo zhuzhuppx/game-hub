@@ -409,7 +409,9 @@ async function send(){
     var reply=data.choices[0].message.content;
     messages.push({role:'assistant',content:reply});
 
-    var codeMatch=reply.match(/```html\n([\s\S]*?)\n```/);
+    var codeMatch=reply.match(/```html\s*\n([\s\S]*?)\n\s*```/);
+    // 兜底：如果上面没匹配到但有 ```，尝试更宽松的匹配
+    if(!codeMatch){codeMatch=reply.match(/```html\s*\n?([\s\S]*?)```/)}
     if(codeMatch){
       gameCode=codeMatch[1];
       version++;
@@ -435,8 +437,9 @@ async function send(){
       if(version===1){openPreview()}
     }
     // 有代码 → 只显示文字，去掉所有代码块
-    // 切掉代码块：取第一个 ``` 之前的所有文字
-    var display=reply.split('\n```')[0];
+    // 切掉代码块：找第一个 ``` 出现的位置
+    var codeIdx=reply.indexOf('\n```');
+    var display=codeIdx>=0?reply.slice(0,codeIdx):reply;
     if(!display.trim()){display='✅ 游戏已更新！点击 👁️ 预览'}
     var msgEl=addMsg(display,false);
 
