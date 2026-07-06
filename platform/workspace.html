@@ -564,9 +564,9 @@ async function send(){
     var reply=data.choices[0].message.content;
     messages.push({role:'assistant',content:reply});
 
-    var codeMatch=reply.match(/```html\s*\n([\s\S]*?)\n\s*```/);
+    var codeMatch=reply.match(/```html[ \t]*\r?\n([\s\S]*?)\r?\n\s*```/);
     if(!codeMatch){codeMatch=reply.match(/```html\s*\n?([\s\S]*?)```/)}
-    if(!codeMatch){codeMatch=reply.match(/```\s*\n([\s\S]*?)\n\s*```/)}
+    if(!codeMatch){codeMatch=reply.match(/```\s*\r?\n([\s\S]*?)\r?\n\s*```/)}
     if(!codeMatch){codeMatch=reply.match(/```\n?([\s\S]*?)```/)}
     // 最后兜底：如果回复里直接包含完整的 <!DOCTYPE html> 或 <html>
     if(!codeMatch){
@@ -720,8 +720,12 @@ async function doSave(){
   if(!name)return;
   gameTitle=name;
   document.getElementById('gameName').textContent=gameTitle;
+  // 始终从 iframe 取最新代码，避免 gameCode 变量是旧值
+  var html=document.getElementById('previewFrame').srcdoc;
+  if(!html||html.length<50)html=gameCode;
+  if(!html||html.length<50){alert('还没有生成游戏呢');return}
   try{
-    var r=await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:gameTitle,html:gameCode,id:gameId,version:version})});
+    var r=await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:gameTitle,html:html,id:gameId,version:version})});
     var d=await r.json();
     if(d.ok){closeSave();gameSaved=true;gameId=d.id;SFX.success();alert('保存成功！✌️')}else{SFX.fail();alert('保存失败：'+d.error)}
   }catch(e){SFX.fail();alert('保存失败')}
