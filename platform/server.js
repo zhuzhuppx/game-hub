@@ -20,7 +20,15 @@ function hash(pw){return crypto.createHash('sha256').update(pw+SALT).digest('hex
 var app=express();
 app.use(express.json({limit:'2mb'}));
 app.use(cookieParser());
-app.use('/platform',express.static(__dirname));
+app.get('/', function(req,res){res.redirect('/platform/')});
+app.get('/platform/', function(req,res){
+  var html=fs.readFileSync(path.resolve(__dirname,'workspace.html'),'utf8');
+  res.type('html').send(html);
+});
+app.get('/api/config', function(req,res){
+  res.json({apiKey:process.env.DEEPSEEK_API_KEY_GAME||''});
+});
+app.use('/platform', express.static(__dirname, {index: false}));
 
 app.get('/p/:user/:slug',function(req,res){
   var file=path.join(GAMES_DIR,req.params.user,req.params.slug+'.html');
