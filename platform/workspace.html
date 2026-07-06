@@ -455,7 +455,13 @@ async function send(){
     var codeMatch=reply.match(/```html\s*\n([\s\S]*?)\n\s*```/);
     // 兜底：如果上面没匹配到但有 ```，尝试更宽松的匹配
     if(!codeMatch){codeMatch=reply.match(/```html\s*\n?([\s\S]*?)```/)}
+    // 再兜底：无语言标记的 ``` 代码块
+    if(!codeMatch){codeMatch=reply.match(/```\s*\n([\s\S]*?)\n\s*```/)}
+    if(!codeMatch){codeMatch=reply.match(/```\n?([\s\S]*?)```/)}
     if(codeMatch && codeMatch[1].trim()){
+      if(codeMatch[1].trim().length<50){codeMatch=null}
+    }
+    if(codeMatch){
       gameCode=codeMatch[1];
       gameSaved=false;
       version++;
