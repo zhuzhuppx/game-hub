@@ -18,7 +18,7 @@ body{display:flex;flex-direction:column}
 .topbar .btn-preview:hover{background:rgba(74,108,247,0.35)}
 .main{flex:1;display:flex;overflow:hidden;position:relative}
 /* 聊天主区域 */
-.chat-main{flex:1;display:flex;flex-direction:column;background:#1a1a1a;min-width:0;transition:margin-right 0.35s cubic-bezier(0.4,0,0.2,1)}
+.chat-main{flex:1;display:flex;flex-direction:column;background:#1a1a1a;min-width:0;min-height:0;transition:margin-right 0.35s cubic-bezier(0.4,0,0.2,1)}
 .chat-main.shrink{margin-right:420px}
 @media(max-width:768px){.chat-main.shrink{margin-right:0}}
 .chat-title{font-size:13px;font-weight:600;padding:10px 14px;border-bottom:1px solid #222;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
@@ -33,7 +33,7 @@ body{display:flex;flex-direction:column}
 .gamelist .game-item .gdel{color:#664444;cursor:pointer;padding:2px 6px;border-radius:4px;font-size:12px}
 .gamelist .game-item .gdel:hover{color:#ff4444;background:rgba(255,0,0,0.1)}
 .gamelist .empty-msg{color:#444;font-size:12px;text-align:center;padding:12px}
-.msgs{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+.msgs{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;min-height:0}
 .msg{max-width:88%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.5;word-break:break-word;animation:fadeIn 0.2s;white-space:pre-wrap}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 .msg.ai{align-self:flex-start;background:#2a2a2a;border-bottom-left-radius:4px}
@@ -300,11 +300,31 @@ init();
 function addMsg(text,isUser){
   var div=document.createElement('div');
   div.className='msg '+(isUser?'user':'ai');
-  div.textContent=text;
+  div.textContent=isUser?text:'';
   document.getElementById('msgs').appendChild(div);
   document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
   var old=document.getElementById('suggestions');
   if(old)old.remove();
+
+  // AI消息做打字效果
+  if(!isUser && text){
+    div._typing=true;
+    typeText(div,text,0,function(){
+      div._typing=false;
+      if(div._typingCb){div._typingCb();div._typingCb=null}
+    });
+  }else if(isUser){
+    div.textContent=text;
+  }
+  return div;
+}
+
+function typeText(el,text,i,cb){
+  if(i<text.length){
+    el.textContent=text.slice(0,i+1);
+    document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
+    setTimeout(function(){typeText(el,text,i+1,cb)},15+Math.random()*25);
+  }else if(cb){cb()}
 }
 
 function quickSend(text){
@@ -382,6 +402,7 @@ async function send(){
     var codeMatch=reply.match(/```html\n([\s\S]*?)\n```/);
     if(codeMatch){
       gameCode=codeMatch[1];
+      version++;
       if(!gameStarted){gameStarted=true;
         // 自动取名：摘用户第一个消息的关键词
         var firstMsg=messages.find(function(m){return m.role==='user'});
@@ -407,43 +428,55 @@ async function send(){
     // 切掉代码块：取第一个 ``` 之前的所有文字
     var display=reply.split('\n```')[0];
     if(!display.trim()){display='✅ 游戏已更新！点击 👁️ 预览'}
-    addMsg(display,false);
+    var msgEl=addMsg(display,false);
 
-    // 代码生成后，在聊天区追加预览按钮
+    // 代码生成后，打字结束再追加按钮
     if(codeMatch){
-      var btn=document.createElement('div');btn.className='suggestions';btn.id='suggestions';
-      btn.innerHTML='<button onclick="openPreview()" style="background:#4a6cf7;color:#fff;font-weight:600">👁️ 预览游戏</button>'+
-        '<button onclick="quickSend(\'好的，继续升级！\')">🚀 继续升级</button>'+
-        '<button onclick="quickSend(\'加个Boss吧\')">👾 加Boss</button>'+
-        '<button onclick="quickSend(\'让难度慢慢增加\')">📈 难度递增</button>'+
-        '<button onclick="quickSend(\'加个排行榜\')">🏆 加排行榜</button>';
-      document.getElementById('msgs').appendChild(btn);
-      document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
+      (function(btnCode){
+        function showBtns(){
+          var btn=document.createElement('div');btn.className='suggestions';btn.id='suggestions';
+          btn.innerHTML='<button onclick="openPreview()" style="background:#4a6cf7;color:#fff;font-weight:600">👁️ 预览游戏</button>'+
+            '<button onclick="quickSend(\'好的，继续升级！\')">🚀 继续升级</button>'+
+            '<button onclick="quickSend(\'加个Boss吧\')">👾 加Boss</button>'+
+            '<button onclick="quickSend(\'让难度慢慢增加\')">📈 难度递增</button>'+
+            '<button onclick="quickSend(\'加个排行榜\')">🏆 加排行榜</button>';
+          document.getElementById('msgs').appendChild(btn);
+          document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
 
-      // 预览区升级弹窗 - 30秒后弹出
-      var hints=document.getElementById('previewHints');
-      var bd=document.getElementById('hintBtns');
-      bd.innerHTML='<button onclick="quickSend(\'好的，继续升级！\')">🚀 继续升级</button>'+
-        '<button onclick="quickSend(\'加个Boss吧\')">👾 加Boss</button>'+
-        '<button onclick="quickSend(\'让难度慢慢增加\')">📈 难度递增</button>'+
-        '<button onclick="quickSend(\'加个排行榜\')">🏆 加排行榜</button>';
-      clearTimeout(window._hintTimeout);
-      window._hintTimeout=setTimeout(function(){
-        if(document.getElementById('previewPanel').classList.contains('open')){
-          hints.style.display='block';
+          // 预览区升级弹窗 - 30秒后弹出
+          var hints=document.getElementById('previewHints');
+          var bd=document.getElementById('hintBtns');
+          bd.innerHTML='<button onclick="quickSend(\'好的，继续升级！\')">🚀 继续升级</button>'+
+            '<button onclick="quickSend(\'加个Boss吧\')">👾 加Boss</button>'+
+            '<button onclick="quickSend(\'让难度慢慢增加\')">📈 难度递增</button>'+
+            '<button onclick="quickSend(\'加个排行榜\')">🏆 加排行榜</button>';
+          clearTimeout(window._hintTimeout);
+          window._hintTimeout=setTimeout(function(){
+            if(document.getElementById('previewPanel').classList.contains('open')){
+              hints.style.display='block';
+            }
+          },30000);
         }
-      },30000);
+        if(msgEl&&msgEl._typing){msgEl._typing=showBtns}
+        else{showBtns()}
+      })();
     }
 
-    // AI提问时给快捷回复
+    // AI提问时给快捷回复 — 打字结束后显示
     if(!codeMatch && reply.includes('？')){
-      var s=document.createElement('div');s.className='suggestions';s.id='suggestions';
-      s.innerHTML='<button onclick="quickSend(\'1\')">1️⃣</button>'+
-        '<button onclick="quickSend(\'2\')">2️⃣</button>'+
-        '<button onclick="quickSend(\'3\')">3️⃣</button>'+
-        '<button onclick="quickSend(\'我想要不一样的\')">💡 其他想法</button>';
-      document.getElementById('msgs').appendChild(s);
-      document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
+      (function(){
+        function showBtns(){
+          var s=document.createElement('div');s.className='suggestions';s.id='suggestions';
+          s.innerHTML='<button onclick="quickSend(\'1\')">1️⃣</button>'+
+            '<button onclick="quickSend(\'2\')">2️⃣</button>'+
+            '<button onclick="quickSend(\'3\')">3️⃣</button>'+
+            '<button onclick="quickSend(\'我想要不一样的\')">💡 其他想法</button>';
+          document.getElementById('msgs').appendChild(s);
+          document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
+        }
+        if(msgEl&&msgEl._typing){msgEl._typingCb=showBtns}
+        else{showBtns()}
+      })();
     }
   }catch(e){
     var el=document.getElementById('typing');if(el)el.remove();
