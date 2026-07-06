@@ -280,7 +280,7 @@ var SYSTEM_PROMPT="你是'游戏工坊'的AI助手，帮小朋友把游戏想法
 "4. 必须完全基于小朋友前面五步的设计\n"+
 "5. ⚠️ 代码放在回复的最后面，前面简要说明改了什么即可\n"+
 "6. 🎵 必须内置背景音乐！在代码开头加入：<script src=\"https://studio.2u1.cn/platform/sfx.js\"><"+"/script>。BGM 必须在第一次点击/按键后才启动（浏览器安全策略），示例：document.addEventListener('keydown',function s(){SFX.bgmAdventure();document.removeEventListener('keydown',s)},{once:true})。游戏里加 🔊/🔇 按钮（SFX.toggleBGM()）。关键时刻加音效：得分 SFX.score()，碰撞 SFX.hurt()，胜利 SFX.success()\n"+
-"7. ⏸️ 必须支持暂停！添加 window.addEventListener('message',function(e){if(e.data==='pause'){paused=true}if(e.data==='resume'){paused=false}}) 和在游戏循环里 if(paused)return。关闭预览面板时会自动发 pause，打开时发 resume\n\n"+
+"7. ⏸️ 必须支持暂停！添加 window.addEventListener('message',function(e){if(e.data==='pause'){paused=true;SFX.stopBGM()}if(e.data==='resume'){paused=false}}) 和在游戏循环里 if(paused)return。关闭预览面板时会自动暂停+停音乐\n\n"+
 "## 迭代模式\n"+
 "代码给出后，追问：「试试你的游戏！这是你设计的，想加什么新功能？」举2个紧扣当前游戏的具体建议\n"+
 "⚠️ 迭代时：已有BGM就替换风格（如 bgmAdventure→bgmSpace），不要加第二个。简单功能（加BGM/音效/按钮/分数）直接改代码，不用重走五步法\n\n"+
@@ -378,9 +378,12 @@ function openPreview(){
 }
 
 function closePreview(){
-  // 发送 pause 消息
   var frame=document.getElementById('previewFrame');
-  try{frame.contentWindow.postMessage('pause','*')}catch(e){}
+  // 暂停游戏 + 停止背景音乐
+  try{
+    frame.contentWindow.postMessage('pause','*');
+    if(frame.contentWindow.SFX) frame.contentWindow.SFX.stopBGM();
+  }catch(e){}
   document.getElementById('previewPanel').classList.remove('open');
   document.getElementById('chatMain').classList.remove('shrink');
   document.getElementById('previewHints').style.display='none';
@@ -772,6 +775,11 @@ function playGame(id,title){
 }
 
 function closePlay(){
+  var frame=document.getElementById('playFrame');
+  try{
+    frame.contentWindow.postMessage('pause','*');
+    if(frame.contentWindow.SFX) frame.contentWindow.SFX.stopBGM();
+  }catch(e){}
   document.getElementById('playOverlay').classList.remove('show');
 }
 
