@@ -451,16 +451,21 @@ async function send(){
       version++;
       SFX.powerup();
       if(!gameStarted){gameStarted=true;
-        // 自动取名：摘用户第一个消息的关键词
+        // 自动取名：从第一条用户消息提取关键词
         var firstMsg=messages.find(function(m){return m.role==='user'});
-        var raw=firstMsg?firstMsg.content:text;
-        var words=raw.match(/[\u4e00-\u9fa5]{2,}|[a-zA-Z]{3,}/g)||[];
-        // 过滤无意义词
-        var skip={'我想做':1,'我想要':1,'帮我做':1,'一个':1,'游戏':1,'我想':1,'做个':1,'做一个':1};
+        var raw=(firstMsg?firstMsg.content:text)||'';
+        // 提取所有有意义的中文词
+        var words=raw.match(/[\u4e00-\u9fa5]{2,}/g)||[];
+        // 扩展跳过词
+        var skip={'我想做':1,'我想要':1,'帮我做':1,'一个':1,'游戏':1,'我想':1,'做个':1,'做一个':1,
+          '我想设计':1,'我设计':1,'帮我设计':1,'能不能':1,'可以':1,'帮我':1,'我要':1,'我们来':1,
+          '第一步':1,'第二步':1,'第三步':1,'第四步':1,'第1步':1,'第2步':1,'第3步':1,'第4步':1,
+          '好的':1,'是的':1,'我想让':1,'我觉得':1,'我希望':1,'然后':1,'还有':1,'就是':1};
         words=words.filter(function(w){return !skip[w]});
-        gameTitle=words.slice(0,3).join('')||'我的游戏';
-        if(gameTitle.length>12)gameTitle=gameTitle.slice(0,12);
-        document.getElementById('gameName').textContent=gameTitle;
+        gameTitle=words.slice(0,3).join('')||'我的创意游戏';
+        if(gameTitle.length>10)gameTitle=gameTitle.slice(0,10);
+        document.getElementById('gameName').textContent='🎮 '+gameTitle;
+        document.getElementById('gameName').style.color='#ffd700';
       }
       document.getElementById('gameName').textContent=gameTitle;
       document.getElementById('gameVer').textContent='🔄 第'+version+'次迭代';
