@@ -18,9 +18,12 @@ body{display:flex;flex-direction:column}
 .preview-header .dot{width:7px;height:7px;border-radius:50%;background:#44cc44}
 .preview-header .vers{font-size:12px;color:#ffcc44;font-weight:600}
 .preview-frame{flex:1;border:none;background:#1a2a1a}
-.preview-hints{position:absolute;bottom:10px;left:10px;right:10px;background:rgba(30,30,40,0.95);border:1px solid #444;border-radius:12px;padding:10px 12px;z-index:10;animation:fadeIn 0.3s}
-.hint-label{font-size:12px;color:#ffcc44;margin-bottom:8px;font-weight:600}
-.hint-btns{display:flex;flex-wrap:wrap;gap:6px}
+.preview-hints{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(20,20,35,0.97);border:2px solid #ffcc44;border-radius:16px;padding:16px 20px;z-index:10;animation:hintPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275);box-shadow:0 0 40px rgba(255,204,68,0.15)}
+@keyframes hintPop{from{opacity:0;transform:translate(-50%,-50%) scale(0.7)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.hint-label{font-size:14px;color:#ffcc44;margin-bottom:10px;font-weight:600;text-align:center}
+.hint-close{position:absolute;top:6px;right:10px;background:none;border:none;color:#666;cursor:pointer;font-size:16px;padding:0;line-height:1}
+.hint-close:hover{color:#fff}
+.hint-btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .hint-btns button{background:rgba(255,255,255,0.08);border:1px solid #555;color:#ddd;padding:6px 12px;border-radius:16px;font-size:12px;cursor:pointer;font-family:system-ui;transition:all 0.15s}
 .hint-btns button:hover{background:rgba(74,108,247,0.3);border-color:#4a6cf7;color:#fff}
 .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#333;gap:8px}
@@ -87,7 +90,8 @@ body{display:flex;flex-direction:column}
     <div id="emptyState" class="empty"><div class="big">🎮</div><p>在右边聊天，游戏会在这里显示</p></div>
     <iframe id="previewFrame" class="preview-frame" style="display:none"></iframe>
     <div class="preview-hints" id="previewHints" style="display:none">
-      <div class="hint-label">💡 想升级游戏吗？</div>
+      <button class="hint-close" onclick="closeHints()">✕</button>
+      <div class="hint-label">🎮 玩得开心吗？要不要加点新功能？</div>
       <div class="hint-btns" id="hintBtns"></div>
     </div>
   </div>
@@ -188,6 +192,8 @@ function addMsg(text,isUser){
   if(old)old.remove();
 }
 
+function closeHints(){document.getElementById('previewHints').style.display='none'}
+
 function quickSend(text){
   document.getElementById('previewHints').style.display='none';
   document.getElementById('input').value=text;
@@ -249,17 +255,18 @@ async function send(){
       document.getElementById('msgs').appendChild(s);
       document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
 
-      // 游戏预览区浮动建议
+      // 游戏预览区浮动建议 - 30秒后弹出，让小孩先玩一会
       var hints=document.getElementById('previewHints');
       var btnDiv=document.getElementById('hintBtns');
       btnDiv.innerHTML='<button onclick="quickSend(\'好的，继续升级！\')">🚀 继续升级</button>'+
         '<button onclick="quickSend(\'加个Boss吧\')">👾 加Boss</button>'+
         '<button onclick="quickSend(\'让难度慢慢增加\')">📈 难度递增</button>'+
         '<button onclick="quickSend(\'加个排行榜\')">🏆 加排行榜</button>';
-      hints.style.display='block';
-      // 15秒后自动隐藏，不打扰游玩
+      hints.style.display='none';
       clearTimeout(window._hintTimeout);
-      window._hintTimeout=setTimeout(function(){hints.style.display='none'},15000);
+      window._hintTimeout=setTimeout(function(){
+        hints.style.display='block';
+      },30000);
     }
 
     // 如果 AI 在提问（没有给出代码），加上提示
