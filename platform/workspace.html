@@ -719,8 +719,7 @@ function buildLobby(){
     d.games.forEach(function(g){
       var card=document.createElement('div');
       card.className='lobby-card';
-      var icons=['🎮','🚀','👾','🐍','🏃','💎','🎯','⚔️','🌟','🎪'];
-      var icon=icons[g.id.charCodeAt(g.id.length-1)%icons.length];
+      var icon=g.icon||'🎮';
       card.innerHTML='<button class="card-del" title="删除">🗑️</button>'+
         '<div class="card-icon">'+icon+'</div>'+
         '<div class="card-title">'+g.title+'</div>'+

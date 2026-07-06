@@ -30,12 +30,15 @@ db.exec(`
     username TEXT NOT NULL REFERENCES users(username),
     title   TEXT NOT NULL,
     html    TEXT NOT NULL,
+    icon    TEXT DEFAULT '🎮',
     ver     INTEGER DEFAULT 1,
     updated TEXT DEFAULT (datetime('now')),
     PRIMARY KEY (id, username)
   );
 `);
 // 确保旧 users.json 数据迁移到 SQLite
+// 确保旧数据有 icon 列
+try{db.exec("ALTER TABLE games ADD COLUMN icon TEXT DEFAULT '🎮'")}catch(e){}
 migrateUsers();
 
 function hash(pw){return crypto.createHash('sha256').update(pw+SALT).digest('hex')}
@@ -43,6 +46,12 @@ function userCode(name){return crypto.createHash('sha256').update('u_'+name).dig
 function nextGameId(username){
   var row=db.prepare('SELECT coalesce(max(cast(substr(id,2) as integer)),0)+1 as n FROM games WHERE username=?').get(username);
   return 'g'+row.n;
+}
+// 根据标题选图标（稳定的哈希映射）
+function pickIcon(title){
+  var icons=['🚀','👾','🐍','🏃','💎','🎯','⚔️','🌟','🎪','🦈','🐉','🦋','🌍','🔥','💡','🎨','🎵','🏆','🧩','👑'];
+  var sum=0;for(var i=0;i<title.length;i++)sum+=title.charCodeAt(i);
+  return icons[sum%icons.length];
 }
 
 function migrateUsers(){
@@ -191,7 +200,7 @@ app.get('/api/me',function(req,res){
 app.get('/api/my-games',requireAuth,listGames);
 app.get('/api/games',requireAuth,listGames);
 function listGames(req,res){
-  var rows=db.prepare('SELECT id,title,ver,updated FROM games WHERE username=? ORDER BY updated DESC').all(req.userName);
+  var rows=db.prepare('SELECT id,title,icon,ver,updated FROM games WHERE username=? ORDER BY updated DESC').all(req.userName);
   res.json({games:rows,userCode:req.userCode});
 }
 
@@ -200,16 +209,16 @@ app.post('/api/save',requireAuth,saveGame);
 function saveGame(req,res){
   var title=req.body.title||'',html=req.body.html||'',existingId=req.body.id||'';
   if(!title||!html)return res.status(400).json({error:'缺少参数'});
-  var gid,ver;
+  var gid,ver,icon;
   if(existingId){
-    var old=db.prepare('SELECT id,ver FROM games WHERE id=? AND username=?').get(existingId,req.userName);
-    if(old){gid=old.id;ver=old.ver+1}
-    else{gid=existingId;ver=1}
+    var old=db.prepare('SELECT id,ver,icon FROM games WHERE id=? AND username=?').get(existingId,req.userName);
+    if(old){gid=old.id;ver=old.ver+1;icon=old.icon}
+    else{gid=existingId;ver=1;icon=pickIcon(title)}
   }else{
-    gid=nextGameId(req.userName);ver=1;
+    gid=nextGameId(req.userName);ver=1;icon=pickIcon(title);
   }
-  db.prepare('INSERT OR REPLACE INTO games(id,username,title,html,ver,updated) VALUES(?,?,?,?,?,datetime(\'now\'))').run(gid,req.userName,title,html,ver);
-  res.json({ok:true,id:gid,ver:ver});
+  db.prepare('INSERT OR REPLACE INTO games(id,username,title,html,icon,ver,updated) VALUES(?,?,?,?,?,?,datetime(\'now\'))').run(gid,req.userName,title,html,icon,ver);
+  res.json({ok:true,id:gid,ver:ver,icon:icon});
 }
 
 app.get('/api/load-game/:id',requireAuth,loadGame);
