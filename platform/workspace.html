@@ -31,7 +31,7 @@ body{display:flex;flex-direction:column}
 .gamelist .game-item .gdel:hover{color:#ff4444;background:rgba(255,0,0,0.1)}
 .gamelist .empty-msg{color:#444;font-size:12px;text-align:center;padding:12px}
 .msgs{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
-.msg{max-width:88%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.5;word-break:break-word;animation:fadeIn 0.2s}
+.msg{max-width:88%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.5;word-break:break-word;animation:fadeIn 0.2s;white-space:pre-wrap}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 .msg.ai{align-self:flex-start;background:#2a2a2a;border-bottom-left-radius:4px}
 .msg.user{align-self:flex-end;background:#4a6cf7;border-bottom-right-radius:4px;color:#fff}
@@ -198,7 +198,7 @@ init();
 function addMsg(text,isUser){
   var div=document.createElement('div');
   div.className='msg '+(isUser?'user':'ai');
-  div.innerHTML=text;
+  div.textContent=text;
   document.getElementById('msgs').appendChild(div);
   document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
   var old=document.getElementById('suggestions');
