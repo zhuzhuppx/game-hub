@@ -223,9 +223,9 @@ body{display:flex;flex-direction:column}
   <div class="play-bar">
     <span class="pl-title" id="playTitle">游戏</span>
     <div style="display:flex;gap:8px">
-      <button onclick="shareGame()" style="background:#2a8a4a;color:#fff;border-color:#2a8a4a">🔗 复制分享</button>
-      <button onclick="editCurrentGame()" style="background:#4a6cf7;color:#fff;border-color:#4a6cf7">✏️ 继续创作</button>
-      <button onclick="closePlay()">✕ 返回大厅</button>
+      <button onclick="shareGame()" style="background:#2a8a4a;color:#fff;border-color:#2a8a4a">🔗 分享</button>
+      <button onclick="editCurrentGame()" style="background:#4a6cf7;color:#fff;border-color:#4a6cf7">✏️ 修改</button>
+      <button onclick="closePlay()">✕ 返回</button>
     </div>
   </div>
   <iframe id="playFrame"></iframe>
@@ -915,14 +915,25 @@ async function shareGame(){
   try{
     await navigator.clipboard.writeText(url);
     SFX.success();
-    alert('链接已复制！📋\n\n'+url+'\n\n发给朋友就能直接玩～');
+    showToast('✅ 已复制，请粘贴后完成分享');
   }catch(e){
-    // 降级方案
     var ta=document.createElement('textarea');
     ta.value=url;document.body.appendChild(ta);
     ta.select();document.execCommand('copy');document.body.removeChild(ta);
-    SFX.success();alert('链接已复制！📋\n'+url);
+    SFX.success();showToast('✅ 已复制，请粘贴后完成分享');
   }
+}
+
+function showToast(msg){
+  var t=document.getElementById('toast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='toast';
+    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 24px;border-radius:20px;font-size:14px;z-index:9999;pointer-events:none;transition:opacity 0.4s;opacity:0;font-family:system-ui';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;t.style.opacity='1';
+  clearTimeout(t._t);t._t=setTimeout(function(){t.style.opacity='0'},2000);
 }
 
 function editCurrentGame(){
