@@ -171,7 +171,7 @@ body{display:flex;flex-direction:column}
       </div>
     </div>
     <div class="chat-input">
-      <input type="text" id="input" placeholder="说说你的游戏想法..." onkeydown="if(event.key==='Enter')send()" autofocus>
+      <input type="text" id="input" placeholder="说说你的游戏想法..." onkeydown="return handleInputKey(event)" autofocus>
       <button class="send" id="sendBtn" onclick="send()">➤</button>
     </div>
   </div>
@@ -369,7 +369,34 @@ function closePreview(){
   document.getElementById('input').focus();
 }
 
-async function send(){
+function handleInputKey(e){
+  // 方向键转发到游戏，不在输入框里移动光标
+  var keyMap={ArrowUp:'w',ArrowDown:'s',ArrowLeft:'a',ArrowRight:'d'};
+  if(keyMap[e.key]){e.preventDefault();forwardKeyToGame(e.key,keyMap[e.key]);return false}
+  // Enter 发送
+  if(e.key==='Enter'){send();return false}
+  return true;
+}
+
+function forwardKeyToGame(key,wasd){
+  var frame=document.getElementById('previewFrame');
+  if(!frame||!frame.contentWindow)return;
+  var doc=frame.contentDocument||frame.contentWindow.document;
+  var opts={key:wasd,code:'Key'+wasd.toUpperCase(),bubbles:true,cancelable:true};
+  doc.dispatchEvent(new KeyboardEvent('keydown',opts));
+  setTimeout(function(){doc.dispatchEvent(new KeyboardEvent('keyup',opts))},50);
+}
+
+// 全局键盘：非输入框时 WASD/方向键 转发到游戏
+document.addEventListener('keydown',function(e){
+  var t=e.target.tagName;
+  if(t==='INPUT'||t==='TEXTAREA')return; // 交给 handleInputKey
+  var keyMap={ArrowUp:'w',ArrowDown:'s',ArrowLeft:'a',ArrowRight:'d'};
+  if(/^Key[WASD]$/.test(e.code)||keyMap[e.key]){
+    e.preventDefault();
+    forwardKeyToGame(e.key,keyMap[e.key]||e.key);
+  }
+});
   window._cancelled=false;
   if(!DS_KEY){addMsg('⚠️ 请先设置 DeepSeek API Key，点击右上角 ⚙️',false);return;}
   var input=document.getElementById('input');
