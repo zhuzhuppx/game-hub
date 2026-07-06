@@ -252,6 +252,9 @@ function hintSpeak(){
 }
 
 function openPreview(){
+  // 强制刷新 iframe
+  var frame=document.getElementById('previewFrame');
+  if(gameCode){frame.srcdoc=gameCode}
   document.getElementById('previewPanel').classList.add('open');
   document.getElementById('chatMain').classList.add('shrink');
   document.getElementById('topPreviewBtn').style.display='none';
@@ -311,8 +314,12 @@ async function send(){
       version++;
       document.getElementById('gameName').textContent=gameTitle;
       document.getElementById('gameVer').textContent='🔄 第'+version+'次迭代';
-      document.getElementById('previewFrame').srcdoc=gameCode;
+      var frame=document.getElementById('previewFrame');
+      frame.srcdoc=''; // 先清空
+      setTimeout(function(){frame.srcdoc=gameCode},50); // 再赋值确保刷新
       document.getElementById('topPreviewBtn').style.display='inline-block';
+      // 首次生成自动打开预览
+      if(version===1){openPreview()}
     }
     // 有代码 → 只显示文字不显示代码
     var display=reply.replace(/```html[\s\S]*?```/g,'');
@@ -445,7 +452,8 @@ async function loadGame(title){
     gameCode=d.html;gameTitle=d.title;version=d.version;
     document.getElementById('gameName').textContent=gameTitle;
     document.getElementById('gameVer').textContent='🔄 第'+version+'次迭代';
-    document.getElementById('previewFrame').srcdoc=gameCode;
+    var frame=document.getElementById('previewFrame');
+    frame.srcdoc='';setTimeout(function(){frame.srcdoc=gameCode},50);
     document.getElementById('topPreviewBtn').style.display='inline-block';
     gameStarted=true;
     addMsg('📂 已加载存档「'+gameTitle+'」，可以继续优化或预览！',false);
