@@ -13,6 +13,7 @@ body{display:flex;flex-direction:column}
 .topbar .btn-logout:hover{background:rgba(255,255,255,0.1);color:#aaa}
 .topbar .btn-settings{background:rgba(255,255,255,0.06);color:#888;font-size:16px;padding:4px 8px}
 .topbar .btn-settings:hover{background:rgba(255,255,255,0.1);color:#aaa}
+.topbar .btn-back-lobby{background:rgba(255,204,68,0.15);color:#ffcc44}
 .topbar .btn-preview{background:rgba(74,108,247,0.2);color:#88aaff;margin-left:4px}
 .topbar .btn-preview:hover{background:rgba(74,108,247,0.35)}
 .main{flex:1;display:flex;overflow:hidden;position:relative}
@@ -81,6 +82,36 @@ body{display:flex;flex-direction:column}
 .save-popup .box .btn-confirm{background:#4a6cf7;color:#fff}
 .save-popup .box .btn-cancel{background:#2a2a2a;color:#888}
 .loading{display:flex;align-items:center;justify-content:center;height:100%;color:#555;font-size:14px}
+/* 大厅 */
+.lobby{flex:1;overflow-y:auto;padding:20px;display:none;flex-direction:column}
+.lobby.show{display:flex}
+.lobby-header{text-align:center;margin-bottom:24px}
+.lobby-header h2{font-size:22px;color:#fff;margin-bottom:6px}
+.lobby-header p{font-size:13px;color:#666}
+.lobby-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;padding-bottom:40px}
+.lobby-card{background:#1a1a1a;border:1px solid #222;border-radius:12px;padding:16px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden}
+.lobby-card:hover{border-color:#4a6cf7;transform:translateY(-2px);box-shadow:0 4px 20px rgba(74,108,247,0.15)}
+.lobby-card .card-icon{font-size:36px;margin-bottom:8px}
+.lobby-card .card-title{font-size:14px;color:#fff;font-weight:600;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lobby-card .card-meta{font-size:11px;color:#555}
+.lobby-card .card-del{position:absolute;top:6px;right:8px;background:none;border:none;color:#555;cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px}
+.lobby-card .card-del:hover{color:#ff4444;background:rgba(255,0,0,0.1)}
+.lobby-empty{text-align:center;padding:60px 20px;color:#555}
+.lobby-empty .big{font-size:60px;margin-bottom:12px}
+.lobby-empty p{font-size:14px;line-height:1.8}
+.btn-new-game{background:#4a6cf7;color:#fff;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-family:system-ui;font-weight:600;transition:all 0.2s}
+.btn-new-game:hover{background:#5b7df8;transform:scale(1.02)}
+/* 游戏播放全屏 */
+.play-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:500;display:none;flex-direction:column}
+.play-overlay.show{display:flex}
+.play-overlay .play-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 14px;background:#111;flex-shrink:0}
+.play-overlay .play-bar .pl-title{color:#fff;font-size:14px}
+.play-overlay .play-bar button{background:none;border:1px solid #333;color:#888;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:system-ui}
+.play-overlay .play-bar button:hover{color:#fff;border-color:#555}
+.play-overlay iframe{flex:1;border:none}
+/* 工作区用 wrapper 控制显示 */
+.view-workspace{display:none;flex:1;flex-direction:column;height:100%}
+.view-workspace.show{display:flex}
 </style>
 
 <div class="loading" id="loading">加载中...</div>
@@ -89,12 +120,33 @@ body{display:flex;flex-direction:column}
 <div class="topbar">
   <div class="user" id="usernameLabel">👤 工作台</div>
   <div class="btns">
+    <button class="btn-new-game" id="btnNewGameTop" onclick="enterWorkspace()" style="display:none">➕ 新建游戏</button>
     <button class="btn-preview" id="topPreviewBtn" onclick="openPreview()" style="display:none">👁️ 预览游戏</button>
+    <button class="btn-back-lobby" id="btnBackLobby" onclick="backToLobby()" style="display:none">🏠 我的游戏</button>
     <button class="btn-save" onclick="openSave()">💾 保存</button>
     <button class="btn-settings" onclick="openSettings()">⚙️</button>
     <button class="btn-logout" onclick="logout()">🚪 退出</button>
   </div>
 </div>
+
+<!-- 大厅视图 -->
+<div class="lobby show" id="viewLobby">
+  <div class="lobby-header">
+    <h2>🎮 我的游戏工坊</h2>
+    <p id="lobbySubtitle">还没有游戏，点击下方按钮开始创作吧！</p>
+  </div>
+  <div style="text-align:center;margin-bottom:20px">
+    <button class="btn-new-game" onclick="enterWorkspace()">➕ 新建游戏</button>
+  </div>
+  <div class="lobby-grid" id="lobbyGrid"></div>
+  <div class="lobby-empty" id="lobbyEmpty">
+    <div class="big">🎨</div>
+    <p>还没有游戏<br>点击「新建游戏」开始你的第一个作品！</p>
+  </div>
+</div>
+
+<!-- 工作区视图 -->
+<div class="view-workspace" id="viewWorkspace">
 <div class="main">
   <div class="chat-main" id="chatMain">
     <div class="chat-title">
@@ -141,6 +193,17 @@ body{display:flex;flex-direction:column}
     </div>
   </div>
 </div>
+</div>
+
+</div><!-- end viewWorkspace -->
+
+<!-- 游戏播放全屏 -->
+<div class="play-overlay" id="playOverlay">
+  <div class="play-bar">
+    <span class="pl-title" id="playTitle">游戏</span>
+    <button onclick="closePlay()">✕ 返回大厅</button>
+  </div>
+  <iframe id="playFrame"></iframe>
 </div>
 
 <div class="save-popup" id="settingsPopup">
@@ -220,7 +283,11 @@ async function init(){
 
     document.getElementById('loading').style.display='none';
     document.getElementById('app').style.display='flex';
-    loadGameList();
+    // 默认显示大厅
+    document.getElementById('viewLobby').classList.add('show');
+    document.getElementById('viewWorkspace').classList.remove('show');
+    document.getElementById('btnNewGameTop').style.display='inline-block';
+    buildLobby();
   }catch(e){document.getElementById('loading').textContent='连接失败，刷新试试'}
 }
 init();
@@ -422,7 +489,7 @@ async function doSave(){
   try{
     var r=await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:gameTitle,html:gameCode,version:version})});
     var d=await r.json();
-    if(d.ok){closeSave();loadGameList();alert('保存成功！✌️')}else{alert('保存失败：'+d.error)}
+    if(d.ok){closeSave();alert('保存成功！✌️')}else{alert('保存失败：'+d.error)}
   }catch(e){alert('保存失败')}
 }
 
@@ -487,6 +554,90 @@ function saveSettings(){
   else{localStorage.removeItem('dsGameKey');DS_KEY=''}
   closeSettings();
   if(!DS_KEY){alert('⚠️ 未设置 Key，AI 功能不可用')}
+}
+
+// === 大厅逻辑 ===
+function enterWorkspace(){
+  document.getElementById('viewLobby').classList.remove('show');
+  document.getElementById('viewWorkspace').classList.add('show');
+  document.getElementById('btnNewGameTop').style.display='none';
+  document.getElementById('btnBackLobby').style.display='inline-block';
+  document.getElementById('input').focus();
+  // 重置聊天
+  if(!gameStarted){
+    messages=[];turnCount=0;
+    // 清空聊天
+    var msgs=document.getElementById('msgs');
+    msgs.innerHTML='<div class="msg ai">嘿，小游戏设计师！🎮<br>这里是你的游戏工坊，你说想法，我帮你实现。<br><br>今天你想做一个什么样的游戏？</div>'+
+      '<div class="suggestions" id="suggestions">'+
+        '<button onclick="quickSend(\'我想做太空飞船打陨石的游戏\')">🚀 太空飞船</button>'+
+        '<button onclick="quickSend(\'我想做一个躲避怪兽的游戏\')">👾 躲避怪兽</button>'+
+        '<button onclick="quickSend(\'我想做一个收集宝石的游戏\')">💎 收集宝石</button>'+
+      '</div>';
+  }
+}
+
+function backToLobby(){
+  // 有未保存的游戏 → 提示
+  if(gameStarted && gameCode){
+    var ok=confirm('你有未保存的游戏「'+gameTitle+'」，是否保存后再返回？');
+    if(ok){openSave();return}
+  }
+  document.getElementById('viewWorkspace').classList.remove('show');
+  document.getElementById('viewLobby').classList.add('show');
+  document.getElementById('btnNewGameTop').style.display='inline-block';
+  document.getElementById('btnBackLobby').style.display='none';
+  document.getElementById('topPreviewBtn').style.display='none';
+  closePreview();
+  buildLobby();
+}
+
+function buildLobby(){
+  fetch('/api/games').then(function(r){return r.json()}).then(function(d){
+    var grid=document.getElementById('lobbyGrid');
+    grid.innerHTML='';
+    var empty=document.getElementById('lobbyEmpty');
+    if(!d.games||!d.games.length){
+      empty.style.display='block';
+      document.getElementById('lobbySubtitle').textContent='还没有游戏，点击下方按钮开始创作吧！';
+      return;
+    }
+    empty.style.display='none';
+    document.getElementById('lobbySubtitle').textContent='共 '+d.games.length+' 款游戏';
+    d.games.forEach(function(g){
+      var card=document.createElement('div');
+      card.className='lobby-card';
+      var icons=['🎮','🚀','👾','🐍','🏃','💎','🎯','⚔️','🌟','🎪'];
+      var icon=icons[Math.floor(Math.random()*icons.length)];
+      card.innerHTML='<button class="card-del" title="删除">🗑️</button>'+
+        '<div class="card-icon">'+icon+'</div>'+
+        '<div class="card-title">'+g.title+'</div>'+
+        '<div class="card-meta">🔄 迭代'+g.ver+'次</div>';
+      card.querySelector('.card-icon').onclick=function(){playGame(g.title,g.slug)};
+      card.querySelector('.card-title').onclick=function(){playGame(g.title,g.slug)};
+      card.querySelector('.card-del').onclick=function(e){e.stopPropagation();deleteFromLobby(g.title)};
+      grid.appendChild(card);
+    });
+  });
+}
+
+function playGame(title,slug){
+  fetch('/api/game/'+encodeURIComponent(title)).then(function(r){return r.json()}).then(function(d){
+    if(!d.ok)return;
+    document.getElementById('playTitle').textContent='🎮 '+title;
+    document.getElementById('playFrame').srcdoc=d.html;
+    document.getElementById('playOverlay').classList.add('show');
+  });
+}
+
+function closePlay(){
+  document.getElementById('playOverlay').classList.remove('show');
+}
+
+function deleteFromLobby(title){
+  if(!confirm('删除「'+title+'」？'))return;
+  fetch('/api/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title})})
+    .then(function(){buildLobby()});
 }
 </script>
 </body></html>
