@@ -148,8 +148,8 @@ body{display:flex;flex-direction:column}
     <button class="btn-preview" id="topPreviewBtn" onclick="openPreview()" style="display:none">👁️ 预览</button>
     <button class="btn-save" id="btnSaveTop" onclick="openSave()" style="display:none">💾 保存</button>
     <button class="btn-new-game" id="btnNewGameTop" onclick="enterWorkspace()" style="display:none">➕ 新建</button>
-    <button class="btn-settings" onclick="openSettings()">⚙️</button>
-    <button class="btn-logout" onclick="logout()">🚪</button>
+    <button class="btn-settings" id="btnSettingsTop" onclick="openSettings()">⚙️</button>
+    <button class="btn-logout" id="btnLogoutTop" onclick="logout()">🚪</button>
   </div>
 </div>
 
@@ -384,6 +384,8 @@ function skipGuide(){
   document.getElementById('guidePopup').classList.remove('show');
   document.getElementById('viewLobby').classList.add('show');
   document.getElementById('btnNewGameTop').style.display='inline-block';
+  document.getElementById('btnSettingsTop').style.display='inline-block';
+  document.getElementById('btnLogoutTop').style.display='inline-block';
   buildLobby();
 }
 async function init(){
@@ -826,6 +828,8 @@ function enterWorkspace(){
   document.getElementById('btnNewGameTop').style.display='none';
   document.getElementById('btnBackLobby').style.display='inline-block';
   document.getElementById('btnSaveTop').style.display='inline-block';
+  document.getElementById('btnSettingsTop').style.display='none';
+  document.getElementById('btnLogoutTop').style.display='none';
   document.getElementById('input').focus();
   // 重置聊天
   if(!gameStarted){
@@ -853,6 +857,8 @@ function backToLobby(){
   document.getElementById('btnBackLobby').style.display='none';
   document.getElementById('topPreviewBtn').style.display='none';
   document.getElementById('btnSaveTop').style.display='none';
+  document.getElementById('btnSettingsTop').style.display='inline-block';
+  document.getElementById('btnLogoutTop').style.display='inline-block';
   closePreview();
   buildLobby();
   // 重置状态，下次新建游戏是干净的
