@@ -249,7 +249,7 @@ body{display:flex;flex-direction:column}
 </div>
 
 <script>
-var username='',gameCode='',gameTitle='我的游戏',version=0,gameStarted=false;
+var username='',gameCode='',gameTitle='我的游戏',version=0,gameStarted=false,gameSaved=false;
 var messages=[],turnCount=0,maxTurns=15,DS_KEY='';
 var SYSTEM_PROMPT="你是'游戏工坊'的AI助手，帮小朋友把游戏想法变成现实。小朋友是游戏设计师，你只负责实现他的设计。\n\n"+
 "## 设计思维四步法\n"+
@@ -441,6 +441,7 @@ document.addEventListener('keydown',function(e){
     if(!codeMatch){codeMatch=reply.match(/```html\s*\n?([\s\S]*?)```/)}
     if(codeMatch && codeMatch[1].trim()){
       gameCode=codeMatch[1];
+      gameSaved=false;
       version++;
       if(!gameStarted){gameStarted=true;
         // 自动取名：摘用户第一个消息的关键词
@@ -578,7 +579,7 @@ async function doSave(){
   try{
     var r=await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:gameTitle,html:gameCode,version:version})});
     var d=await r.json();
-    if(d.ok){closeSave();alert('保存成功！✌️')}else{alert('保存失败：'+d.error)}
+    if(d.ok){closeSave();gameSaved=true;alert('保存成功！✌️')}else{alert('保存失败：'+d.error)}
   }catch(e){alert('保存失败')}
 }
 
@@ -605,7 +606,7 @@ async function loadGame(title){
     var r=await fetch('/api/game/'+encodeURIComponent(title));
     var d=await r.json();
     if(!d.ok){alert('加载失败');return}
-    gameCode=d.html;gameTitle=d.title;version=d.version;
+    gameCode=d.html;gameTitle=d.title;version=d.version;gameSaved=false;
     document.getElementById('gameName').textContent=gameTitle;
     document.getElementById('gameVer').textContent='🔄 第'+version+'次迭代';
     var frame=document.getElementById('previewFrame');
@@ -660,6 +661,7 @@ function enterWorkspace(){
   document.getElementById('input').focus();
   // 重置聊天
   if(!gameStarted){
+    gameSaved=false;
     messages=[];turnCount=0;
     // 清空聊天
     var msgs=document.getElementById('msgs');
@@ -673,8 +675,7 @@ function enterWorkspace(){
 }
 
 function backToLobby(){
-  // 有未保存的游戏 → 提示
-  if(gameStarted && gameCode){
+  if(gameStarted && gameCode && !gameSaved){
     var ok=confirm('你有未保存的游戏「'+gameTitle+'」，是否保存后再返回？');
     if(ok){openSave();return}
   }
@@ -739,6 +740,7 @@ function editCurrentGame(){
   gameTitle=_editingGame.title;
   version=_editingGame.version||1;
   gameStarted=true;
+  gameSaved=false;
   document.getElementById('gameName').textContent=gameTitle;
   document.getElementById('gameVer').textContent='🔄 第'+version+'次迭代';
   var frame=document.getElementById('previewFrame');
