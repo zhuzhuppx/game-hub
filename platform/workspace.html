@@ -250,6 +250,7 @@ body{display:flex;flex-direction:column}
   </div>
 </div>
 
+<script src="/platform/sfx.js"></script>
 <script>
 var username='',userCode='',gameCode='',gameTitle='我的游戏',gameId='',version=0,gameStarted=false,gameSaved=false;
 var messages=[],turnCount=0,maxTurns=15,DS_KEY='';
@@ -339,12 +340,15 @@ function typeText(el,text,i,cb){
 }
 
 function quickSend(text){
+  if(!DS_KEY){
+    alert('⚠️ 请先设置 DeepSeek API Key！\n点击右上角「🔑 接入AI」按钮');
+    return;
+  }
   document.getElementById('previewHints').style.display='none';
   document.getElementById('hintInput').value='';
   document.getElementById('input').value=text;
   SFX.tap();
-  // 短暂延迟确保输入框值已设置
-  setTimeout(function(){send()},50);
+  send();
 }
 
 function closeHints(){document.getElementById('previewHints').style.display='none'}
@@ -405,7 +409,12 @@ document.addEventListener('keydown',function(e){
 document.addEventListener('click',function(){SFX.resume()},{once:true});
 async function send(){
   window._cancelled=false;
-  if(!DS_KEY){addMsg('⚠️ 请先设置 DeepSeek API Key，点击右上角 ⚙️',false);return;}
+  if(!DS_KEY){
+    addMsg('⚠️ 请先设置 DeepSeek API Key，点击右上角 🔑 接入AI',false);
+    document.getElementById('input').style.border='2px solid #ff4444';
+    setTimeout(function(){document.getElementById('input').style.border=''},2000);
+    return;
+  }
   var input=document.getElementById('input');
   var text=input.value.trim();
   if(!text||turnCount>=maxTurns)return;
