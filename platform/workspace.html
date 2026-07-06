@@ -343,7 +343,9 @@ function quickSend(text){
   document.getElementById('hintInput').value='';
   document.getElementById('input').value=text;
   SFX.tap();
-  send();
+  // 短暂延迟确保输入框值已设置
+  setTimeout(function(){send()},50);
+}
 }
 
 function closeHints(){document.getElementById('previewHints').style.display='none'}
