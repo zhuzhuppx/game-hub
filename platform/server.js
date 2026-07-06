@@ -48,6 +48,27 @@ app.get('/p/:user/:slug',function(req,res){
   res.sendFile(file);
 });
 
+// 独立游戏播放页（分享用）
+app.get('/play/:user/:slug',function(req,res){
+  var file=path.join(GAMES_DIR,req.params.user,req.params.slug+'.html');
+  if(!fs.existsSync(file))return res.status(404).send('游戏不存在');
+  var html=fs.readFileSync(file,'utf8');
+  var metaFile=path.join(GAMES_DIR,req.params.user,'meta.json');
+  var meta=fs.existsSync(metaFile)?JSON.parse(fs.readFileSync(metaFile,'utf8')):{};
+  var info=meta[req.params.slug]||{};
+  var title=info.title||req.params.slug;
+  // 注入移动端适配 meta + 全屏样式
+  var wrapper='<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8">'+
+    '<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">'+
+    '<title>'+title+' - AI 游戏工坊</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;overflow:hidden;background:#000}'+
+    'canvas{display:block}</style></head><body>';
+  // 只注入包装，保留原游戏代码的 <html><body> 标签
+  res.send(html.replace(/<!DOCTYPE[^>]*>/i,'').replace(/<html[^>]*>/i,'').replace(/<\/html>/i,'').replace(/<head>[\s\S]*?<\/head>/i,function(m){
+    return wrapper+m.replace(/<\/head>/i,'');
+  }));
+});
+
 function requireAuth(req,res,next){
   var user=req.cookies&&req.cookies.auth_token;
   if(!user)return res.status(401).json({error:'请先登录'});

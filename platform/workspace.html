@@ -206,6 +206,7 @@ body{display:flex;flex-direction:column}
   <div class="play-bar">
     <span class="pl-title" id="playTitle">游戏</span>
     <div style="display:flex;gap:8px">
+      <button onclick="shareGame()" style="background:#2a8a4a;color:#fff;border-color:#2a8a4a">🔗 复制分享</button>
       <button onclick="editCurrentGame()" style="background:#4a6cf7;color:#fff;border-color:#4a6cf7">✏️ 继续创作</button>
       <button onclick="closePlay()">✕ 返回大厅</button>
     </div>
@@ -727,8 +728,9 @@ function buildLobby(){
   });
 }
 
-var _editingGame=null;
+var _editingGame=null,_playingSlug='';
 function playGame(title,slug){
+  _playingSlug=slug||title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g,'-').slice(0,40);
   fetch('/api/game/'+encodeURIComponent(title)).then(function(r){return r.json()}).then(function(d){
     if(!d.ok)return;
     _editingGame=d;
@@ -740,6 +742,23 @@ function playGame(title,slug){
 
 function closePlay(){
   document.getElementById('playOverlay').classList.remove('show');
+}
+
+async function shareGame(){
+  if(!_editingGame||!_playingSlug)return;
+  // 先确保服务端有这个游戏的独立页面
+  var url='https://studio.2u1.cn/play/'+username+'/'+_playingSlug;
+  try{
+    await navigator.clipboard.writeText(url);
+    SFX.success();
+    alert('链接已复制！📋\n\n'+url+'\n\n发给朋友就能直接玩～');
+  }catch(e){
+    // 降级方案
+    var ta=document.createElement('textarea');
+    ta.value=url;document.body.appendChild(ta);
+    ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    SFX.success();alert('链接已复制！📋\n'+url);
+  }
 }
 
 function editCurrentGame(){
