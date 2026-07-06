@@ -88,6 +88,23 @@ body{display:flex;flex-direction:column}
 .save-popup .box button{padding:10px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-family:system-ui}
 .save-popup .box .btn-confirm{background:#4a6cf7;color:#fff;padding:10px 20px}
 .save-popup .box .btn-cancel{background:#2a2a2a;color:#888;padding:10px 20px}
+/* 新手引导 */
+.guide-box{background:#1a1a1a;border:1px solid #333;border-radius:16px;padding:0;width:360px;max-width:92vw;overflow:hidden;text-align:center}
+.guide-steps{position:relative;min-height:220px}
+.gstep{display:none;padding:28px 24px 16px;animation:guideIn 0.35s ease}
+.gstep.active{display:block}
+.gstep .gicon{font-size:48px;margin-bottom:12px}
+.gstep h2{font-size:18px;color:#fff;margin-bottom:8px}
+.gstep h3{font-size:16px;color:#fff;margin-bottom:8px}
+.gstep p{font-size:14px;color:#aaa;line-height:1.7}
+@keyframes guideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.guide-dots{display:flex;justify-content:center;gap:6px;padding:8px 0 12px}
+.guide-dots span{width:8px;height:8px;border-radius:50%;background:#333;transition:all 0.3s}
+.guide-dots span.done{background:#4a6cf7}
+.guide-dots span.current{background:#4a6cf7;transform:scale(1.4)}
+.guide-btns{display:flex;justify-content:space-between;padding:0 20px 20px;gap:10px}
+.guide-btns button{flex:1;padding:10px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-family:system-ui}
+
 .loading{display:flex;align-items:center;justify-content:center;height:100%;color:#555;font-size:14px}
 /* 大厅 */
 .lobby{flex:1;overflow-y:auto;padding:20px;display:none;flex-direction:column}
@@ -251,6 +268,55 @@ body{display:flex;flex-direction:column}
   </div>
 </div>
 
+<!-- 新手引导弹窗 -->
+<div class="save-popup" id="guidePopup">
+  <div class="guide-box">
+    <div class="guide-steps" id="guideSteps">
+      <div class="gstep active" data-step="0">
+        <div class="gicon">🏰</div>
+        <h2>欢迎来到 AI 游戏工坊！</h2>
+        <p>这里你可以像真正的游戏设计师一样，<br>一步步创造属于自己的游戏！</p>
+        <p style="color:#aaa;font-size:12px;margin-top:8px">AI 助手会引导你完成 5 个设计步骤</p>
+      </div>
+      <div class="gstep" data-step="1">
+        <div class="gicon">🎯</div>
+        <h3>第 1 步：设计主角</h3>
+        <p>你想控制什么角色？<br>🚀 飞船？👾 小怪物？🐍 蛇？</p>
+        <p style="color:#4a6cf7;font-size:11px">决定游戏里"你是谁"</p>
+      </div>
+      <div class="gstep" data-step="2">
+        <div class="gicon">🏆</div>
+        <h3>第 2 步：设计目标</h3>
+        <p>怎么算赢？<br>💎 收集宝石？⏱ 存活更久？👾 消灭敌人？</p>
+        <p style="color:#4a6cf7;font-size:11px">决定游戏里"做什么"</p>
+      </div>
+      <div class="gstep" data-step="3">
+        <div class="gicon">⚡</div>
+        <h3>第 3 步：设计挑战</h3>
+        <p>什么让游戏变刺激？<br>🔥 敌人越来越快？🌪 障碍变多？</p>
+        <p style="color:#4a6cf7;font-size:11px">决定游戏里"难在哪"</p>
+      </div>
+      <div class="gstep" data-step="4">
+        <div class="gicon">🎮</div>
+        <h3>第 4 步：设计操作</h3>
+        <p>怎么控制角色？<br>⌨️ 键盘 WASD？🖱 鼠标？📱 手机触摸？</p>
+        <p style="color:#4a6cf7;font-size:11px">决定游戏里"怎么动"</p>
+      </div>
+      <div class="gstep" data-step="5">
+        <div class="gicon">🎵</div>
+        <h3>第 5 步：设计音乐</h3>
+        <p>背景音乐什么风格？<br>🗡 紧张刺激？🌿 轻快探索？🚀 太空科幻？</p>
+        <p style="color:#4a6cf7;font-size:11px">决定游戏里"听什么"</p>
+      </div>
+    </div>
+    <div class="guide-dots" id="guideDots"></div>
+    <div class="guide-btns">
+      <button class="btn-cancel" onclick="skipGuide()">跳过</button>
+      <button class="btn-confirm" id="guideNext" onclick="nextGuide()">下一步 ➜</button>
+    </div>
+  </div>
+</div>
+
 <script src="/platform/sfx.js"></script>
 <script>
 var username='',userCode='',gameCode='',gameTitle='我的游戏',gameId='',version=0,gameStarted=false,gameSaved=false;
@@ -290,6 +356,37 @@ var SYSTEM_PROMPT="你是'游戏工坊'的AI助手，帮小朋友把游戏想法
 "不要用「我教你」「我来做」这类抢功劳的话。用「帮你实现」「按你的设计来做」\n"+
 "非游戏请求回复：「这里是游戏工坊哦～你想设计什么游戏？」";
 
+var guideStep=0,totalSteps=6; // 0=欢迎, 1-5=五步
+function showGuide(){
+  guideStep=0;
+  renderGuide();
+  document.getElementById('guidePopup').classList.add('show');
+}
+function renderGuide(){
+  var steps=document.querySelectorAll('.gstep');
+  steps.forEach(function(s,i){s.classList.toggle('active',i===guideStep)});
+  var dots=document.getElementById('guideDots');
+  dots.innerHTML='';
+  for(var i=0;i<totalSteps;i++){
+    var d=document.createElement('span');
+    if(i<guideStep)d.className='done';
+    else if(i===guideStep)d.className='current';
+    dots.appendChild(d);
+  }
+  var btn=document.getElementById('guideNext');
+  if(guideStep===totalSteps-1){btn.textContent='🎮 开始创作！'}
+  else{btn.textContent='下一步 ➜'}
+}
+function nextGuide(){
+  if(guideStep<totalSteps-1){guideStep++;renderGuide()}
+  else{skipGuide()}
+}
+function skipGuide(){
+  document.getElementById('guidePopup').classList.remove('show');
+  document.getElementById('viewLobby').classList.add('show');
+  document.getElementById('btnNewGameTop').style.display='inline-block';
+  buildLobby();
+}
 async function init(){
   try{
     var r=await fetch('/api/me');var d=await r.json();
@@ -306,11 +403,8 @@ async function init(){
 
     document.getElementById('loading').style.display='none';
     document.getElementById('app').style.display='flex';
-    // 默认显示大厅
-    document.getElementById('viewLobby').classList.add('show');
-    document.getElementById('viewWorkspace').classList.remove('show');
-    document.getElementById('btnNewGameTop').style.display='inline-block';
-    buildLobby();
+    // 新手引导
+    showGuide();
   }catch(e){document.getElementById('loading').textContent='连接失败，刷新试试'}
 }
 init();
