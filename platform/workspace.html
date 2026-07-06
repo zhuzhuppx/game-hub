@@ -601,8 +601,8 @@ async function send(){
       frame.srcdoc=''; // 先清空
       setTimeout(function(){frame.srcdoc=gameCode},50); // 再赋值确保刷新
       document.getElementById('topPreviewBtn').style.display='inline-block';
-      // 首次生成自动打开预览
-      if(version===1){openPreview()}
+      // 首次生成或有新代码时自动打开预览
+      openPreview();
     }
     // 有代码 → 只显示文字，去掉所有代码块
     // 切掉代码块：找第一个 ``` 出现的位置
