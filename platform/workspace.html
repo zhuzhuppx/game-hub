@@ -16,7 +16,7 @@ body{display:flex;flex-direction:column}
 .topbar .btn-back-lobby{background:rgba(255,204,68,0.15);color:#ffcc44}
 .topbar .btn-preview{background:rgba(74,108,247,0.2);color:#88aaff;margin-left:4px}
 .topbar .btn-preview:hover{background:rgba(74,108,247,0.35)}
-.main{flex:1;display:flex;overflow:hidden;position:relative}
+.main{flex:1;display:flex;overflow:hidden;position:relative;min-height:0}
 /* 聊天主区域 */
 .chat-main{flex:1;display:flex;flex-direction:column;background:#1a1a1a;min-width:0;min-height:0;transition:margin-right 0.35s cubic-bezier(0.4,0,0.2,1)}
 .chat-main.shrink{margin-right:420px}
@@ -116,13 +116,13 @@ body{display:flex;flex-direction:column}
 .play-overlay .play-bar button:hover{color:#fff;border-color:#555}
 .play-overlay iframe{flex:1;border:none}
 /* 工作区用 wrapper 控制显示 */
-.view-workspace{display:none;flex:1;flex-direction:column;height:100%}
+.view-workspace{display:none;flex:1;flex-direction:column;min-height:0}
 .view-workspace.show{display:flex}
 </style>
 
 <div class="loading" id="loading">加载中...</div>
 
-<div id="app" style="display:none;flex-direction:column;height:100%">
+<div id="app" style="display:none;flex-direction:column;height:100%;overflow:hidden">
 <div class="topbar">
   <div class="user" id="usernameLabel">👤 工作台</div>
   <div class="btns">
@@ -535,6 +535,7 @@ function retryLast(){
 }
 
 function openSave(){
+  if(!gameCode){gameCode=document.getElementById('previewFrame').srcdoc||''}
   if(!gameCode){alert('还没有生成游戏呢，先去聊天做游戏吧！');return}
   document.getElementById('savePopup').classList.add('show');
   document.getElementById('saveName').value=gameTitle;
