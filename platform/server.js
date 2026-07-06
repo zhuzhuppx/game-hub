@@ -139,6 +139,7 @@ app.get('/play/:ucode/:gcode',function(req,res){
     '👤 '+author+' <span style="color:#4a6cf7">🏭 AI 游戏工坊</span></a></div>';
   var wrapper='<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8">'+
     '<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">'+
+    '<script src="https://studio.2u1.cn/platform/sfx.js"><\/script>'+
     '<title>'+title+' - '+author+' - AI 游戏工坊</title>'+
     '<style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;overflow:hidden;background:#000}'+
     'canvas{display:block}</style></head><body>'+credit;
