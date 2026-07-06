@@ -236,6 +236,7 @@ function closePreview(){
 }
 
 async function send(){
+  window._cancelled=false;
   var input=document.getElementById('input');
   var text=input.value.trim();
   if(!text||turnCount>=maxTurns)return;
@@ -246,18 +247,25 @@ async function send(){
   input.value='';
 
   var typing=document.createElement('div');
-  typing.className='msg ai';typing.textContent='...';typing.id='typing';
+  typing.className='msg ai';typing.innerHTML='... <button onclick="cancelSend()" style="margin-left:6px;padding:2px 8px;border-radius:10px;border:1px solid #555;background:#333;color:#888;cursor:pointer;font-size:11px">✕ 取消</button>';
+  typing.id='typing';
   document.getElementById('msgs').appendChild(typing);
   document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
 
   messages.push({role:'user',content:text});
 
   try{
+    var controller=new AbortController();
+    window._controller=controller;
+    var timeout=setTimeout(function(){controller.abort()},45000);
+
     var resp=await fetch('https://api.deepseek.com/v1/chat/completions',{
-      method:'POST',
+      method:'POST',signal:controller.signal,
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+DS_KEY},
       body:JSON.stringify({model:'deepseek-v4-flash',messages:[{role:'system',content:SYSTEM_PROMPT},...messages],max_tokens:4096,temperature:0.7})
     });
+    clearTimeout(timeout);
+    window._controller=null;
     var data=await resp.json();
     var el=document.getElementById('typing');if(el)el.remove();
 
@@ -315,15 +323,25 @@ async function send(){
     }
   }catch(e){
     var el=document.getElementById('typing');if(el)el.remove();
+    window._controller=null;
+    if(window._cancelled){window._cancelled=false;return}
+    var msg=e.name==='AbortError'?'⏰ 响应超时':'😣 网络出错了';
     var errDiv=document.createElement('div');
     errDiv.className='msg ai';
-    errDiv.innerHTML='网络出错了 😣 <button onclick="retryLast()" style="margin-left:6px;padding:4px 10px;border-radius:12px;border:1px solid #555;background:#333;color:#fff;cursor:pointer;font-size:12px;font-family:system-ui">🔄 再试一次</button>';
+    errDiv.innerHTML=msg+' <button onclick="retryLast()" style="margin-left:6px;padding:4px 10px;border-radius:12px;border:1px solid #555;background:#333;color:#fff;cursor:pointer;font-size:12px;font-family:system-ui">🔄 再试一次</button>';
     document.getElementById('msgs').appendChild(errDiv);
     document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
   }
 }
 
-function retryLast(){
+function cancelSend(){
+  if(window._controller){window._controller.abort();window._controller=null}
+  var el=document.getElementById('typing');if(el)el.remove();
+  if(messages.length>0 && messages[messages.length-1].role==='user'){
+    messages.pop();turnCount--;
+  }
+  window._cancelled=true;
+}
   // 撤销出错的那条用户消息，重新发送
   if(messages.length>0){
     var last=messages[messages.length-1];
