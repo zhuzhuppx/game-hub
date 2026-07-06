@@ -11,28 +11,13 @@ body{display:flex;flex-direction:column}
 .topbar .btn-save:hover{background:rgba(100,200,100,0.25)}
 .topbar .btn-logout{background:rgba(255,255,255,0.06);color:#888}
 .topbar .btn-logout:hover{background:rgba(255,255,255,0.1);color:#aaa}
-.main{flex:1;display:flex;overflow:hidden}
-.preview{flex:1;display:flex;flex-direction:column;background:#111;min-width:0;position:relative}
-.preview-header{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid #1a1a1a;flex-shrink:0}
-.preview-header .name{font-size:13px;color:#fff;display:flex;align-items:center;gap:6px}
-.preview-header .dot{width:7px;height:7px;border-radius:50%;background:#44cc44}
-.preview-header .vers{font-size:12px;color:#ffcc44;font-weight:600}
-.preview-frame{flex:1;border:none;background:#1a2a1a}
-.preview-hints{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(20,20,35,0.97);border:2px solid #ffcc44;border-radius:16px;padding:16px 20px;z-index:10;animation:hintPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275);box-shadow:0 0 40px rgba(255,204,68,0.15)}
-@keyframes hintPop{from{opacity:0;transform:translate(-50%,-50%) scale(0.7)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
-.hint-label{font-size:14px;color:#ffcc44;margin-bottom:10px;font-weight:600;text-align:center}
-.hint-close{position:absolute;top:6px;right:10px;background:none;border:none;color:#666;cursor:pointer;font-size:16px;padding:0;line-height:1}
-.hint-close:hover{color:#fff}
-.hint-btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-.hint-btns button{background:rgba(255,255,255,0.08);border:1px solid #555;color:#ddd;padding:6px 12px;border-radius:16px;font-size:12px;cursor:pointer;font-family:system-ui;transition:all 0.15s}
-.hint-btns button:hover{background:rgba(74,108,247,0.3);border-color:#4a6cf7;color:#fff}
-.hint-speak{display:flex;gap:6px;margin-top:12px}
-.hint-speak input{flex:1;padding:8px 12px;border-radius:16px;border:1px solid #444;background:#1a1a1a;color:#fff;font-size:13px;outline:none;font-family:system-ui}
-.hint-speak input::placeholder{color:#555}
-.hint-speak button{width:36px;height:36px;border-radius:50%;border:none;background:#4a6cf7;color:#fff;cursor:pointer;font-size:16px;flex-shrink:0}
-.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#333;gap:8px}
-.empty .big{font-size:56px}.empty p{font-size:14px}
-.chat-panel{width:340px;min-width:280px;display:flex;flex-direction:column;border-left:1px solid #222;background:#1a1a1a;flex-shrink:0}
+.topbar .btn-preview{background:rgba(74,108,247,0.2);color:#88aaff;margin-left:4px}
+.topbar .btn-preview:hover{background:rgba(74,108,247,0.35)}
+.main{flex:1;display:flex;overflow:hidden;position:relative}
+/* 聊天主区域 */
+.chat-main{flex:1;display:flex;flex-direction:column;background:#1a1a1a;min-width:0;transition:margin-right 0.35s cubic-bezier(0.4,0,0.2,1)}
+.chat-main.shrink{margin-right:420px}
+@media(max-width:768px){.chat-main.shrink{margin-right:0}}
 .chat-title{font-size:13px;font-weight:600;padding:10px 14px;border-bottom:1px solid #222;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .chat-title span{color:#fff}.chat-title .toggle{color:#666;cursor:pointer;font-size:11px}
 .chat-title .toggle:hover{color:#aaa}
@@ -50,6 +35,8 @@ body{display:flex;flex-direction:column}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 .msg.ai{align-self:flex-start;background:#2a2a2a;border-bottom-left-radius:4px}
 .msg.user{align-self:flex-end;background:#4a6cf7;border-bottom-right-radius:4px;color:#fff}
+.msg .preview-btn{display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:6px 14px;background:#4a6cf7;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-family:system-ui}
+.msg .preview-btn:hover{background:#5b7df8}
 .chat-input{display:flex;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid #222;flex-shrink:0}
 .chat-input input{flex:1;padding:9px 14px;border-radius:18px;border:none;background:#252525;color:#e0e0e0;font-size:13px;outline:none;font-family:system-ui}
 .chat-input input::placeholder{color:#444}
@@ -58,6 +45,30 @@ body{display:flex;flex-direction:column}
 .suggestions{display:flex;flex-wrap:wrap;gap:6px;padding:4px 10px 8px}
 .suggestions button{background:#252525;border:1px solid #333;color:#aaa;padding:5px 10px;border-radius:16px;font-size:12px;cursor:pointer;font-family:system-ui;transition:all 0.15s}
 .suggestions button:hover{background:#333;color:#fff;border-color:#555}
+/* 预览滑出面板 */
+.preview-panel{position:absolute;top:0;right:0;width:420px;height:100%;display:flex;flex-direction:column;background:#111;border-left:1px solid #222;transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);z-index:10}
+.preview-panel.open{transform:translateX(0)}
+@media(max-width:768px){.preview-panel{width:100%;transform:translateY(100%)}
+.preview-panel.open{transform:translateY(0)}}
+.preview-header{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid #1a1a1a;flex-shrink:0}
+.preview-header .name{font-size:13px;color:#fff;display:flex;align-items:center;gap:6px}
+.preview-header .dot{width:7px;height:7px;border-radius:50%;background:#44cc44}
+.preview-header .vers{font-size:12px;color:#ffcc44;font-weight:600}
+.preview-header .btn-close-preview{background:none;border:1px solid #333;color:#888;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-family:system-ui}
+.preview-header .btn-close-preview:hover{color:#fff;border-color:#555}
+.preview-frame{flex:1;border:none;background:#1a2a1a}
+.preview-hints{position:absolute;top:50%;left:10px;right:10px;transform:translateY(-50%);background:rgba(20,20,35,0.97);border:2px solid #ffcc44;border-radius:16px;padding:16px 20px;z-index:20;animation:hintPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275);box-shadow:0 0 40px rgba(255,204,68,0.15)}
+@keyframes hintPop{from{opacity:0;transform:translateY(-50%) scale(0.7)}to{opacity:1;transform:translateY(-50%) scale(1)}}
+.hint-label{font-size:14px;color:#ffcc44;margin-bottom:10px;font-weight:600;text-align:center}
+.hint-close{position:absolute;top:6px;right:10px;background:none;border:none;color:#666;cursor:pointer;font-size:16px;padding:0;line-height:1}
+.hint-close:hover{color:#fff}
+.hint-btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.hint-btns button{background:rgba(255,255,255,0.08);border:1px solid #555;color:#ddd;padding:6px 12px;border-radius:16px;font-size:12px;cursor:pointer;font-family:system-ui;transition:all 0.15s}
+.hint-btns button:hover{background:rgba(74,108,247,0.3);border-color:#4a6cf7;color:#fff}
+.hint-speak{display:flex;gap:6px;margin-top:12px}
+.hint-speak input{flex:1;padding:8px 12px;border-radius:16px;border:1px solid #444;background:#1a1a1a;color:#fff;font-size:13px;outline:none;font-family:system-ui}
+.hint-speak input::placeholder{color:#555}
+.hint-speak button{width:36px;height:36px;border-radius:50%;border:none;background:#4a6cf7;color:#fff;cursor:pointer;font-size:16px;flex-shrink:0}
 .save-popup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:999;display:none;align-items:center;justify-content:center}
 .save-popup.show{display:flex}
 .save-popup .box{background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:24px;width:300px;max-width:90vw}
@@ -68,11 +79,6 @@ body{display:flex;flex-direction:column}
 .save-popup .box .btn-confirm{background:#4a6cf7;color:#fff}
 .save-popup .box .btn-cancel{background:#2a2a2a;color:#888}
 .loading{display:flex;align-items:center;justify-content:center;height:100%;color:#555;font-size:14px}
-@media(max-width:768px){
-  .main{flex-direction:column}
-  .chat-panel{width:100%;min-width:unset;border-left:none;border-top:1px solid #222;max-height:50%}
-  .preview{max-height:50%}
-}
 </style>
 
 <div class="loading" id="loading">加载中...</div>
@@ -81,31 +87,15 @@ body{display:flex;flex-direction:column}
 <div class="topbar">
   <div class="user" id="usernameLabel">👤 工作台</div>
   <div class="btns">
+    <button class="btn-preview" id="topPreviewBtn" onclick="openPreview()" style="display:none">👁️ 预览游戏</button>
     <button class="btn-save" onclick="openSave()">💾 保存</button>
     <button class="btn-logout" onclick="logout()">🚪 退出</button>
   </div>
 </div>
 <div class="main">
-  <div class="preview">
-    <div class="preview-header">
-      <div class="name"><span class="dot" id="liveDot"></span><span id="gameName">我的游戏</span></div>
-      <div class="vers" id="gameVer">还没开始</div>
-    </div>
-    <div id="emptyState" class="empty"><div class="big">🎮</div><p>在右边聊天，游戏会在这里显示</p></div>
-    <iframe id="previewFrame" class="preview-frame" style="display:none"></iframe>
-    <div class="preview-hints" id="previewHints" style="display:none">
-      <button class="hint-close" onclick="closeHints()">✕</button>
-      <div class="hint-label">🎮 玩得开心吗？要不要加点新功能？</div>
-      <div class="hint-btns" id="hintBtns"></div>
-      <div class="hint-speak">
-        <input type="text" id="hintInput" placeholder="或者对我说你想加什么..." onkeydown="if(event.key==='Enter')hintSpeak()">
-        <button onclick="hintSpeak()">💬</button>
-      </div>
-    </div>
-  </div>
-  <div class="chat-panel">
+  <div class="chat-main" id="chatMain">
     <div class="chat-title">
-      <span>💬 聊天</span>
+      <span>💬 游戏设计工坊</span>
       <span class="toggle" id="listToggle" onclick="toggleList()">📂 我的游戏 ▸</span>
     </div>
     <div class="gamelist" id="gamelist">
@@ -127,6 +117,26 @@ body{display:flex;flex-direction:column}
       <button class="send" id="sendBtn" onclick="send()">➤</button>
     </div>
   </div>
+
+  <div class="preview-panel" id="previewPanel">
+    <div class="preview-header">
+      <div class="name"><span class="dot" id="liveDot"></span><span id="gameName">我的游戏</span></div>
+      <div>
+        <span class="vers" id="gameVer">还没开始</span>
+        <button class="btn-close-preview" onclick="closePreview()">✕ 关闭预览</button>
+      </div>
+    </div>
+    <iframe id="previewFrame" class="preview-frame"></iframe>
+    <div class="preview-hints" id="previewHints" style="display:none">
+      <button class="hint-close" onclick="closeHints()">✕</button>
+      <div class="hint-label">🎮 玩得开心吗？要不要加点新功能？</div>
+      <div class="hint-btns" id="hintBtns"></div>
+      <div class="hint-speak">
+        <input type="text" id="hintInput" placeholder="或者对我说你想加什么..." onkeydown="if(event.key==='Enter')hintSpeak()">
+        <button onclick="hintSpeak()">💬</button>
+      </div>
+    </div>
+  </div>
 </div>
 </div>
 
@@ -135,8 +145,8 @@ body{display:flex;flex-direction:column}
     <h3>💾 保存游戏</h3>
     <input type="text" id="saveName" placeholder="游戏名称，如：鲨鱼追人" onkeydown="if(event.key==='Enter')doSave()">
     <div class="btns">
-      <button class="btn-cancel" onclick="closeSave()">取消</button>
       <button class="btn-confirm" onclick="doSave()">保存</button>
+      <button class="btn-cancel" onclick="closeSave()">取消</button>
     </div>
   </div>
 </div>
@@ -190,9 +200,15 @@ function addMsg(text,isUser){
   div.innerHTML=text;
   document.getElementById('msgs').appendChild(div);
   document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
-  // 移除旧的建议按钮
   var old=document.getElementById('suggestions');
   if(old)old.remove();
+}
+
+function quickSend(text){
+  document.getElementById('previewHints').style.display='none';
+  document.getElementById('hintInput').value='';
+  document.getElementById('input').value=text;
+  send();
 }
 
 function closeHints(){document.getElementById('previewHints').style.display='none'}
@@ -204,11 +220,18 @@ function hintSpeak(){
   quickSend(v);
 }
 
-function quickSend(text){
+function openPreview(){
+  document.getElementById('previewPanel').classList.add('open');
+  document.getElementById('chatMain').classList.add('shrink');
+  document.getElementById('topPreviewBtn').style.display='none';
+}
+
+function closePreview(){
+  document.getElementById('previewPanel').classList.remove('open');
+  document.getElementById('chatMain').classList.remove('shrink');
   document.getElementById('previewHints').style.display='none';
-  document.getElementById('hintInput').value='';
-  document.getElementById('input').value=text;
-  send();
+  if(gameCode) document.getElementById('topPreviewBtn').style.display='inline-block';
+  document.getElementById('input').focus();
 }
 
 async function send(){
@@ -248,39 +271,39 @@ async function send(){
       version++;
       document.getElementById('gameName').textContent=gameTitle;
       document.getElementById('gameVer').textContent='🔄 第'+version+'次迭代';
-      document.getElementById('emptyState').style.display='none';
-      document.getElementById('previewFrame').style.display='block';
       document.getElementById('previewFrame').srcdoc=gameCode;
+      document.getElementById('topPreviewBtn').style.display='inline-block';
     }
-    var display=reply.replace(/```html[\s\S]*?```/g,'[游戏已更新到左边预览]');
+    var display=reply.replace(/```html[\s\S]*?```/g,'');
     addMsg(display,false);
 
-    // 代码生成后，给出迭代建议按钮
+    // 代码生成后，在聊天区追加预览按钮
     if(codeMatch){
-      // 聊天区建议
-      var s=document.createElement('div');s.className='suggestions';s.id='suggestions';
-      s.innerHTML='<button onclick="quickSend(\'好的，继续升级！\')">🚀 继续升级</button>'+
+      var btn=document.createElement('div');btn.className='suggestions';btn.id='suggestions';
+      btn.innerHTML='<button onclick="openPreview()" style="background:#4a6cf7;color:#fff;font-weight:600">👁️ 预览游戏</button>'+
+        '<button onclick="quickSend(\'好的，继续升级！\')">🚀 继续升级</button>'+
         '<button onclick="quickSend(\'加个Boss吧\')">👾 加Boss</button>'+
         '<button onclick="quickSend(\'让难度慢慢增加\')">📈 难度递增</button>'+
         '<button onclick="quickSend(\'加个排行榜\')">🏆 加排行榜</button>';
-      document.getElementById('msgs').appendChild(s);
+      document.getElementById('msgs').appendChild(btn);
       document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
 
-      // 游戏预览区浮动建议 - 30秒后弹出，让小孩先玩一会
+      // 预览区升级弹窗 - 30秒后弹出
       var hints=document.getElementById('previewHints');
-      var btnDiv=document.getElementById('hintBtns');
-      btnDiv.innerHTML='<button onclick="quickSend(\'好的，继续升级！\')">🚀 继续升级</button>'+
+      var bd=document.getElementById('hintBtns');
+      bd.innerHTML='<button onclick="quickSend(\'好的，继续升级！\')">🚀 继续升级</button>'+
         '<button onclick="quickSend(\'加个Boss吧\')">👾 加Boss</button>'+
         '<button onclick="quickSend(\'让难度慢慢增加\')">📈 难度递增</button>'+
         '<button onclick="quickSend(\'加个排行榜\')">🏆 加排行榜</button>';
-      hints.style.display='none';
       clearTimeout(window._hintTimeout);
       window._hintTimeout=setTimeout(function(){
-        hints.style.display='block';
+        if(document.getElementById('previewPanel').classList.contains('open')){
+          hints.style.display='block';
+        }
       },30000);
     }
 
-    // 如果 AI 在提问（没有给出代码），加上提示
+    // AI提问时给快捷回复
     if(!codeMatch && reply.includes('？')){
       var s=document.createElement('div');s.className='suggestions';s.id='suggestions';
       s.innerHTML='<button onclick="quickSend(\'好的，就按你说的做\')">✅ 好的</button>'+
@@ -305,77 +328,62 @@ function closeSave(){document.getElementById('savePopup').classList.remove('show
 
 async function doSave(){
   var name=document.getElementById('saveName').value.trim();
-  if(!name){alert('请输入游戏名称');return}
-  var slug=name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g,'').slice(0,30)||'game';
+  if(!name)return;
+  gameTitle=name;
+  document.getElementById('gameName').textContent=gameTitle;
   try{
-    var r=await fetch('/api/save-game',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({slug:slug,title:name,html:gameCode,version:version})
-    });
+    var r=await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:gameTitle,html:gameCode,version:version})});
     var d=await r.json();
-    if(d.ok){closeSave();loadGameList();alert('保存成功！')}
-    else alert(d.error||'保存失败');
-  }catch(e){alert('网络错误')}
+    if(d.ok){closeSave();loadGameList();alert('保存成功！✌️')}else{alert('保存失败：'+d.error)}
+  }catch(e){alert('保存失败')}
 }
 
 async function loadGameList(){
   try{
-    var r=await fetch('/api/my-games');var d=await r.json();
+    var r=await fetch('/api/games');var d=await r.json();
     var list=document.getElementById('gamelist');
-    list.innerHTML='';
-    if(!d.games||d.games.length===0){
-      list.innerHTML='<div class="empty-msg">还没有保存的游戏</div>';
-      return;
-    }
+    list.querySelectorAll('.game-item').forEach(function(el){el.remove()});
+    if(!d.games||!d.games.length){document.getElementById('gamelistEmpty').style.display='block';return}
+    document.getElementById('gamelistEmpty').style.display='none';
     d.games.forEach(function(g){
       var div=document.createElement('div');
       div.className='game-item';
       div.innerHTML='<span class="gtitle">'+g.title+'</span><span class="gver">v'+g.version+'</span><span class="gdel" title="删除">🗑️</span>';
-      div.querySelector('.gtitle').onclick=function(){loadGame(g.slug)};
-      div.querySelector('.gdel').onclick=function(e){e.stopPropagation();deleteGame(g.slug)};
+      div.querySelector('.gtitle').onclick=function(){loadGame(g.title)};
+      div.querySelector('.gdel').onclick=function(e){e.stopPropagation();deleteGame(g.title)};
       list.appendChild(div);
     });
   }catch(e){}
 }
 
-async function loadGame(slug){
+async function loadGame(title){
   try{
-    var r=await fetch('/api/load-game/'+slug);var d=await r.json();
-    if(d.html){
-      gameCode=d.html;gameTitle=d.title;version=d.version;
-      document.getElementById('gameName').textContent=gameTitle;
-      document.getElementById('gameVer').textContent='🔄 第'+version+'次迭代';
-      document.getElementById('emptyState').style.display='none';
-      document.getElementById('previewFrame').style.display='block';
-      document.getElementById('previewFrame').srcdoc=gameCode;
-      gameStarted=true;
-    }
+    var r=await fetch('/api/game/'+encodeURIComponent(title));
+    var d=await r.json();
+    if(!d.ok){alert('加载失败');return}
+    gameCode=d.html;gameTitle=d.title;version=d.version;
+    document.getElementById('gameName').textContent=gameTitle;
+    document.getElementById('gameVer').textContent='🔄 第'+version+'次迭代';
+    document.getElementById('previewFrame').srcdoc=gameCode;
+    document.getElementById('topPreviewBtn').style.display='inline-block';
+    gameStarted=true;
+    addMsg('📂 已加载存档「'+gameTitle+'」，可以继续优化或预览！',false);
   }catch(e){alert('加载失败')}
 }
 
-async function deleteGame(slug){
-  if(!confirm('确定删除这个游戏？'))return;
+async function deleteGame(title){
+  if(!confirm('确定删除「'+title+'」？'))return;
   try{
-    var r=await fetch('/api/delete-game',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({slug:slug})
-    });
+    var r=await fetch('/api/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title})});
     var d=await r.json();
-    if(d.ok)loadGameList();
-  }catch(e){}
+    if(d.ok){loadGameList()}else{alert('删除失败')}
+  }catch(e){alert('删除失败')}
 }
 
-function toggleList(){
-  var list=document.getElementById('gamelist');
-  var btn=document.getElementById('listToggle');
-  list.classList.toggle('show');
-  btn.textContent=list.classList.contains('show')?'📂 我的游戏 ▾':'📂 我的游戏 ▸';
-  if(list.classList.contains('show'))loadGameList();
-}
+function toggleList(){document.getElementById('gamelist').classList.toggle('show')}
 
-async function logout(){
-  await fetch('/api/logout',{method:'POST'});
-  location.href='/login';
+function logout(){
+  fetch('/api/logout',{method:'POST'}).then(function(){location.href='/login'});
 }
 </script>
-</html>
+</body></html>
