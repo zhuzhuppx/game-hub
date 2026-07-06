@@ -45,6 +45,12 @@ body{display:flex;flex-direction:column}
 .chat-input input::placeholder{color:#444}
 .chat-input .send{width:34px;height:34px;border-radius:50%;border:none;background:#4a6cf7;color:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s}
 .chat-input .send:disabled{background:#2a2a2a;color:#444;cursor:default}
+/* AI 思考动画 */
+.think-dots{display:inline-flex;gap:2px;vertical-align:middle}
+.think-dots i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#888;animation:thinkBounce 1.2s infinite}
+.think-dots i:nth-child(2){animation-delay:0.2s}
+.think-dots i:nth-child(3){animation-delay:0.4s}
+@keyframes thinkBounce{0%,60%,100%{transform:translateY(0);opacity:0.3}30%{transform:translateY(-6px);opacity:1}}
 .suggestions{display:flex;flex-wrap:wrap;gap:6px;padding:4px 10px 8px}
 .suggestions button{background:#252525;border:1px solid #333;color:#aaa;padding:5px 10px;border-radius:16px;font-size:12px;cursor:pointer;font-family:system-ui;transition:all 0.15s}
 .suggestions button:hover{background:#333;color:#fff;border-color:#555}
@@ -376,8 +382,9 @@ async function send(){
   input.value='';
 
   var typing=document.createElement('div');
-  typing.className='msg ai';typing.innerHTML='... <button onclick="cancelSend()" style="margin-left:6px;padding:2px 8px;border-radius:10px;border:1px solid #555;background:#333;color:#888;cursor:pointer;font-size:11px">✕ 取消</button>';
-  typing.id='typing';
+  typing.className='msg ai';typing.id='typing';
+  typing.innerHTML='<span class="think-dots"><i>.</i><i>.</i><i>.</i></span>'+
+    ' <button onclick="cancelSend()" style="margin-left:8px;padding:2px 8px;border-radius:10px;border:1px solid #555;background:#333;color:#888;cursor:pointer;font-size:11px">✕ 取消</button>';
   document.getElementById('msgs').appendChild(typing);
   document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
 
