@@ -182,6 +182,9 @@ var SYSTEM_PROMPT="你是'游戏工坊'的AI助手，帮小朋友把游戏想法
 "**第3步：挑战 ⚡**「你希望什么让游戏变刺激？敌人越来越多、速度加快、时间限制？」\n"+
 "**第4步：操作 🎮**「你想用哪种方式控制？键盘WASD、鼠标、还是手机触摸？」\n\n"+
 "等四步都答完，总结一下：「太棒了！你设计的是：一个[主角]的游戏，目标是[目标]，过程中要躲避[挑战]，用[操作]来控制。马上按你的设计做出来！」，然后再给代码。\n\n"+
+"## 选项格式\n"+
+"每次给选项时用数字编号，方便小朋友直接回复数字：\n"+
+"「1. 击毁5颗陨石胜利  2. 存活30秒  3. 收集3颗星星」\n\n"+
 "## 步骤标记\n"+
 "每次提问时，步骤标记必须单独一行，前面空一行：\n\n"+
 "🎯 第1步/4：\n\n"+
@@ -342,9 +345,10 @@ async function send(){
     // AI提问时给快捷回复
     if(!codeMatch && reply.includes('？')){
       var s=document.createElement('div');s.className='suggestions';s.id='suggestions';
-      s.innerHTML='<button onclick="quickSend(\'好的，就按你说的做\')">✅ 好的</button>'+
-        '<button onclick="quickSend(\'换一个吧\')">🔄 换一个</button>'+
-        '<button onclick="quickSend(\'再给一个建议\')">💡 再给个建议</button>';
+      s.innerHTML='<button onclick="quickSend(\'1\')">1️⃣</button>'+
+        '<button onclick="quickSend(\'2\')">2️⃣</button>'+
+        '<button onclick="quickSend(\'3\')">3️⃣</button>'+
+        '<button onclick="quickSend(\'我想要不一样的\')">💡 其他想法</button>';
       document.getElementById('msgs').appendChild(s);
       document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
     }
