@@ -74,7 +74,7 @@ db.exec(`
 
 // ==================== Plan Config ====================
 const PLANS = {
-  free:    {dailyAi:5,  maxGames:2,  voice:false, download:false, name:'免费版'},
+  free:    {dailyAi:5,  maxGames:2,  voice:true,  download:false, name:'免费版'},
   credits: {dailyAi:Infinity, maxGames:10, voice:true,  download:true,  name:'按次',  costPerCall:1},
   creator: {dailyAi:Infinity, maxGames:Infinity, voice:true,  download:true,  name:'创作者'},
   family:  {dailyAi:Infinity, maxGames:Infinity, voice:true,  download:true,  name:'家庭版'},
