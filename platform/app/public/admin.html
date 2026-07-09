@@ -6,32 +6,40 @@
 <title>管理后台 · 游戏工坊</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:system-ui;background:#0f0f0f;color:#e0e0e0;min-height:100vh;padding:24px;max-width:800px;margin:0 auto}
+body{font-family:system-ui;background:#0f0f0f;color:#e0e0e0;min-height:100vh;padding:24px;max-width:900px;margin:0 auto}
 h1{font-size:22px;margin-bottom:20px;color:#fff}
 .card{background:#1a1a1a;border:1px solid #222;border-radius:12px;padding:20px;margin-bottom:16px}
 .card h2{font-size:15px;color:#88aaff;margin-bottom:12px}
-input,button{font-family:system-ui}
-input{padding:8px 12px;border-radius:8px;border:1px solid #333;background:#2a2a2a;color:#fff;font-size:13px;outline:none;width:100%}
-input:focus{border-color:#667eea}
+input,button,select{font-family:system-ui}
+input,select{padding:8px 12px;border-radius:8px;border:1px solid #333;background:#2a2a2a;color:#fff;font-size:13px;outline:none}
+input:focus,select:focus{border-color:#667eea}
 button{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all 0.2s}
-.btn-blue{background:#4a6cf7;color:#fff;width:100%;margin-top:10px}
-.btn-blue:hover{background:#5a7cf7}
-.btn-red{background:rgba(255,60,40,0.2);color:#ff6644}
-.btn-red:hover{background:rgba(255,60,40,0.35)}
-.btn-green{background:rgba(60,200,60,0.2);color:#88cc88}
-.btn-green:hover{background:rgba(60,200,60,0.35)}
+.btn-blue{background:#4a6cf7;color:#fff}.btn-blue:hover{background:#5a7cf7}
+.btn-red{background:rgba(255,60,40,0.2);color:#ff6644}.btn-red:hover{background:rgba(255,60,40,0.35)}
+.btn-green{background:rgba(60,200,90,0.2);color:#66dd66}.btn-green:hover{background:rgba(60,200,90,0.35)}
+.btn-yellow{background:rgba(255,200,40,0.2);color:#ffbb33}.btn-yellow:hover{background:rgba(255,200,40,0.35)}
+.btn-sm{padding:4px 10px;font-size:11px}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{padding:8px 12px;text-align:left;border-bottom:1px solid #222}
-th{color:#888;font-weight:500}
-td .badge{padding:2px 8px;border-radius:10px;font-size:11px}
-td .badge.active{background:rgba(60,200,100,0.15);color:#88cc88}
-td .badge.inactive{background:rgba(255,100,60,0.15);color:#ff8866}
-.stats{display:flex;gap:16px}
-.stat{flex:1;background:#161616;border-radius:10px;padding:16px;text-align:center}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid #222}
+th{color:#888;font-weight:500;white-space:nowrap}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-free{background:rgba(150,150,150,0.15);color:#999}
+.badge-credits{background:rgba(255,180,40,0.2);color:#ffbb33}
+.badge-creator{background:rgba(74,108,247,0.2);color:#88aaff}
+.badge-family{background:rgba(200,80,255,0.2);color:#cc88ff}
+.badge-active{background:rgba(60,200,100,0.15);color:#88cc88}
+.badge-inactive{background:rgba(255,100,60,0.15);color:#ff8866}
+.stats{display:flex;gap:16px;flex-wrap:wrap}
+.stat{flex:1;min-width:100px;background:#161616;border-radius:10px;padding:16px;text-align:center}
 .stat .n{font-size:28px;font-weight:700;color:#fff}
 .stat .l{font-size:11px;color:#888;margin-top:4px}
-.err{color:#ff4444;font-size:12px;margin-top:6px;min-height:18px}
 .login-box{max-width:360px;margin:80px auto}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.checkbox{width:16px;height:16px;accent-color:#4a6cf7;cursor:pointer}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#4a6cf7;color:#fff;padding:10px 24px;border-radius:20px;font-size:14px;z-index:999;animation:fadeInOut 2.5s forwards}
+@keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(-10px)}15%{opacity:1;transform:translateX(-50%) translateY(0)}80%{opacity:1}100%{opacity:0}}
+.plan-row{display:flex;align-items:center;gap:10px;margin:8px 0}
+.plan-row label{font-size:13px;color:#888;min-width:60px}
 </style>
 </head>
 <body>
@@ -40,7 +48,7 @@ td .badge.inactive{background:rgba(255,100,60,0.15);color:#ff8866}
   <h2>🔐 管理员登录</h2>
   <input type="password" id="loginPwd" placeholder="管理员密码" onkeydown="if(event.key==='Enter')doLogin()">
   <button class="btn-blue" onclick="doLogin()">登录</button>
-  <div class="err" id="loginErr"></div>
+  <div style="color:#ff4444;font-size:12px;margin-top:6px" id="loginErr"></div>
 </div>
 
 <div id="dashboard" style="display:none">
@@ -49,66 +57,198 @@ td .badge.inactive{background:rgba(255,100,60,0.15);color:#ff8866}
 <div class="card">
   <div class="stats">
     <div class="stat"><div class="n" id="statUsers">-</div><div class="l">用户总数</div></div>
-    <div class="stat"><div class="n" id="statActive">-</div><div class="l">活跃用户</div></div>
+    <div class="stat"><div class="n" id="statActive">-</div><div class="l">活跃</div></div>
+    <div class="stat"><div class="n" id="statPro">-</div><div class="l">付费/按次</div></div>
     <div class="stat"><div class="n" id="statGames">-</div><div class="l">游戏总数</div></div>
   </div>
 </div>
 
+<!-- 会员赠送 -->
 <div class="card">
-  <h2>👥 用户管理</h2>
-  <p style="color:#888;font-size:12px;margin-bottom:10px">用户通过登录页自行注册，管理员可查看和禁用</p>
+  <h2>💎 会员赠送</h2>
+  <div class="plan-row">
+    <label>会员等级</label>
+    <select id="grantPlan">
+      <option value="credits">按次付费</option>
+      <option value="creator">创作者 (¥29/月)</option>
+      <option value="family">家庭版 (¥49/月)</option>
+      <option value="free">免费版 (取消)</option>
+    </select>
+  </div>
+  <div class="plan-row">
+    <label>有效期</label>
+    <select id="grantDays">
+      <option value="30">30天 (试用)</option>
+      <option value="90">90天</option>
+      <option value="180">180天</option>
+      <option value="365" selected>365天 (1年)</option>
+      <option value="0">永久</option>
+    </select>
+  </div>
+  <div class="row" style="margin-top:10px;gap:8px">
+    <button class="btn-green" onclick="batchGrant()">🎁 批量赠送选中用户</button>
+    <button class="btn-blue btn-sm" onclick="selectAll()">全选</button>
+    <button class="btn-blue btn-sm" onclick="selectNone()">取消全选</button>
+    <button class="btn-blue btn-sm" onclick="selectFree()">仅选免费用户</button>
+  </div>
+</div>
+
+<!-- 次数赠送 -->
+<div class="card">
+  <h2>🎫 赠送次数</h2>
+  <div class="plan-row">
+    <label>赠送数量</label>
+    <select id="creditsAmount">
+      <option value="10">10 次</option>
+      <option value="50">50 次</option>
+      <option value="100" selected>100 次</option>
+      <option value="500">500 次</option>
+    </select>
+  </div>
+  <div class="row" style="margin-top:10px;gap:8px">
+    <button class="btn-yellow" onclick="batchGrantCredits()">🎫 赠送次数给选中用户</button>
+  </div>
 </div>
 
 <div class="card">
-  <h2>📋 用户列表</h2>
-  <table><thead><tr><th>用户名</th><th>注册时间</th><th>游戏数</th><th>状态</th><th>操作</th></tr></thead>
-  <tbody id="userTable"><tr><td colspan="5" style="text-align:center;color:#555">加载中...</td></tr></tbody></table>
+  <h2>📋 用户列表 <span id="userCount" style="color:#888;font-weight:normal;font-size:12px"></span></h2>
+  <table>
+    <thead><tr>
+      <th><input type="checkbox" class="checkbox" id="checkAll" onchange="toggleAll(this.checked)"></th>
+      <th>用户名</th><th>注册</th><th>游戏</th><th>今日AI</th><th>次数</th><th>会员</th><th>状态</th><th>操作</th>
+    </tr></thead>
+    <tbody id="userTable"></tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>🎯 游戏管理 <span id="gameCount" style="color:#888;font-weight:normal;font-size:12px"></span></h2>
+  <div style="margin-bottom:10px">
+    <button class="btn-yellow btn-sm" onclick="loadGames()">🔄 刷新</button>
+    <span style="font-size:12px;color:#666;margin-left:8px">点击 🗑 下架游戏</span>
+  </div>
+  <table>
+    <thead><tr>
+      <th>图标</th><th>游戏名</th><th>作者</th><th>迭代</th><th>更新时间</th><th>操作</th>
+    </tr></thead>
+    <tbody id="gameTable"></tbody>
+  </table>
 </div>
 </div>
 
 <script>
 var adminPass='';
+function doLogin(){adminPass=document.getElementById('loginPwd').value;loadData()}
+function api(m,u,b){var o={method:u,headers:b?{'Content-Type':'application/json','X-Admin-Password':adminPass}:{'X-Admin-Password':adminPass}};if(b)o.body=JSON.stringify(b);return fetch(m,o).then(function(r){return r.json()})}
+function toast(m){var t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(function(){t.remove()},2500)}
 
-async function api(path,method,body){
-  var opts={method:method,headers:{'Content-Type':'application/json'}};
-  if(adminPass)opts.headers['x-admin-password']=adminPass;
-  if(body)opts.body=JSON.stringify(body);
-  var r=await fetch(path,opts);
-  return r.json();
-}
-
-async function doLogin(){
-  var pwd=document.getElementById('loginPwd').value;
-  var err=document.getElementById('loginErr');
-  adminPass=pwd;
-  var d=await api('/api/admin/users','GET');
-  if(d.error){adminPass='';err.textContent=d.error;return}
-  document.getElementById('loginBox').style.display='none';
-  document.getElementById('dashboard').style.display='block';
-  loadAll();
+function getPlanBadge(plan,expires){
+  var now=new Date().toISOString().slice(0,10);
+  var expired=expires&&expires<now;
+  if(plan==='free'||expired)return'<span class="badge badge-free">免费</span>';
+  if(plan==='credits')return'<span class="badge badge-credits">按次'+(expires?' ⏳'+expires:'')+'</span>';
+  if(plan==='creator')return'<span class="badge badge-creator">创作者'+(expires?' ⏳'+expires:'')+'</span>';
+  if(plan==='family')return'<span class="badge badge-family">家庭版'+(expires?' ⏳'+expires:'')+'</span>';
+  return'<span class="badge badge-free">免费</span>';
 }
 
-async function loadAll(){loadStats();loadUsers()}
-async function loadStats(){
-  var d=await api('/api/stats','GET');
-  document.getElementById('statUsers').textContent=d.userCount||0;
-  document.getElementById('statActive').textContent=d.activeUsers||0;
-  document.getElementById('statGames').textContent=d.gameCount||0;
-}
-async function loadUsers(){
-  var d=await api('/api/admin/users','GET');
-  var rows=(d.users||[]).map(function(u){
-    return '<tr><td><b>'+u.username+'</b></td><td>'+u.created+'</td><td>'+u.gameCount+'</td>'+
-      '<td><span class="badge '+(u.active?'active':'inactive')+'">'+(u.active?'正常':'已禁用')+'</span></td>'+
-      '<td><button class="'+(u.active?'btn-red':'btn-green')+'" onclick="toggleUser(\''+u.username+'\')">'+(u.active?'禁用':'启用')+'</button></td></tr>';
-  }).join('');
-  document.getElementById('userTable').innerHTML=rows||'<tr><td colspan="5" style="text-align:center;color:#555">暂无用户</td></tr>';
+function loadData(){
+  api('/api/admin/users','GET').then(function(d){
+    if(d.error){document.getElementById('loginErr').textContent=d.error;return}
+    document.getElementById('loginBox').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    document.getElementById('userCount').textContent='('+d.users.length+'人)';
+    document.getElementById('statUsers').textContent=d.users.length;
+    var active=d.users.filter(function(u){return u.active}).length;
+    var pro=d.users.filter(function(u){return u.plan!=='free'}).length;
+    var games=d.users.reduce(function(s,u){return s+(u.gameCount||0)},0);
+    document.getElementById('statActive').textContent=active;
+    document.getElementById('statPro').textContent=pro;
+    document.getElementById('statGames').textContent=games;
+    var html='';
+    d.users.forEach(function(u){
+      html+='<tr>'+
+        '<td><input type="checkbox" class="checkbox user-cb" value="'+u.username+'"></td>'+
+        '<td>'+u.username+'</td>'+
+        '<td>'+u.created+'</td>'+
+        '<td>'+u.gameCount+'</td>'+
+        '<td>'+u.dailyAiUsed+'</td>'+
+        '<td><b>'+(u.credits||0)+'</b></td>'+
+        '<td>'+getPlanBadge(u.plan,u.plan_expires)+'</td>'+
+        '<td>'+(u.active?'<span class="badge badge-active">正常</span>':'<span class="badge badge-inactive">禁用</span>')+'</td>'+
+        '<td>'+
+          '<button class="btn-red btn-sm" onclick="toggleUser(\''+u.username+'\')">'+(u.active?'禁用':'启用')+'</button> '+
+          '<button class="btn-blue btn-sm" onclick="grantOne(\''+u.username+'\')">送会员</button>'+
+        '</td></tr>';
+    });
+    document.getElementById('userTable').innerHTML=html;
+  });
 }
 
-async function toggleUser(username){
-  var d=await api('/api/admin/toggle-user','POST',{username:username});
-  if(d.ok)loadAll();
+function toggleUser(u){api('/api/admin/toggle-user','POST',{username:u}).then(function(d){toast(d.active?'已启用':'已禁用');loadData()})}
+function selectAll(){document.querySelectorAll('.user-cb').forEach(function(cb){cb.checked=true})}
+function selectNone(){document.querySelectorAll('.user-cb').forEach(function(cb){cb.checked=false})}
+function selectFree(){
+  document.querySelectorAll('.user-cb').forEach(function(cb){
+    var tr=cb.closest('tr');
+    if(tr&&tr.querySelector('.badge-free'))cb.checked=true;
+    else cb.checked=false;
+  });
 }
+function getSelected(){var r=[];document.querySelectorAll('.user-cb:checked').forEach(function(cb){r.push(cb.value)});return r}
+function grantOne(u){doGrant([u])}
+function batchGrant(){
+  var sel=getSelected();if(!sel.length){toast('请先勾选用户');return}
+  doGrant(sel);
+}
+function doGrant(usernames){
+  var plan=document.getElementById('grantPlan').value;
+  var days=parseInt(document.getElementById('grantDays').value);
+  api('/api/admin/grant-plan','POST',{usernames:usernames,plan:plan,days:days}).then(function(d){
+    toast('已为 '+d.updated.length+' 人设置「'+d.plan+'」'+(d.expires?' 至 '+d.expires:''));
+    loadData();
+  });
+}
+function batchGrantCredits(){
+  var sel=getSelected();if(!sel.length){toast('请先勾选用户');return}
+  var amount=parseInt(document.getElementById('creditsAmount').value);
+  api('/api/admin/grant-credits','POST',{usernames:sel,amount:amount}).then(function(d){
+    toast('已为 '+d.updated.length+' 人赠送 '+d.amount+' 次');
+    loadData();
+  });
+}
+function toggleAll(v){document.querySelectorAll('.user-cb').forEach(function(cb){cb.checked=v})}
+
+function loadGames(){
+  api('/api/admin/games','GET').then(function(d){
+    document.getElementById('gameCount').textContent='('+d.games.length+'个)';
+    var html='';
+    d.games.forEach(function(g){
+      html+='<tr>'+
+        '<td>'+(g.icon||'🎮')+'</td>'+
+        '<td><b>'+g.title+'</b></td>'+
+        '<td>'+g.username+'</td>'+
+        '<td>v'+g.ver+'</td>'+
+        '<td>'+g.updated+'</td>'+
+        '<td>'+
+          '<button class="btn-red btn-sm" onclick="deleteGame(\''+g.id+'\',\''+g.username+'\',\''+g.title.replace(/'/g,"\\'")+'\')">🗑 下架</button> '+
+          '<a href="/play/'+g.userCode+'/'+g.id+'" target="_blank" style="color:#88aaff;font-size:11px;text-decoration:none">🔗</a>'+
+        '</td></tr>';
+    });
+    document.getElementById('gameTable').innerHTML=html;
+  });
+}
+
+function deleteGame(id,username,title){
+  if(!confirm('确认下架「'+title+'」？此操作不可恢复。'))return;
+  api('/api/admin/delete-game','POST',{id:id,username:username}).then(function(d){
+    toast('已下架: '+title);
+    loadGames();
+  });
+}
+
+loadData();
+loadGames();
 </script>
 </body>
 </html>

@@ -1,0 +1,6 @@
+{
+  "task": "fix_bug",
+  "file": "index.html",
+  "bug_description": "render() 函数中访问 food.x 时 food 可能为 undefined（游戏未开始时第一次渲染就会崩溃）。需要加 null 保护，并且在 startGame 后确保渲染循环正常工作。",
+  "instructions": "请修复 index.html 中的 bug，返回完整的修复后的 HTML 文件（纯 HTML，不要代码块包裹）。"
+}

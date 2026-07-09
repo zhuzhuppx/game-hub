@@ -17,6 +17,13 @@ body{display:flex;flex-direction:column}
 .topbar .btn-back-lobby{background:rgba(255,204,68,0.15);color:#ffcc44}
 .topbar .btn-preview{background:rgba(74,108,247,0.2);color:#88aaff;margin-left:4px}
 .topbar .btn-preview:hover{background:rgba(74,108,247,0.35)}
+.plan-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;margin-left:6px;vertical-align:middle}
+.plan-badge.free{background:rgba(150,150,150,0.15);color:#999}
+.plan-badge.creator{background:rgba(74,108,247,0.2);color:#88aaff}
+.plan-badge.family{background:rgba(200,80,255,0.2);color:#cc88ff}
+.plan-badge.credits{background:rgba(230,160,30,0.2);color:#ffb733}
+.limit-bar{background:rgba(255,180,60,0.1);border:1px solid rgba(255,180,60,0.2);border-radius:8px;padding:8px 12px;margin:8px 14px 0;font-size:12px;color:#eebb55;display:flex;align-items:center;justify-content:space-between}
+.limit-bar a{color:#ffbb33;text-decoration:underline;cursor:pointer}
 .main{flex:1;display:flex;overflow:hidden;position:relative;min-height:0}
 /* 聊天主区域 */
 .chat-main{flex:1;display:flex;flex-direction:column;background:#1a1a1a;min-width:0;min-height:0;transition:margin-right 0.35s cubic-bezier(0.4,0,0.2,1)}
@@ -37,6 +44,7 @@ body{display:flex;flex-direction:column}
 .msgs{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;min-height:0}
 .msg{max-width:88%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.5;word-break:break-word;animation:fadeIn 0.2s;white-space:pre-wrap}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
 .msg.ai{align-self:flex-start;background:#2a2a2a;border-bottom-left-radius:4px}
 .msg.user{align-self:flex-end;background:#4a6cf7;border-bottom-right-radius:4px;color:#fff}
 .msg .preview-btn{display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:6px 14px;background:#4a6cf7;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-family:system-ui}
@@ -57,22 +65,33 @@ body{display:flex;flex-direction:column}
 .chat-input.voice-mode .send{display:none}
 .chat-input.voice-mode .hold-record{display:block}
 /* 语音录音环 */
-.record-ring{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);width:120px;height:120px;border-radius:50%;display:none;align-items:center;justify-content:center;z-index:999;
+.record-ring{position:fixed;bottom:320px;left:50%;transform:translateX(-50%);width:160px;height:160px;border-radius:50%;display:none;align-items:center;justify-content:center;z-index:999999;
   background:rgba(0,0,0,0.85);border:3px solid #ff4444;color:#fff;font-size:13px;pointer-events:none}
-.record-ring.show{display:flex}
-.record-ring .inner{width:80px;height:80px;border-radius:50%;background:rgba(255,68,68,0.15);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px}
-.record-ring .wave{display:flex;align-items:center;gap:2px;height:20px}
-.record-ring .wave span{display:inline-block;width:3px;border-radius:2px;background:#ff4444;animation:waveBounce 0.6s ease-in-out infinite}
-.record-ring .wave span:nth-child(1){height:6px;animation-delay:0s}
-.record-ring .wave span:nth-child(2){height:12px;animation-delay:0.1s}
-.record-ring .wave span:nth-child(3){height:18px;animation-delay:0.2s}
-.record-ring .wave span:nth-child(4){height:12px;animation-delay:0.3s}
-.record-ring .wave span:nth-child(5){height:6px;animation-delay:0.4s}
+.record-ring.show{
+  display:flex;
+}
+.record-ring .inner{width:110px;height:110px;border-radius:50%;background:rgba(255,68,68,0.15);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px}
+.record-ring .wave{display:flex;align-items:center;gap:3px;height:24px}
+.record-ring .wave span{display:inline-block;width:4px;border-radius:2px;background:#ff4444;animation:waveBounce 0.6s ease-in-out infinite}
+.record-ring .wave span:nth-child(1){height:8px;animation-delay:0s}
+.record-ring .wave span:nth-child(2){height:14px;animation-delay:0.1s}
+.record-ring .wave span:nth-child(3){height:22px;animation-delay:0.2s}
+.record-ring .wave span:nth-child(4){height:14px;animation-delay:0.3s}
+.record-ring .wave span:nth-child(5){height:8px;animation-delay:0.4s}
 @keyframes waveBounce{0%,100%{transform:scaleY(1)}50%{transform:scaleY(0.3)}}
-.record-ring .pulse-ring{position:absolute;width:100%;height:100%;border-radius:50%;border:2px solid rgba(255,68,68,0.4);animation:ringPulse 1.2s ease-out infinite}
+.record-ring .pulse-ring{position:absolute;width:100%;height:100%;border-radius:50%;border:3px solid rgba(255,68,68,0.4);animation:ringPulse 1.2s ease-out infinite}
 .record-ring .pulse-ring:nth-child(2){animation-delay:0.4s}
 .record-ring .pulse-ring:nth-child(3){animation-delay:0.8s}
 @keyframes ringPulse{0%{transform:scale(1);opacity:1}100%{transform:scale(1.6);opacity:0}}
+.slide-zones{position:fixed;bottom:110px;left:0;right:0;display:none;justify-content:center;gap:16px;z-index:99999;pointer-events:none;padding:0 16px}
+.slide-zone{flex:1;max-width:160px;height:80px;display:flex;align-items:center;justify-content:center;border-radius:16px;margin:0 6px;font-size:15px;font-weight:600;font-family:system-ui;transition:all 0.15s;pointer-events:auto;border:1px solid transparent}
+.slide-cancel{background:rgba(60,60,60,0.7);color:#aaa;border-color:#444}
+.slide-cancel.active{background:rgba(200,60,60,0.9);color:#fff;border-color:#ff4444;transform:scale(1.05)}
+.slide-send{background:rgba(74,108,247,0.7);color:#aac;border-color:#4a6cf7}
+.slide-send.active{background:rgba(74,108,247,0.95);color:#fff;border-color:#6a8cff;transform:scale(1.05)}
+.wizard-slide-row{display:none;justify-content:center;gap:12px;margin:16px auto 20px;padding:0}
+.wizard-slide-row.show{display:flex}
+.wizard-slide-row .slide-zone{flex:1;max-width:140px;height:52px;font-size:13px}
 /* AI 思考动画 */
 .think-dots{display:inline-flex;gap:2px;vertical-align:middle}
 .think-dots i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#888;animation:thinkBounce 1.2s infinite}
@@ -145,24 +164,107 @@ body{display:flex;flex-direction:column}
 .lobby-card .card-icon{font-size:36px;margin-bottom:8px}
 .lobby-card .card-title{font-size:14px;color:#fff;font-weight:600;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lobby-card .card-meta{font-size:11px;color:#555}
-.lobby-card .card-del{position:absolute;top:6px;right:8px;background:none;border:none;color:#555;cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px}
-.lobby-card .card-del:hover{color:#ff4444;background:rgba(255,0,0,0.1)}
+.lobby-card .card-del{display:none}
+.game-detail-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:400;display:none;align-items:center;justify-content:center;padding:20px}
+.game-detail-overlay.show{display:flex}
+.game-detail{background:#1a1a1a;border:1px solid #333;border-radius:16px;width:90vw;max-width:420px;overflow:hidden;animation:slideUp 0.25s ease}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.game-detail .gd-header{background:#111;padding:40px 20px 20px;text-align:center}
+.game-detail .gd-icon{font-size:56px;margin-bottom:10px}
+.game-detail .gd-title{font-size:18px;color:#fff;font-weight:700;word-break:break-word}
+.game-detail .gd-meta{font-size:12px;color:#666;margin-top:6px}
+.game-detail .gd-actions{padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.game-detail .gd-actions button{display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 10px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:system-ui;transition:all 0.15s;color:#fff}
+.game-detail .gd-start{grid-column:span 2;background:#4a6cf7;font-size:15px;padding:14px}
+.game-detail .gd-start:hover{background:#5a7cf7}
+.game-detail .gd-btn{background:rgba(255,255,255,0.06);border:1px solid #333!important}
+.game-detail .gd-btn:hover{background:rgba(255,255,255,0.12)}
+.game-detail .gd-btn.primary{background:rgba(74,108,247,0.15);border-color:#4a6cf7!important;color:#88aaff}
+.game-detail .gd-btn.danger{background:rgba(255,60,40,0.1);border-color:#553333!important;color:#ff6655}
+.game-detail .gd-close{display:block;width:100%;padding:12px;background:rgba(255,255,255,0.03);border:none;border-top:1px solid #222;color:#666;cursor:pointer;font-size:13px;font-family:system-ui;transition:all 0.15s}
+.game-detail .gd-close:hover{color:#aaa;background:rgba(255,255,255,0.05)}
+/* 协议弹窗 */
+.agree-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+.agree-overlay.show{display:flex}
+.agree-card{background:#1a1a1a;border:1px solid #333;border-radius:16px;width:90vw;max-width:380px;padding:28px 24px 20px;animation:slideUp 0.25s ease}
+.agree-card .agree-icon{font-size:40px;text-align:center;margin-bottom:12px}
+.agree-card h3{font-size:16px;color:#fff;text-align:center;margin-bottom:16px}
+.agree-card .agree-items{font-size:12px;color:#999;line-height:2;margin-bottom:20px}
+.agree-card .agree-items span{color:#ffcc44;margin-right:6px}
+.agree-card .agree-btns{display:flex;gap:10px}
+.agree-card .agree-btns button{flex:1;padding:11px;border-radius:10px;border:none;cursor:pointer;font-size:14px;font-weight:600;font-family:system-ui;transition:all 0.15s}
+.agree-card .btn-cancel{background:rgba(255,255,255,0.06);color:#888}
+.agree-card .btn-cancel:hover{background:rgba(255,255,255,0.1);color:#aaa}
+.agree-card .btn-agree{background:#4a6cf7;color:#fff}
+.agree-card .btn-agree:hover{background:#5a7cf7}
+.agree-card .btn-danger{background:rgba(255,60,40,0.2);color:#ff6655}
+.agree-card .btn-danger:hover{background:rgba(255,60,40,0.35)}
 .lobby-empty{text-align:center;padding:60px 20px;color:#555}
 .lobby-empty .big{font-size:60px;margin-bottom:12px}
 .lobby-empty p{font-size:14px;line-height:1.8}
 .btn-new-game{background:#4a6cf7;color:#fff;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-family:system-ui;font-weight:600;transition:all 0.2s}
 .btn-new-game:hover{background:#5b7df8;transform:scale(1.02)}
-/* 游戏播放全屏 */
-.play-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:500;display:none;flex-direction:column}
-.play-overlay.show{display:flex}
-.play-overlay .play-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 14px;background:#111;flex-shrink:0}
-.play-overlay .play-bar .pl-title{color:#fff;font-size:14px}
-.play-overlay .play-bar button{background:none;border:1px solid #333;color:#888;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:system-ui}
-.play-overlay .play-bar button:hover{color:#fff;border-color:#555}
-.play-overlay iframe{flex:1;border:none}
 /* 工作区用 wrapper 控制显示 */
 .view-workspace{display:none;flex:1;flex-direction:column;min-height:0}
 .view-workspace.show{display:flex}
+
+/* ===== 向导样式 ===== */
+.wizard-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:9998;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px)}
+.wizard-overlay.show{display:flex}
+.wizard-box{background:#161616;border:1px solid #222;border-radius:20px;padding:24px 28px;max-width:600px;width:90%;max-height:90vh;overflow-y:auto;position:relative}
+.wizard-step-num{font-size:12px;color:#888;text-align:center;margin-bottom:12px}
+.wizard-bar-wrap{height:4px;background:#222;border-radius:4px;margin-bottom:20px;overflow:hidden}
+.wizard-bar{height:100%;background:linear-gradient(90deg,#4a6cf7,#6c5ce7);border-radius:4px;transition:width 0.4s ease;width:0%}
+.wizard-icon{font-size:48px;text-align:center;margin-bottom:12px}
+.wizard-title{font-size:20px;font-weight:700;color:#fff;text-align:center;margin-bottom:6px}
+.wizard-desc{font-size:13px;color:#999;text-align:center;margin-bottom:24px;line-height:1.5}
+.wizard-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.wizard-opt{background:#1a1a1a;border:2px solid #222;border-radius:14px;padding:14px 12px;cursor:pointer;transition:all 0.2s;text-align:center;user-select:none;-webkit-tap-highlight-color:transparent}
+.wizard-opt:hover{border-color:#444;background:#222}
+.wizard-opt.selected{border-color:#4a6cf7;background:rgba(74,108,247,0.12);box-shadow:0 0 20px rgba(74,108,247,0.15);transform:scale(1.03)}
+.wizard-opt .opt-icon{font-size:28px;display:block;margin-bottom:4px}
+.wizard-opt .opt-label{font-size:13px;color:#ddd;font-weight:500}
+.wizard-opt .opt-desc{font-size:11px;color:#777;margin-top:2px}
+.wizard-name-wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:18px 0 16px}
+.wizard-name-tag{background:#2a2a2a;border:1px solid #444;border-radius:20px;padding:8px 18px;font-size:14px;color:#ccc;cursor:pointer;transition:all 0.15s}
+.wizard-name-tag:hover{background:#3a3a3a;border-color:#4a6cf7;color:#fff}
+.wizard-btns{display:flex;gap:12px;justify-content:center;margin-top:20px}
+.wizard-btns button{padding:12px 32px;border-radius:24px;border:1px solid #444;font-size:15px;font-weight:600;cursor:pointer;font-family:system-ui;transition:all 0.2s}
+.wizard-btns .btn-prev{background:#2a2a2a;color:#888}
+.wizard-btns .btn-prev:hover{background:#3a3a3a;color:#ccc}
+.wizard-btns .btn-next{background:#4a6cf7;color:#fff;border-color:#4a6cf7}
+.wizard-btns .btn-next:hover{background:#5a7cf7;box-shadow:0 2px 12px rgba(74,108,247,0.3);transform:translateY(-1px)}
+.wizard-btns .btn-next:disabled{opacity:0.3;cursor:not-allowed;pointer-events:none;transform:none!important}
+.wizard-btns .btn-next.enabled{animation:wizBtnEnable 0.3s ease}
+@keyframes wizBtnEnable{0%{transform:scale(0.95)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+.wizard-summary{background:#1a1a1a;border:1px solid #222;border-radius:14px;padding:16px;margin-bottom:16px}
+.wizard-summary .ws-item{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #222}
+.wizard-summary .ws-item:last-child{border-bottom:none}
+.wizard-summary .ws-icon{font-size:18px;width:24px;text-align:center}
+.wizard-summary .ws-key{font-size:12px;color:#888;width:50px;flex-shrink:0}
+.wizard-summary .ws-val{font-size:13px;color:#ddd}
+.wizard-title-big{font-size:28px;font-weight:800;text-align:center;color:#fff;margin-bottom:4px}
+.wizard-sub{font-size:13px;color:#999;text-align:center;margin-bottom:16px}
+.wizard-hold-record{display:block;text-align:center;padding:14px 28px;border-radius:20px;border:1px solid #555;cursor:pointer;transition:all 0.15s;font-size:15px;color:#ddd;background:#2a2a2a;user-select:none;-webkit-user-select:none;touch-action:manipulation;margin:12px auto 6px;width:fit-content;min-width:180px}
+.wizard-hold-record:hover{border-color:#888;color:#fff;background:#333}
+.wizard-hold-record:active{background:#222}
+.wizard-hold-record.recording{background:#ff4444;border-color:#ff4444;color:#fff}
+.no-voice .wizard-hold-record{display:none!important}
+.wizard-loading{text-align:center;padding:20px}
+.wizard-loading .wl-icon{font-size:64px;animation:wizardBounce 1s ease-in-out infinite}
+@keyframes wizardBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.wizard-loading .wl-text{font-size:15px;color:#aaa;margin-top:12px}
+.wizard-loading .wl-dots{display:inline-flex;gap:4px;margin-top:8px}
+.wizard-loading .wl-dots span{width:8px;height:8px;border-radius:50%;background:#4a6cf7;animation:wlDot 1.4s ease-in-out infinite}
+.wizard-loading .wl-dots span:nth-child(2){animation-delay:0.2s}
+.wizard-loading .wl-dots span:nth-child(3){animation-delay:0.4s}
+@keyframes wlDot{0%,80%,100%{opacity:0.2}40%{opacity:1}}
+.wizard-output{background:#0a0a0a;border:1px solid #333;border-radius:10px;padding:14px;margin-top:12px;max-height:160px;overflow-y:auto;font-size:13px;color:#ccc;line-height:1.6;text-align:left;white-space:pre-wrap;word-break:break-word;font-family:'SF Mono','Fira Code','Courier New',monospace}
+.wizard-output .cursor{display:inline-block;width:2px;height:15px;background:#4a6cf7;margin-left:2px;animation:blinkCursor 0.8s step-end infinite;vertical-align:text-bottom}
+@keyframes blinkCursor{0%,100%{opacity:1}50%{opacity:0}}
+.wizard-output.has-code{border-color:#4a6cf7;color:#e0e0e0}
+.wizard-opts-disabled{pointer-events:none!important;opacity:0.6}
+
 </style>
 
 <div class="loading" id="loading">加载中...</div>
@@ -170,12 +272,11 @@ body{display:flex;flex-direction:column}
 <div id="app" style="display:none;flex-direction:column;height:100%;overflow:hidden">
 <div class="topbar">
   <div class="user" id="usernameLabel">👤 工作台</div>
+  <div class="plan-badge free" id="planBadge" style="display:none;cursor:pointer" onclick="showUpgrade()" title="点击查看会员详情">免费版</div>
   <div class="btns">
-    <button class="btn-back-lobby" id="btnBackLobby" onclick="backToLobby()" style="display:none">🏠 大厅</button>
+    <button class="btn-back-lobby" id="btnBackLobby" onclick="backToLobby()" style="display:none">🏠 作品</button>
     <button class="btn-preview" id="topPreviewBtn" onclick="openPreview()" style="display:none">👁️ 预览</button>
-    <button class="btn-save" id="btnSaveTop" onclick="openSave()" style="display:none">💾 保存</button>
     <button class="btn-new-game" id="btnNewGameTop" onclick="enterWorkspace()" style="display:none">➕ 新建</button>
-    <button class="btn-settings" id="btnSettingsTop" onclick="openSettings()">🔑 设置</button>
     <button class="btn-logout" id="btnLogoutTop" onclick="logout()">🚪 退出</button>
   </div>
 </div>
@@ -185,6 +286,7 @@ body{display:flex;flex-direction:column}
   <div class="lobby-header">
     <h2>🎮 我的游戏工坊</h2>
     <p id="lobbySubtitle">还没有游戏，点击右上角「➕ 新建游戏」开始创作吧！</p>
+    <p style="margin-top:8px"><a onclick="goPlaza()" style="color:#88aaff;cursor:pointer;font-size:12px;text-decoration:none">🏪 逛游戏广场 →</a></p>
   </div>
   <div class="lobby-grid" id="lobbyGrid"></div>
   <div class="lobby-empty" id="lobbyEmpty">
@@ -200,6 +302,10 @@ body{display:flex;flex-direction:column}
     <div class="chat-title">
       <span>💬 我的游戏工坊</span>
       <span class="toggle" id="listToggle" onclick="toggleList()">📂 我的游戏 ▸</span>
+    </div>
+    <div class="limit-bar" id="limitBar" style="display:none">
+      <span id="limitMsg"></span>
+      <a onclick="showUpgrade()">升级会员 →</a>
     </div>
     <div class="gamelist" id="gamelist">
       <div class="empty-msg" id="gamelistEmpty">还没有保存的游戏</div>
@@ -218,7 +324,7 @@ body{display:flex;flex-direction:column}
     <div class="chat-input" id="chatInput">
       <button class="mode-btn" id="modeBtn" onclick="toggleInputMode()" title="切换到语音输入">🎤</button>
       <input type="text" id="input" placeholder="说说你的游戏想法..." onkeydown="return handleInputKey(event)" autofocus>
-      <div class="hold-record" id="holdRecord">按住 录音</div>
+      <div class="hold-record" id="holdRecord">🎤 按住说话</div>
       <button class="send" id="sendBtn" onclick="send()">➤</button>
     </div>
     <!-- 录音状态环 -->
@@ -228,8 +334,12 @@ body{display:flex;flex-direction:column}
       <div class="pulse-ring"></div>
       <div class="inner">
         <div class="wave"><span></span><span></span><span></span><span></span><span></span></div>
-        <span style="font-size:11px;color:#ff6666">🎙️ 录音中</span>
+        <span style="font-size:15px;color:#ff6666;font-weight:600">🎙️ 说话中</span>
       </div>
+    </div>
+    <div class="slide-zones" id="slideZones">
+      <div class="slide-zone slide-cancel" id="slideCancel">✕ 取消</div>
+      <div class="slide-zone slide-send" id="slideSend">✓ 转文字</div>
     </div>
   </div>
 
@@ -257,195 +367,867 @@ body{display:flex;flex-direction:column}
 
 </div><!-- end viewWorkspace -->
 
-<!-- 游戏播放全屏 -->
-<div class="play-overlay" id="playOverlay">
-  <div class="play-bar">
-    <span class="pl-title" id="playTitle">游戏</span>
-    <div style="display:flex;gap:8px">
-      <button onclick="shareGame()" style="background:#2a8a4a;color:#fff;border-color:#2a8a4a">🔗 分享</button>
-      <button onclick="editCurrentGame()" style="background:#4a6cf7;color:#fff;border-color:#4a6cf7">✏️ 修改</button>
-      <button onclick="closePlay()">✕ 返回</button>
+<!-- 游戏详情弹窗 -->
+<div class="game-detail-overlay" id="gameDetail" onclick="if(event.target===this)closeGameDetail()">
+  <div class="game-detail">
+    <div class="gd-header">
+      <div class="gd-icon" id="gdIcon">🎮</div>
+      <div class="gd-title" id="gdTitle">游戏名称</div>
+      <div class="gd-meta" id="gdMeta"></div>
     </div>
-  </div>
-  <iframe id="playFrame"></iframe>
-</div>
-
-<div class="save-popup" id="settingsPopup">
-  <div class="box" style="width:380px;text-align:center">
-    <div style="font-size:48px;margin-bottom:8px">🔑</div>
-    <h3>设置你的 DeepSeek Key</h3>
-    <div style="background:#1a1a1a;border-radius:10px;padding:12px;margin:10px 0;text-align:left;font-size:12px;color:#aaa;line-height:1.8">
-      <b style="color:#fff">📋 获取方式：</b><br>
-      1️⃣ 打开 <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color:#4a6cf7">platform.deepseek.com</a><br>
-      2️⃣ 注册/登录后点击「创建 API Key」<br>
-      3️⃣ 复制 sk- 开头的 Key 粘贴到下方<br>
-      <span style="color:#666">💡 新用户免费送额度，够玩好久！</span>
+    <div class="gd-actions">
+      <button class="gd-start" onclick="playFromDetail()">▶ 开始游戏</button>
+      <button class="gd-btn" id="gdPubBtn" onclick="publishFromDetail()">📤 发布</button>
+      <button class="gd-btn" id="gdDlBtn" onclick="downloadGame(_gdId,_gdTitle)">📥 下载</button>
+      <button class="gd-btn primary" onclick="editFromDetail()">✏️ 修改</button>
+      <button class="gd-btn" onclick="shareGame()">🔗 分享</button>
+      <button class="gd-btn danger" onclick="deleteFromDetail()">🗑 删除</button>
     </div>
-    <p style="font-size:11px;color:#555;margin:8px 0">
-      🔐 Key 只存在你的浏览器里，服务器看不到
-    </p>
-    <div style="display:flex;align-items:center;width:100%;margin-bottom:12px;background:#252525;border:1px solid #333;border-radius:8px;padding-right:6px">
-      <input type="password" id="settingsKey" placeholder="sk-..." style="flex:1;padding:10px;border:none;background:none;color:#fff;font-size:13px;outline:none;font-family:system-ui;min-width:0">
-      <button onclick="toggleKeyEye()" style="background:none;border:none;color:#666;cursor:pointer;font-size:16px;padding:4px 6px;line-height:1" id="keyEye">👁️</button>
-    </div>
-    <div class="btns">
-      <button class="btn-confirm" onclick="saveSettings()">💾 保存</button>
-      <button class="btn-cancel" onclick="closeSettings()">取消</button>
-    </div>
+    <button class="gd-close" onclick="closeGameDetail()">关闭</button>
   </div>
 </div>
 
-<div class="save-popup" id="savePopup">
-  <div class="box">
-    <h3>💾 保存游戏</h3>
-    <input type="text" id="saveName" placeholder="游戏名称，如：鲨鱼追人" onkeydown="if(event.key==='Enter')doSave()">
-    <div class="btns">
-      <button class="btn-confirm" onclick="doSave()">保存</button>
-      <button class="btn-cancel" onclick="closeSave()">取消</button>
+<!-- 发布协议弹窗 -->
+<div class="agree-overlay" id="agreeOverlay" onclick="if(event.target===this)closeAgree()">
+  <div class="agree-card">
+    <div class="agree-icon" id="publishIcon">📜</div>
+    <h3 id="publishTitle">发布到游戏广场</h3>
+    <div class="agree-items" id="publishDesc">
+      <div><span>1</span> 游戏代码以 MIT 协议开源</div>
+      <div><span>2</span> 平台可公开展示你的游戏</div>
+      <div><span>3</span> 如内容违法，平台有权下架</div>
+      <div><span>4</span> 法律责任由创作者承担</div>
+    </div>
+    <div class="agree-btns">
+      <button class="btn-cancel" onclick="closeAgree()">取消</button>
+      <button class="btn-agree" id="agreeConfirmBtn" onclick="confirmPublish()">同意并发布</button>
+    </div>
+  </div>
+</div>
+
+<!-- 删除确认弹窗 -->
+<div class="agree-overlay" id="deleteOverlay" onclick="if(event.target===this)closeDelete()">
+  <div class="agree-card">
+    <div class="agree-icon">🗑️</div>
+    <h3>确定删除？</h3>
+    <div style="font-size:13px;color:#999;text-align:center;margin-bottom:20px">
+      游戏「<b style="color:#fff" id="delGameTitle"></b>」将被永久删除<br>此操作不可恢复
+    </div>
+    <div class="agree-btns">
+      <button class="btn-cancel" onclick="closeDelete()">取消</button>
+      <button class="btn-danger" onclick="confirmDelete()">确认删除</button>
     </div>
   </div>
 </div>
 
 <!-- 新手引导弹窗 -->
-<div class="save-popup" id="guidePopup">
-  <div class="guide-box">
-    <div class="guide-steps" id="guideSteps">
-      <div class="gstep active" data-step="0">
-        <div class="gicon">🏰</div>
-        <h2>欢迎来到 AI 游戏工坊！</h2>
-        <p>这里你可以像真正的游戏设计师一样，<br>一步步创造属于自己的游戏！</p>
-        <p style="color:#aaa;font-size:12px;margin-top:8px">AI 助手会引导你完成 5 个设计步骤</p>
-      </div>
-      <div class="gstep" data-step="1">
-        <div class="gicon">🎯</div>
-        <h3>第 1 步：设计主角</h3>
-        <p>你想控制什么角色？<br>🚀 飞船？👾 小怪物？🐍 蛇？</p>
-        <p style="color:#4a6cf7;font-size:11px">决定游戏里"你是谁"</p>
-      </div>
-      <div class="gstep" data-step="2">
-        <div class="gicon">🏆</div>
-        <h3>第 2 步：设计目标</h3>
-        <p>怎么算赢？<br>💎 收集宝石？⏱ 存活更久？👾 消灭敌人？</p>
-        <p style="color:#4a6cf7;font-size:11px">决定游戏里"做什么"</p>
-      </div>
-      <div class="gstep" data-step="3">
-        <div class="gicon">⚡</div>
-        <h3>第 3 步：设计挑战</h3>
-        <p>什么让游戏变刺激？<br>🔥 敌人越来越快？🌪 障碍变多？</p>
-        <p style="color:#4a6cf7;font-size:11px">决定游戏里"难在哪"</p>
-      </div>
-      <div class="gstep" data-step="4">
-        <div class="gicon">🎮</div>
-        <h3>第 4 步：设计操作</h3>
-        <p>怎么控制角色？<br>⌨️ 键盘 WASD？🖱 鼠标？📱 手机触摸？</p>
-        <p style="color:#4a6cf7;font-size:11px">决定游戏里"怎么动"</p>
-      </div>
-      <div class="gstep" data-step="5">
-        <div class="gicon">🎵</div>
-        <h3>第 5 步：设计音乐</h3>
-        <p>背景音乐什么风格？<br>🗡 紧张刺激？🌿 轻快探索？🚀 太空科幻？</p>
-        <p style="color:#4a6cf7;font-size:11px">决定游戏里"听什么"</p>
-      </div>
-    </div>
-    <div class="guide-dots" id="guideDots"></div>
-    <div class="guide-btns">
-      <button class="btn-cancel" onclick="skipGuide()">跳过</button>
-      <button class="btn-confirm" id="guideNext" onclick="nextGuide()">下一步 ➜</button>
+<div class="wizard-overlay" id="wizardOverlay">
+  <div class="wizard-box" id="wizardBox">
+    <div class="wizard-step-num" id="wizardStepNum">✏️ 第 0 步 / 5</div>
+    <div class="wizard-bar-wrap"><div class="wizard-bar" id="wizardBar" style="width:0%"></div></div>
+    <div id="wizardBody"></div>
+    <div class="wizard-btns" id="wizardBtns">
+      <button class="btn-prev" id="wizardPrevBtn" onclick="wizardPrev()" style="visibility:hidden">⬅ 上一步</button>
+      <button class="btn-next" id="wizardNextBtn" onclick="wizardNext()">继续 ➜</button>
     </div>
   </div>
 </div>
 
-<script src="/platform/sfx.js"></script>
+<script src="/sfx.js"></script>
 <script>
 var username='',userCode='',gameCode='',gameTitle='我的游戏',gameId='',version=0,gameStarted=false,gameSaved=false;
-var messages=[],turnCount=0,maxTurns=15,DS_KEY='';
+
+// 本地同音纠错表（前端瞬时匹配）
+var _STT_FIXES={
+  '官员的关':'勇士闯关','官员':'闯关','勇室':'勇士','勇是':'勇士',
+  '小鸡':'小鸡','小鸡子':'小机子','几系':'机械','机系':'机械',
+  '太空飞船':'太空飞船','太平':'飞船','太平飞':'太空飞船',
+  '收集':'收集','收集保':'收集宝石','收拾':'收集','收集宝石':'收集宝石',
+  '小恐龙':'小恐龙','孔龙':'恐龙','恐笼':'恐龙',
+  '机器':'机器人','机器':'机器人','机器人':'机器人',
+  '猫咪':'小猫咪','猫谜':'小猫咪','毛咪':'小猫咪',
+  '赛撤':'赛车','赛车':'赛车','撤':'赛车',
+  '音效':'音效','英雄':'小英雄',
+  '挑战':'挑战','条展':'挑战','条占':'挑战',
+  '消灭':'消灭','霄灭':'消灭','销灭':'消灭',
+  '敌人':'敌人','底人':'敌人','低人':'敌人',
+  '存活':'存活','生活':'存活','村活':'存活',
+  '键盘':'键盘','剑盘':'键盘','建盘':'键盘',
+  '鼠标':'鼠标','鼠表':'鼠标','数表':'鼠标',
+  '触摸':'触摸','出没':'触摸','触目':'触摸',
+  '紧张':'紧张','仅张':'紧张','紧凑':'紧张',
+  '刺激':'刺激','刺几':'刺激','此次':'刺激',
+  '太空':'太空','太平':'太空','台空':'太空',
+  '科幻':'科幻','刻幻':'科幻','科换':'科幻',
+  '轻松':'轻松','轻送':'轻松','青送':'轻松',
+  '休闲':'休闲','休贤':'休闲','修贤':'休闲',
+  '欢乐':'欢乐','慌乱':'欢乐','换乐':'欢乐',
+  '派对':'派对','排队':'派对','拍对':'派对',
+  '冒险':'冒险','毛先':'冒险','冒献':'冒险',
+  '轻快':'轻快','轻坏':'轻快','清快':'轻快',
+  '探索':'探索','叹所':'探索','碳所':'探索',
+  'Boss':'Boss','博士':'Boss','波斯':'Boss',
+  '草地':'大草地','草地':'草地','绿草地':'大草地'
+};
+var messages=[],turnCount=0,maxTurns=15;
+
+// ===== 向导核心 =====
+var wizardStep=0,wizardTotal=6;
+var wizardDesign={gameName:'',character:'',goal:'',challenge:'',controls:'',music:''};
+var wizardKeys=['gameName','character','goal','challenge','controls','music'];
+var wizardIcons={gameName:'✏️',character:'🎯',goal:'🏆',challenge:'⚡',controls:'🎮',music:'🔊'};
+var wizardTitles={gameName:'取个酷酷的名字',character:'谁是主角？',goal:'游戏目标是什么？',challenge:'什么让游戏刺激？',controls:'怎么操作？',music:'配什么音乐？'};
+var wizardDescs={gameName:'给你的游戏取一个名字吧！可以语音说，也可以点下面的灵感标签',character:'你的游戏里，谁来做主角？',goal:'怎么算赢？收集东西、消灭敌人、还是活下去？',challenge:'什么让游戏变得又刺激又好玩？',controls:'玩家怎么控制角色？',music:'背景音乐决定游戏的氛围！'};
+var _wizardCharIcon='🚀';
+
+// 步骤数据
+var wizardSteps=[
+  null, // step0=命名，特殊处理
+  {icon:'🎯',opts:[
+    {icon:'🚀',label:'太空飞船',desc:'驾驶飞船穿越星际'},
+    {icon:'🤠',label:'小勇士',desc:'勇敢的小冒险家'},
+    {icon:'🐱',label:'小猫咪',desc:'敏捷又可爱'},
+    {icon:'🐉',label:'小恐龙',desc:'远古小霸王'},
+    {icon:'🐟',label:'小丑鱼',desc:'海底小精灵'},
+    {icon:'🤖',label:'小机器人',desc:'未来科技战士'},
+    {icon:'🏎️',label:'小赛车',desc:'速度与激情'},
+    {icon:'🦸',label:'小英雄',desc:'拯救世界！'}
+  ]},
+  {icon:'🏆',opts:[
+    {icon:'💎',label:'收集宝石',desc:'集齐指定数量的宝石'},
+    {icon:'👾',label:'消灭敌人',desc:'击败所有敌人'},
+    {icon:'⏱️',label:'存活挑战',desc:'在限定时间内活下来'},
+    {icon:'⭐',label:'收集星星',desc:'收集天上的星星'},
+    {icon:'🏁',label:'到达终点',desc:'穿越障碍到达终点'},
+    {icon:'🥇',label:'拿到最高分',desc:'挑战最高分纪录'},
+    {icon:'🍎',label:'吃到金币',desc:'吃金币长大'}
+  ]},
+  {icon:'⚡',opts:[
+    {icon:'🔥',label:'敌人增多',desc:'敌人越来越多越来越快'},
+    {icon:'🌪️',label:'障碍变多',desc:'障碍越来越复杂'},
+    {icon:'⏰',label:'限时挑战',desc:'必须在时间内完成'},
+    {icon:'💀',label:'生命有限',desc:'只有几条命'},
+    {icon:'📈',label:'难度递增',desc:'越往后越难'},
+    {icon:'🌀',label:'地形变化',desc:'地图会动态变化'},
+    {icon:'👻',label:'Boss 战',desc:'最后有个大Boss'}
+  ]},
+  {icon:'🎮',opts:[
+    {icon:'⌨️',label:'键盘 WASD',desc:'WASD 或方向键操控'},
+    {icon:'🖱️',label:'鼠标点击',desc:'点哪里走哪里'},
+    {icon:'📱',label:'触摸滑动',desc:'手机触摸滑动控制'},
+    {icon:'🖲️',label:'键盘 + 空格',desc:'方向键 + 空格跳跃'},
+    {icon:'🎯',label:'鼠标瞄准',desc:'鼠标瞄准 + 点击射击'},
+    {icon:'🔄',label:'重力翻转',desc:'点击翻转重力方向'},
+    {icon:'👆',label:'单指操作',desc:'一个手指就能玩'},
+    {icon:'🎮',label:'双端都支持',desc:'PC键盘+手机触屏都兼容'}
+  ]},
+  {icon:'🎵',opts:[
+    {icon:'🗡️',label:'紧张刺激',desc:'bgmAdventure - 冒险战斗风'},
+    {icon:'🌿',label:'轻快探索',desc:'bgmExplore - 轻松愉快'},
+    {icon:'🚀',label:'太空科幻',desc:'bgmSpace - 未来科技感'},
+    {icon:'🏝️',label:'轻松休闲',desc:'bgmRelax - 放松减压'},
+    {icon:'🎪',label:'欢乐派对',desc:'bgmFun - 活泼有趣'},
+    {icon:'🌙',label:'神秘冒险',desc:'bgmMystery - 神秘探索'}
+  ]}
+];
+
+var _wizardCustomVoices={};
+try{var cv=localStorage.getItem('wizardCustomVoices');if(cv)_wizardCustomVoices=JSON.parse(cv)}catch(e){}
+
+// 灵感名字标签
+var _nameTags=['星际大冒险','小勇士闯关','极速赛车王','太空探险','海底世界','恐龙乐园','宝石大盗','魔法学院'];
+
+function startWizard(){
+  wizardStep=0;wizardDesign={gameName:'',character:'',goal:'',challenge:'',controls:'',music:''};
+  document.getElementById('wizardOverlay').classList.add('show');
+  // 同步语音权限状态到body class
+  var d=window._userPlan;
+  if(d&&d.limits&&!d.limits.voice) document.body.classList.add('no-voice');
+  else document.body.classList.remove('no-voice');
+  renderWizard();
+}
+
+function renderWizard(){
+  var stepDisplay=wizardStep===0?'✏️ 命名':'🎯🏆⚡🎮🔊'[wizardStep-1]+' 第 '+wizardStep+' 步 / 5';
+  document.getElementById('wizardStepNum').textContent=stepDisplay;
+  var pct=wizardStep===0?8:8+((wizardStep-1)*18.4);
+  document.getElementById('wizardBar').style.width=Math.min(pct,100)+'%';
+  
+  var body=document.getElementById('wizardBody');
+  var prevBtn=document.getElementById('wizardPrevBtn');
+  var nextBtn=document.getElementById('wizardNextBtn');
+  
+  prevBtn.style.visibility=(wizardStep>0?'visible':'hidden');
+  
+  if(wizardStep===0){
+    // 命名步
+    var d=window._userPlan;
+    var hasVoice=d&&d.limits&&d.limits.voice;
+    body.innerHTML=
+      '<div class="wizard-icon">✏️</div>'+
+      '<div class="wizard-title">取个酷酷的名字</div>'+
+      '<div class="wizard-desc">给你的游戏取一个名字吧！点下面的灵感标签'+(hasVoice?'，或按住按钮说话':'')+'</div>'+
+      '<div class="wizard-name-wrap" id="wizardNameTags"></div>'+
+      (hasVoice
+        ?'<div class="wizard-slide-row" id="wizardSlideRow">'+
+            '<div class="slide-zone slide-cancel" id="wizSc">✕ 取消</div>'+
+            '<div class="slide-zone slide-send" id="wizSs">✓ 转文字</div>'+
+          '</div>'+
+          '<div class="wizard-hold-record" id="wizardHoldRecord" style="margin-top:28px">🎤 按住说话</div>'
+        :'');
+    // 渲染灵感标签
+    var tags='';
+    for(var i=0;i<_nameTags.length;i++){
+      tags+='<span class="wizard-name-tag" onclick="fillName(\''+_nameTags[i]+'\')">'+_nameTags[i]+'</span>';
+    }
+    document.getElementById('wizardNameTags').innerHTML=tags;
+    nextBtn.textContent='继续 ➜';
+    nextBtn.disabled=true;
+    nextBtn.classList.remove('enabled');
+    // 绑定录音按钮事件（仅语音权限用户）
+    if(hasVoice){
+      var wrBtn=document.getElementById('wizardHoldRecord');
+      if(wrBtn){
+        wrBtn.addEventListener('touchstart',function(e){wizardInitHold(e)},{passive:false});
+        wrBtn.addEventListener('mousedown',function(e){wizardInitHold(e)});
+      }
+    }
+    // TTS 朗读引导（仅语音权限用户）
+    if(hasVoice){
+      setTimeout(function(){wizardSpeak('取个酷酷的名字！给你的游戏取一个名字吧！可以按住下面的按钮说话，也可以点灵感标签');},300);
+    }
+    // 安全兜底：CSS 也隐藏无权限用户的语音按钮
+    setTimeout(function(){
+      var d2=window._userPlan;
+      if(!d2||!d2.limits||!d2.limits.voice){
+        document.body.classList.add('no-voice');
+        var btn2=document.getElementById('wizardHoldRecord');
+        if(btn2)btn2.style.display='none';
+      }
+    },100);
+    return;
+  }
+  
+  if(wizardStep<wizardTotal){
+    var st=wizardSteps[wizardStep];
+    body.innerHTML=
+      '<div class="wizard-icon">'+st.icon+'</div>'+
+      '<div class="wizard-title">'+wizardTitles[wizardKeys[wizardStep]]+'</div>'+
+      '<div class="wizard-desc">'+wizardDescs[wizardKeys[wizardStep]]+'</div>'+
+      '<div class="wizard-opts" id="wizardOpts"></div>';
+    var opts='',key=wizardKeys[wizardStep];
+    for(var i=0;i<st.opts.length;i++){
+      var o=st.opts[i],sel=(wizardDesign[key]===o.label)?' selected':'';
+      opts+='<div class="wizard-opt'+sel+'" onclick="wizardPick('+wizardStep+','+i+')">'+
+        '<span class="opt-icon">'+o.icon+'</span>'+
+        '<span class="opt-label">'+o.label+'</span>'+
+        '<span class="opt-desc">'+o.desc+'</span></div>';
+    }
+    document.getElementById('wizardOpts').innerHTML=opts;
+    // 朗读当前步骤（标题+描述）
+    setTimeout(function(){
+      var wk=wizardKeys[wizardStep];
+      wizardSpeak(wizardTitles[wk]+' '+wizardDescs[wk]);
+    },300);
+    nextBtn.textContent=(wizardStep===wizardTotal-1)?'🎮 生成游戏！':'继续 ➜';
+    nextBtn.disabled=true;
+    nextBtn.style.opacity='0.5';
+  }else{
+    // 总结页
+    var summary='';winHtml='';
+    var keys=['character','goal','challenge','controls','music'];
+    var icons=['🎯','🏆','⚡','🎮','🔊'];
+    var labels=['主角','目标','挑战','操作','音乐'];
+    for(var i=0;i<keys.length;i++){
+      summary+='<div class="ws-item"><span class="ws-icon">'+icons[i]+'</span><span class="ws-key">'+labels[i]+'</span><span class="ws-val">'+(wizardDesign[keys[i]]||'未选')+'</span></div>';
+    }
+    // 生成称号
+    var title='游戏设计师';
+    if(wizardDesign.character==='太空飞船'&&wizardDesign.goal==='消灭敌人')title='星际战士';
+    else if(wizardDesign.character==='小勇士'&&wizardDesign.challenge==='Boss 战')title='勇者传说';
+    else if(wizardDesign.character==='小猫咪')title='喵星人大冒险';
+    else if(wizardDesign.controls==='触摸滑动')title='指尖大师';
+    else if(wizardDesign.challenge==='难度递增')title='硬核玩家';
+    else if(wizardDesign.goal==='收集宝石'||wizardDesign.goal==='收集星星')title='收藏家';
+    else if(wizardDesign.music==='轻快探索'||wizardDesign.music==='轻松休闲')title='悠然设计师';
+    else if(wizardDesign.challenge==='限时挑战')title='速度达人';
+    else title='创意设计师';
+    
+    body.innerHTML=
+      '<div class="wizard-title-big">🎉 '+wizardDesign.gameName+'</div>'+
+      '<div class="wizard-sub">🏅 设计师称号：'+title+'</div>'+
+      '<div class="wizard-summary">'+summary+'</div>'+
+      '<div class="wizard-desc">这就是你的游戏设计！让 AI 帮你变成现实吧 🚀</div>';
+    
+    nextBtn.textContent='🎮 生成游戏！';
+    nextBtn.disabled=false;
+    nextBtn.style.opacity='1';
+    prevBtn.textContent='⬅ 修改设计';
+    prevBtn.style.visibility='visible';
+  }
+}
+
+function wizardPick(step,idx){
+  var st=wizardSteps[step];
+  if(!st||!st.opts[idx])return;
+  var o=st.opts[idx];
+  wizardDesign[wizardKeys[step]]=o.label;
+  // 记录主角图标
+  if(step===1)_wizardCharIcon=o.icon;
+  
+  // 选中效果
+  var opts=document.getElementById('wizardOpts');
+  if(opts){
+    var cards=opts.querySelectorAll('.wizard-opt');
+    for(var i=0;i<cards.length;i++)cards[i].classList.remove('selected');
+    if(cards[idx])cards[idx].classList.add('selected');
+  }
+  
+  // 音效反馈
+  try{SFX.resume();SFX.score()}catch(e){}
+  
+  // 启用继续按钮
+  var nextBtn=document.getElementById('wizardNextBtn');
+  nextBtn.disabled=false;
+  nextBtn.classList.add('enabled');
+  
+  // TTS 朗读（含描述）
+  wizardSpeak('你选中了'+o.label+'！'+o.desc+'！');
+  
+  // 自动跳转（等动画和TTS播完）
+  document.getElementById('wizardBody').classList.add('wizard-opts-disabled');
+  setTimeout(function(){
+    document.getElementById('wizardBody').classList.remove('wizard-opts-disabled');
+    wizardNext();
+  },1200);
+}
+
+function wizardPrev(){
+  if(_wizardSpeaking)return;
+  if(wizardStep<=0)return;
+  wizardStep--;
+  renderWizard();
+}
+
+function wizardNext(){
+  if(_wizardSpeaking)return;
+  if(wizardStep===0){
+    if(!wizardDesign.gameName){return}
+  }else if(wizardStep<wizardTotal&&!wizardDesign[wizardKeys[wizardStep]]){return}
+  wizardStep++;
+  if(wizardStep>wizardTotal){
+    // 生成了，关闭向导
+    submitWizardGame();
+    return;
+  }
+  renderWizard();
+}
+
+function fillName(name){
+  wizardDesign.gameName=name;
+  var btn=document.getElementById('wizardNextBtn');
+  if(btn){btn.disabled=false;btn.classList.add('enabled')}
+  // 把页面标题「取个酷酷的名字」换成游戏名
+  var titleEl=document.querySelector('.wizard-title');
+  if(titleEl)titleEl.textContent=name;
+  try{SFX.resume();SFX.score()}catch(e){}
+  wizardSpeak('游戏名字：'+name+'！');
+}
+
+// TTS 朗读（仅语音权限用户有效）
+function wizardSpeak(text){
+  var d=window._userPlan;
+  if(d&&d.limits&&!d.limits.voice) return;
+  // 如果正在说话，先停掉旧的
+  if(_wizardAudio){_wizardAudio.pause();_wizardAudio=null}
+  try{doTTS(text)}catch(e){}
+}
+
+function doTTS(text){
+  if(!text)return;
+  // 锁定交互，防止点击触发叠加语音
+  _wizardSpeaking=true;
+  lockWizardCards(true);
+  
+  var voices=JSON.parse(localStorage.getItem('wizardCustomVoices')||'{}');
+  var voiceKey=localStorage.getItem('wizardTTSVoice')||'zh-CN-XiaoxiaoNeural';
+  // 如果有自定义录音，用自定义
+  var custom=voices[voiceKey];
+  if(custom){
+    try{
+      var audio=new Audio(custom);
+      audio.volume=1;
+      audio.onended=function(){_wizardSpeaking=false;lockWizardCards(false)};
+      audio.play().catch(function(){_wizardSpeaking=false;lockWizardCards(false)});
+      _wizardAudio=audio;
+      return;
+    }catch(e){_wizardSpeaking=false;lockWizardCards(false)}
+  }
+  // 否则用 Edge TTS
+  fetch('/api/tts?text='+encodeURIComponent(text)+'&voice='+encodeURIComponent(voiceKey))
+    .then(function(r){return r.blob()})
+    .then(function(blob){
+      var url=URL.createObjectURL(blob);
+      var audio=new Audio(url);
+      audio.volume=1;
+      audio.onended=function(){
+        _wizardSpeaking=false;
+        lockWizardCards(false);
+        URL.revokeObjectURL(url);
+      };
+      audio.play().catch(function(){_wizardSpeaking=false;lockWizardCards(false)});
+      _wizardAudio=audio;
+    }).catch(function(){_wizardSpeaking=false;lockWizardCards(false)});
+}
+
+// 向导语音
+var _wizardStream=null,_wizardRecorder=null,_wizardChunks=[];
+var _wizardSpeaking=false,_wizardAudio=null;
+
+// TTS 朗读期间禁用卡片/标签/录音按钮/导航按钮点击，防语音重叠
+function lockWizardCards(lock){
+  document.querySelectorAll('.wizard-opt').forEach(function(el){
+    el.style.pointerEvents=lock?'none':'';
+    el.style.opacity=lock?'0.5':'';
+  });
+  document.querySelectorAll('.wizard-name-tag').forEach(function(el){
+    el.style.pointerEvents=lock?'none':'';
+    el.style.opacity=lock?'0.5':'';
+  });
+  var hb=document.getElementById('wizardHoldRecord');
+  if(hb){
+    hb.style.pointerEvents=lock?'none':'';
+    hb.style.opacity=lock?'0.4':'';
+  }
+  // 导航按钮（下一步/上一步）
+  ['wizardNextBtn','wizardPrevBtn'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){
+      el.style.pointerEvents=lock?'none':'';
+      el.style.opacity=lock?'0.4':'';
+    }
+  });
+}
+
+function wizardInitHold(e){
+  e.preventDefault();
+  if(_wizardRecorder)return;
+  if(_wizardSpeaking){console.log('TTS speaking, ignore');return;}
+  var d=window._userPlan;
+  if(d&&d.limits&&!d.limits.voice){
+    alert('🔇 语音输入是会员专享功能\n\n💎 升级创作者/家庭版会员解锁语音输入');
+    resetWizardRecord();
+    return;
+  }
+  var btn=document.getElementById('wizardHoldRecord');
+  btn.textContent='🔴 松手发送';
+  btn.classList.add('recording');
+  document.getElementById('recordRing').classList.add('show');
+  // 确保全局划区隐藏，用向导内置的
+  document.getElementById('slideZones').style.display='none';
+  // 显示向导内置划区（按钮正下方）
+  var sr=document.getElementById('wizardSlideRow');
+  sr.classList.add('show');
+  var sc=document.getElementById('wizSc'), ss=document.getElementById('wizSs');
+  sc.classList.remove('active'); ss.classList.remove('active');
+
+  var _slideTarget=null, _wizMicReady=false;
+  window.__wizPending=null;
+
+  function handleMove(px,py){
+    var cr=sc.getBoundingClientRect(), sr2=ss.getBoundingClientRect();
+    var oc=(px>=cr.left&&px<=cr.right&&py>=cr.top&&py<=cr.bottom);
+    var os=(px>=sr2.left&&px<=sr2.right&&py>=sr2.top&&py<=sr2.bottom);
+    sc.classList.toggle('active',oc); ss.classList.toggle('active',os);
+    _slideTarget=oc?'cancel':(os?'send':null);
+  }
+  function handleEnd(ev){
+    ev.preventDefault();
+    sr.classList.remove('show'); sc.classList.remove('active'); ss.classList.remove('active');
+    document.removeEventListener('touchmove',onMove); document.removeEventListener('touchend',onEnd);
+    document.removeEventListener('mousemove',onMouse); document.removeEventListener('mouseup',onMouseUp);
+    if(_slideTarget==='cancel'){
+      if(!_wizMicReady && !_wizardRecorder){ window.__wizPending='cancel'; return; }
+      if(_wizardRecorder&&_wizardRecorder.state!='inactive'){_wizardRecorder.stop();_wizardChunks=[];}
+      _wizardRecorder=null; resetWizardRecord();
+    }else{
+      if(!_wizMicReady && !_wizardRecorder){ window.__wizPending='send'; return; }
+      wizardStopHoldAndSend();
+    }
+  }
+  function onMove(ev){handleMove(ev.touches[0].clientX,ev.touches[0].clientY)}
+  function onEnd(ev){handleEnd(ev)}
+  function onMouse(ev){handleMove(ev.clientX,ev.clientY)}
+  function onMouseUp(ev){handleEnd(ev)}
+  
+  // ★ 先注册事件，再等 getUserMedia
+  document.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('touchend',onEnd,{passive:false});
+  document.addEventListener('mousemove',onMouse);
+  document.addEventListener('mouseup',onMouseUp,{once:true});
+  
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+    _wizMicReady=true;
+    _wizardStream=stream;
+    _wizardRecorder=new MediaRecorder(stream,{mimeType:'audio/webm'});
+    _wizardChunks=[];
+    _wizardRecorder.ondataavailable=function(e){if(e.data.size>0)_wizardChunks.push(e.data)};
+    _wizardRecorder.onstop=function(){
+      if(_wizardStream){_wizardStream.getTracks().forEach(function(t){t.stop()});_wizardStream=null}
+      if(_wizardChunks.length>0){
+        var blob=new Blob(_wizardChunks,{type:'audio/webm'});
+        if(blob.size>0)wizardSendAudio(blob);
+      }
+    };
+    _wizardRecorder.start();
+    // 如果松手时麦克风未就绪，现在处理
+    if(window.__wizPending==='cancel'){_wizardRecorder.stop();_wizardChunks=[];_wizardRecorder=null;resetWizardRecord();window.__wizPending=null}
+    else if(window.__wizPending==='send'){window.__wizPending=null;wizardStopHoldAndSend()}
+  }).catch(function(e){alert('麦克风访问失败：'+e.message);resetWizardRecord()});
+}
+
+function wizardStopHoldAndSend(){
+  if(!_wizardRecorder)return;
+  _wizardRecorder.stop();
+  _wizardRecorder=null;
+  // onstop 回调中会调用 wizardSendAudio
+}
+
+function wizardStopHold(){
+  if(!_wizardRecorder)return;
+  _wizardRecorder.stop();
+  _wizardRecorder=null;
+}
+
+async function wizardSendAudio(blob){
+  try{
+    // 跟聊天区一样：解码→重采样16kHz单声道WAV→发送
+    var ab=await blob.arrayBuffer();
+    var actx=new (window.AudioContext||window.webkitAudioContext)();
+    var buf=await actx.decodeAudioData(ab);
+    var wav=resampleTo16kMono(buf);
+    actx.close();
+    var r=await fetch('/api/speech',{method:'POST',body:wav,headers:{'Content-Type':'audio/wav'}});
+    var d=await r.json();
+    var text=(d.text||'').trim();
+    if(!text){resetWizardRecord();return}
+    // 本地同音纠错
+    var fixed=text;
+    for(var k in _STT_FIXES){
+      if(fixed.indexOf(k)>=0){fixed=fixed.replace(new RegExp(k,'g'),_STT_FIXES[k]);break}
+    }
+    if(fixed!==text){fillName(fixed);resetWizardRecord();return}
+    // 后端AI纠错兜底
+    var r2=await fetch('/api/polish-name',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:text})});
+    var d2=await r2.json();
+    fillName(d2.name||text);
+    resetWizardRecord();
+  }catch(e){resetWizardRecord()}
+}
+
+function resetWizardRecord(){
+  var wsr=document.getElementById('wizardSlideRow');
+  if(wsr)wsr.classList.remove('show');
+  var btn=document.getElementById('wizardHoldRecord');
+  if(btn){btn.textContent='🎤 按住说话';btn.classList.remove('recording')}
+  document.getElementById('recordRing').classList.remove('show');
+  _wizardRecorder=null;
+  if(_wizardStream){_wizardStream.getTracks().forEach(function(t){t.stop()});_wizardStream=null}
+}
+
+// 提交生成游戏
+function submitWizardGame(){
+  var title=wizardDesign.gameName||'我的游戏';
+  var msg='帮我设计一个叫\u300c'+title+'\u300d的游戏！\n\n'+
+    '🎯 主角：'+wizardDesign.character+'\n'+
+    '🏆 目标：'+wizardDesign.goal+'\n'+
+    '⚡ 挑战：'+wizardDesign.challenge+'\n'+
+    '🎮 操作：'+wizardDesign.controls+'\n'+
+    '🔊 音乐：'+wizardDesign.music+'\n\n'+
+    '重要：游戏必须同时支持PC和手机！PC用WASD/方向键+A/B键，手机用虚拟摇杆+A/B键。\n\n'+
+    '这是小朋友花时间认真设计的完整方案。请先给一句游戏预览，再写出完整HTML代码！';
+  
+  // 关闭向导，显示loading
+  document.getElementById('wizardOverlay').classList.remove('show');
+  
+  // 进入工作台
+  if(!gameStarted){
+    gameStarted=true;
+    gameTitle=title;
+    document.getElementById('gameName').textContent=title;
+    document.getElementById('btnNewGameTop').style.display='none';
+    document.getElementById('btnBackLobby').style.display='inline-block';
+    document.getElementById('btnLogoutTop').style.display='none';
+    document.getElementById('viewLobby').classList.remove('show');
+    document.getElementById('viewWorkspace').classList.add('show');
+  }
+  
+  // 显示 loading + 发送消息
+  var winHtml='<div class="wizard-loading"><div class="wl-icon" id="wlIcon">🚀</div>'+
+    '<div class="wl-text">AI 正在生成你的游戏...</div>'+
+    '<div class="wl-dots"><span></span><span></span><span></span></div>'+
+    '<div class="wizard-output" id="wizardOutput"></div></div>';
+  document.getElementById('msgs').innerHTML='';
+  document.getElementById('msgs').innerHTML=winHtml;
+  
+  // 预设角色图标
+  document.getElementById('wlIcon').textContent=_wizardCharIcon||'🚀';
+  
+  messages=[{role:'system',content:SYSTEM_PROMPT},{role:'user',content:msg}];
+  
+  // 调 API
+  doWizardApiCall(msg);
+}
+
+function doWizardApiCall(msg){
+  var outputEl=document.getElementById('wizardOutput');
+  if(outputEl)outputEl.textContent='AI 正在思考...';
+  
+  var msgs=window.messages&&window.messages.length?window.messages:[{role:'user',content:msg}];
+  var controller=new AbortController();
+  var timeout=setTimeout(function(){controller.abort()},300000);
+  
+  fetch('/api/chat',{
+    method:'POST',signal:controller.signal,
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({messages:msgs,stream:true})
+  }).then(function(r){
+    var reader=r.body.getReader();
+    var decoder=new TextDecoder();
+    var buf='',full='';
+    function readChunk(){
+      return reader.read().then(function(result){
+        if(result.done){
+          clearTimeout(timeout);
+          var codeMatch=full.match(/```html[\s\S]*?```/);
+          if(!codeMatch)codeMatch=full.match(/<!DOCTYPE html[\s\S]*?<\/html>/i);
+          if(codeMatch){
+            var htmlCode=codeMatch[0].replace(/^```html\s*/,'').replace(/```\s*$/,'');
+            showGeneratedGame(htmlCode);
+          }else{
+            showWizardRetry('AI 回复中没有找到完整代码，重新试试？');
+          }
+          return;
+        }
+        buf+=decoder.decode(result.value,{stream:true});
+        var lines=buf.split('\n');
+        buf=lines.pop()||'';
+        for(var i=0;i<lines.length;i++){
+          var t=lines[i].trim();
+          if(t.startsWith('data:')){
+            var d=t.slice(5).trim();
+            if(d==='[DONE]')continue;
+            try{
+              var j=JSON.parse(d);
+              var delta=j.choices&&j.choices[0]&&j.choices[0].delta;
+              if(delta&&delta.content){
+                full+=delta.content;if(outputEl){
+                  if(full.includes('```')||full.includes('<html')||full.includes('<!DOCTYPE'))outputEl.classList.add('has-code');
+                  outputEl.textContent=full;
+                  var cur=document.createElement('span');cur.className='cursor';
+                  outputEl.appendChild(cur);
+                  outputEl.scrollTop=outputEl.scrollHeight;
+                }
+              }
+            }catch(e){}
+          }
+        }
+        return readChunk();
+      });
+    }
+    return readChunk();
+  }).catch(function(e){
+    clearTimeout(timeout);
+    var errMsg='网络出错了'+(e.name==='AbortError'?'（超时了，AI 思考太久）':': '+e.message);
+    showWizardRetry(errMsg);
+  });
+}
+
+function showWizardRetry(msg){
+  document.getElementById('msgs').innerHTML='<div class="msg ai">'+msg+'</div>'+
+    '<div style="display:flex;gap:8px;padding:8px;justify-content:center">'+
+    '<button onclick="submitWizardGame()" style="background:#4a6cf7;color:#fff;border:none;padding:10px 24px;border-radius:10px;cursor:pointer;font-size:14px">🔄 重新生成</button>'+
+    '<button onclick="backToLobby()" style="background:#2a2a2a;color:#aaa;border:1px solid #444;padding:10px 24px;border-radius:10px;cursor:pointer;font-size:14px">🏠 返回大厅</button></div>';
+}
+
+function showGeneratedGame(htmlCode){
+  if(!htmlCode||htmlCode.length<50){
+    showWizardRetry('生成的代码太短了，重新试试？');
+    return;
+  }
+  gameCode=htmlCode;
+  
+  // 先保存，再显示结果
+  saveWizardGame(function(saved){
+    if(saved)gameSaved=true;
+    document.getElementById('msgs').innerHTML=
+      '<div class="msg ai">🎉 游戏已生成！</div>'+
+      '<div style="display:flex;gap:8px;padding:8px;justify-content:center">'+
+      '<button onclick="wizardPreviewGame()" style="background:#4a6cf7;color:#fff;border:none;padding:10px 24px;border-radius:10px;cursor:pointer;font-size:14px">👁️ 预览游戏</button>'+
+      '<button onclick="backToLobby()" style="background:#2a2a2a;color:#aaa;border:1px solid #444;padding:10px 24px;border-radius:10px;cursor:pointer;font-size:14px">🏠 返回大厅</button></div>'+
+      '<div class="msg ai" style="margin-top:8px">💡 在下面输入框打字，告诉 AI 想改什么功能。'+
+      (window._userPlan&&window._userPlan.limits&&window._userPlan.limits.voice?'按住 🎤 说话也行！':'')+'</div>';
+  });
+}
+
+function saveWizardGame(cb){
+  fetch('/api/save',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({title:wizardDesign.gameName||'我的游戏',html:gameCode,design:JSON.stringify(wizardDesign)})
+  }).then(function(r){return r.json()}).then(function(d){
+    if(d.id){gameId=d.id;gameSaved=true;version=1}
+    if(cb)cb(true);
+  }).catch(function(){if(cb)cb(false)});
+}
+
+function saveChatGame(){
+  var id=gameId||'';
+  fetch('/api/save',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({id:id,title:gameTitle||'我的游戏',html:gameCode})
+  }).then(function(r){return r.json()}).then(function(d){
+    if(d.ok){gameId=d.id;gameSaved=true;version=d.ver||version}
+  }).catch(function(){});
+}
+
+function wizardPreviewGame(){
+  var frame=document.getElementById('previewFrame');
+  if(gameCode)frame.srcdoc=gameCode;
+  document.getElementById('previewPanel').classList.add('open');
+  document.getElementById('chatMain').classList.add('shrink');
+  document.getElementById('topPreviewBtn').style.display='none';
+  try{setDnd(true)}catch(e){}
+}
+
 var SYSTEM_PROMPT="你是'游戏工坊'的AI助手，帮小朋友把游戏想法变成现实。小朋友是游戏设计师，你只负责实现他的设计。\n\n"+
-"## 设计思维五步法\n"+
-"不要直接写代码！先帮小朋友理清设计思路，每次只问一步：\n\n"+
-"**第1步：主角 🎯**「你的游戏里，你控制什么角色？飞船、小人、动物？」\n"+
-"**第2步：目标 🏆**「你设计的游戏怎么算赢？收集东西、存活更久、消灭敌人？」\n"+
-"**第3步：挑战 ⚡**「你希望什么让游戏变刺激？敌人越来越多、速度加快、时间限制？」\n"+
-"**第4步：操作 🎮**「你想用哪种方式控制？键盘WASD、鼠标、还是手机触摸？」\n"+
-"**第5步：音乐 🎵**「你的游戏适合什么背景音乐？紧张刺激、轻快探索、太空科幻？」\n\n"+
-"等五步都答完，总结一下，然后再给代码。\n\n"+
-"## 选项格式\n"+
-"每次给选项时用数字编号，方便小朋友直接回复数字：\n"+
-"「1. 击毁5颗陨石胜利  2. 存活30秒  3. 收集3颗星星」\n\n"+
-"## 步骤标记\n"+
-"每次提问时，步骤标记必须单独一行，前面空一行：\n\n"+
-"🎯 第1步/5：\n\n"+
-"🏆 第2步/5：\n\n"+
-"⚡ 第3步/5：\n\n"+
-"🎮 第4步/5：\n\n"+
-"🔊 第5步/5：\n\n"+
+"收到小朋友的完整 5 步设计方案后，直接写完整 HTML 代码，不要再逐步骤提问。不要分析方案，直接写代码。\n\n"+
+"## 绝对禁止\n"+
+"❌ 绝对不要说「好了」「完成了」「游戏已经完成」「可以开始玩了」之类的结束语！\n"+
+"❌ 不要替小朋友决定游戏已经做完。只有小朋友说「好了」「可以了」「就这样」才算结束。\n"+
+"✅ 代码给出后必须追问：「试试你的游戏！这是你设计的，想加什么新功能？」并给 2-3 个具体建议。\n"+
+"✅ 如果小朋友只是说「继续」「再升级」「再来」而没有具体想法，主动给 3 个功能建议：加敌人、加道具、加特效\n\n"+
 "## 代码规则\n"+
 "1. 画布自适应屏幕，Canvas 绘制，单文件 HTML\n"+
-"2. 完整代码用 ```html ... ``` 包裹，控制在200行内，精简高效\n"+
+"2. 完整代码用 ```html ... ``` 包裹，代码要完整可运行，不要省略\n"+
 "3. 必须有：得分显示、生命值、胜负条件、操控提示\n"+
-"4. 必须完全基于小朋友前面五步的设计\n"+
-"5. ⚠️ 代码放在回复的最后面，前面简要说明改了什么即可\n"+
-"6. 🎵 必须内置背景音乐！代码开头加：<script src=\"https://studio.2u1.cn/platform/sfx.js\"><"+"/script>。BGM 在第一次点击/按键时启动：var musicStarted=false;canvas.addEventListener('click',function(){if(!musicStarted){SFX.bgmAdventure();musicStarted=true}});document.addEventListener('keydown',function(){if(!musicStarted){SFX.bgmAdventure();musicStarted=true}},{once:true})。加 🔊/🔇 按钮。音效：得分 SFX.score()，碰撞 SFX.hurt()，胜利 SFX.success()\n"+
-"7. ⏸️ 必须支持暂停！添加 window.addEventListener('message',function(e){if(e.data==='pause'){paused=true;SFX.stopBGM()}if(e.data==='resume'){paused=false}}) 和在游戏循环里 if(paused)return。关闭预览面板时会自动暂停+停音乐\n\n"+
-"## 迭代模式\n"+
-"代码给出后，追问：「试试你的游戏！这是你设计的，想加什么新功能？」举2个紧扣当前游戏的具体建议\n"+
-"⚠️ 迭代时：已有BGM就替换风格（如 bgmAdventure→bgmSpace），不要加第二个。简单功能（加BGM/音效/按钮/分数）直接改代码，不用重走五步法\n\n"+
-"## 语气\n"+
-"让孩子感觉自己是游戏设计师，你是他的助手。多用：「你的想法很酷！」「这是你设计的！」「你决定！」\n"+
-"不要用「我教你」「我来做」这类抢功劳的话。用「帮你实现」「按你的设计来做」\n"+
-"非游戏请求回复：「这里是游戏工坊哦～你想设计什么游戏？」";
+"4. 必须完全基于小朋友的设计方案\n"+
+"5. 代码放在回复的最后面，前面简要说明改了什么即可\n"+
+"6. 🎮 必须同时支持PC和手机！PC用WASD/方向键+A/B键，手机用虚拟摇杆+A/B键：a键为左下方/b键为右下方。触摸区域:摇杆在左半屏，AB键在右半屏\n"+
+"7. 🎵 必须内置背景音乐！代码开头加：<script src=\"https://studio.2u1.cn/platform/sfx.js\"><"+"/script>。BGM 在第一次点击/按键时启动。加一个简单的 🔊/🔇 按钮切换音乐，**不要加播放器（不要进度条/快进/快退/暂停播放按钮）**。音效：得分 SFX.score()，碰撞 SFX.hurt()，胜利 SFX.success()\n"+
+"8. ⏸️ 必须支持暂停！添加 window.addEventListener('message',function(e){if(e.data==='pause'){paused=true;SFX.stopBGM()}if(e.data==='resume'){paused=false}}) 和在游戏循环里 if(paused)return。关闭预览面板时会自动暂停+停音乐\n\n"+
+"## 迭代升级建议格式\n"+
+"如果小朋友想升级，先问想升级哪个部分：\n"+
+"🎯 主角：换角色/改大小/加特效\n"+
+"🏆 目标：调整胜利条件/加关卡\n"+
+"⚡ 挑战：加敌人/加障碍/调难度\n"+
+"🎮 操作：加按键/加触摸/改控制方式\n"+
+"🔊 音乐：换风格/加音效/调音量\n\n"+
+"⚠️ 迭代时：已有BGM就替换风格（如 bgmAdventure→bgmSpace），不要加第二个。简单功能（加BGM/音效/按钮/分数）直接改代码，不用重走五步法\n"+
+"⚠️ 不要加播放器控件（进度条/快进/快退），只需简单的 🔊/🔇 切换\n"+
+"核心原则：每次升级都让小朋友意识到他是在修改游戏设计的一个维度，强化结构化思维框架\n\n"+
+"如果小朋友说想从头做一个新游戏，先问五次设计问题再写代码。\n";
 
-var guideStep=0,totalSteps=6; // 0=欢迎, 1-5=五步
 function showGuide(){
-  guideStep=0;
-  renderGuide();
-  document.getElementById('guidePopup').classList.add('show');
-}
-function renderGuide(){
-  var steps=document.querySelectorAll('.gstep');
-  steps.forEach(function(s,i){s.classList.toggle('active',i===guideStep)});
-  var dots=document.getElementById('guideDots');
-  dots.innerHTML='';
-  for(var i=0;i<totalSteps;i++){
-    var d=document.createElement('span');
-    if(i<guideStep)d.className='done';
-    else if(i===guideStep)d.className='current';
-    dots.appendChild(d);
-  }
-  var btn=document.getElementById('guideNext');
-  if(guideStep===totalSteps-1){btn.textContent='🎮 开始创作！'}
-  else{btn.textContent='下一步 ➜'}
-}
-function nextGuide(){
-  if(guideStep<totalSteps-1){guideStep++;renderGuide()}
-  else{skipGuide()}
-}
-function skipGuide(){
-  document.getElementById('guidePopup').classList.remove('show');
   document.getElementById('viewLobby').classList.add('show');
   document.getElementById('btnNewGameTop').style.display='inline-block';
-  document.getElementById('btnSettingsTop').style.display='inline-block';
   document.getElementById('btnLogoutTop').style.display='inline-block';
   buildLobby();
 }
+function skipGuide(){}
+function nextGuide(){}
 async function init(){
   try{
     var r=await fetch('/api/me');var d=await r.json();
     if(!d.loggedIn){location.href='/login';return}
     username=d.username;userCode=d.code;
+    window._userPlan = d;
     document.getElementById('usernameLabel').textContent='👤 '+username+' 的工作台';
 
-    // 优先用 localStorage 的 key
-    DS_KEY=localStorage.getItem('dsGameKey')||'';
-    if(!DS_KEY){
-      var cr=await fetch('/api/config');var cd=await cr.json();
-      DS_KEY=cd.apiKey||'';
+    // 显示会员标识
+    var badge = document.getElementById('planBadge');
+    badge.style.display = 'inline-block';
+    badge.textContent = d.planName;
+    badge.className = 'plan-badge ' + (d.plan||'free');
+    if (d.planExpires) badge.title = '有效期至 '+d.planExpires;
+
+    // 免费用户显示限制条
+    updateLimitBar(d);
+
+    // 语音权限检查：无语音权限则强制切换到文字模式
+    if (!d.limits || !d.limits.voice) {
+      _voiceMode = false;
+      var c = document.getElementById('chatInput');
+      var m = document.getElementById('modeBtn');
+      c.classList.remove('voice-mode');
+      m.classList.remove('voice');
+      m.textContent = '🎤';
+      m.title = '切换到语音输入';
+      document.getElementById('holdRecord').style.display = 'none';
+      document.body.classList.add('no-voice');
     }
 
     document.getElementById('loading').style.display='none';
     document.getElementById('app').style.display='flex';
-    // 新手引导
     showGuide();
   }catch(e){document.getElementById('loading').textContent='连接失败，刷新试试'}
+}
+
+function updateLimitBar(d){
+  var bar = document.getElementById('limitBar');
+  var msg = document.getElementById('limitMsg');
+  if (!d.limits) { bar.style.display='none'; return; }
+  var ai = d.limits.dailyAi;
+  var gm = d.limits.games;
+  var parts = [];
+  if (d.plan === 'credits') {
+    parts.push('剩余次数: '+d.credits);
+    if (gm.max < 999) parts.push('游戏数量: '+gm.used+'/'+gm.max);
+  } else {
+    if (ai.max < 999) parts.push('今日AI对话: '+ai.used+'/'+ai.max);
+    if (gm.max < 999) parts.push('游戏数量: '+gm.used+'/'+gm.max);
+  }
+  if (!d.limits.voice) parts.push('语音输入: 会员专享');
+  if (parts.length > 0) {
+    msg.textContent = parts.join(' ｜ ');
+    bar.style.display = 'flex';
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function showUpgrade(){
+  var d = window._userPlan;
+  if (!d) return;
+  if (d.plan === 'creator') { alert('你已是创作者会员 🎉\n\n✅ 无限 AI 对话\n✅ 无限游戏\n✅ 语音输入\n✅ 下载源码'); return; }
+  if (d.plan === 'family') { alert('你已是家庭版会员 🎉\n\n✅ 无限 AI 对话\n✅ 无限游戏\n✅ 语音输入\n✅ 下载源码\n👨‍👩‍👧 支持 3 个子账号'); return; }
+  if (d.plan === 'credits') { 
+    alert('你当前是按次付费用户 🎫\n剩余次数: '+d.credits+' 次\n\n📱 联系管理员充值次数\n💰 10次=¥1 | 100次=¥9 | 500次=¥39\n\n或升级为会员解锁无限次数：\n创作者 ¥29/月 | 家庭版 ¥49/月');
+    return;
+  }
+  alert('🚀 升级解锁全部功能：\n\n🎫 按次付费: ¥1=10次 AI 对话\n💎 创作者 ¥29/月: 无限 AI+语音+下载\n🏠 家庭版 ¥49/月: 3个子账号+全部功能\n\n📱 联系管理员开通');
+}
+
+async function checkCanSend(){
+  try {
+    var r = await fetch('/api/me'); var d = await r.json();
+    window._userPlan = d;
+    updateLimitBar(d);
+    // 按次付费：检查次数
+    if (d.plan === 'credits') {
+      if (d.credits <= 0) {
+        addMsg('🎫 次数已用完！\n\n💡 联系管理员充值次数，或升级为会员解锁无限AI对话', false);
+        return false;
+      }
+      return true;
+    }
+    if (d.limits && d.limits.dailyAi.used >= d.limits.dailyAi.max && d.limits.dailyAi.max < 999) {
+      addMsg('⏰ 今日 AI 对话次数已用完（'+d.limits.dailyAi.max+'次/天）\n\n💎 升级会员即可无限使用，点击右上角「' + d.planName + '」查看', false);
+      return false;
+    }
+    return true;
+  } catch(e) { return true; }
 }
 init();
 
@@ -485,10 +1267,6 @@ function typeText(el,text,i,cb){
 }
 
 function quickSend(text){
-  if(!DS_KEY){
-    alert('⚠️ 请先设置 DeepSeek API Key！\n点击右上角「🔑 接入AI」按钮');
-    return;
-  }
   document.getElementById('previewHints').style.display='none';
   document.getElementById('hintInput').value='';
   document.getElementById('input').value=text;
@@ -500,6 +1278,7 @@ function closeHints(){document.getElementById('previewHints').style.display='non
 
 // 🎤 语音输入 - 微信风格（按住录音松开发送）
 var _mediaRecorder=null,_audioChunks=[],_voiceMode=true,_stream=null;
+window.__pendingSendChat=false;
 // 默认语音模式
 (function(){
   var c=document.getElementById('chatInput');
@@ -512,6 +1291,17 @@ var _mediaRecorder=null,_audioChunks=[],_voiceMode=true,_stream=null;
 })();
 
 function toggleInputMode(){
+  var d = window._userPlan;
+  // 当前是文字模式，要切到语音模式但无权限
+  if (!_voiceMode && d && d.limits && !d.limits.voice) {
+    SFX.tap();
+    var upgradeBtn = document.getElementById('planBadge');
+    addMsg('🔇 语音输入是会员专享功能\n\n💎 升级创作者/家庭版会员解锁语音输入、无限AI对话、源码下载等全部功能', false);
+    // 高亮会员入口提醒
+    if (upgradeBtn) upgradeBtn.style.animation = 'pulse 1s 3';
+    setTimeout(function(){ if(upgradeBtn) upgradeBtn.style.animation = ''; }, 4000);
+    return;
+  }
   _voiceMode=!_voiceMode;
   var c=document.getElementById('chatInput');
   var m=document.getElementById('modeBtn');
@@ -527,6 +1317,9 @@ function toggleInputMode(){
     m.title='切换到语音输入';
     document.getElementById('input').focus();
   }
+  // 同步 holdRecord 显示状态
+  var hr = document.getElementById('holdRecord');
+  if (hr) hr.style.display = _voiceMode ? '' : 'none';
 }
 
 function setInputEnabled(enabled){
@@ -550,12 +1343,70 @@ async function startHoldRecord(){
   if(_isHolding)return;
   _isHolding=true;
   var btn=document.getElementById('holdRecord');
-  btn.textContent='松开 发送';
+  btn.textContent='🔴 松手发送';
   btn.classList.add('recording');
   document.getElementById('recordRing').classList.add('show');
+  // 显示滑动区域
+  var zones=document.getElementById('slideZones');
+  zones.style.display='flex';
+  document.getElementById('slideCancel').classList.remove('active');
+  document.getElementById('slideSend').classList.remove('active');
+
+  // ★立即注册滑动事件，不等 getUserMedia（麦克风请求可能卡1-3秒）
+  var slideCancel=document.getElementById('slideCancel');
+  var slideSend=document.getElementById('slideSend');
+  var _slideTarget=null;
+  var _micReady=false; // 标记麦克风是否就绪
+  window.__pendingSend=null; // 松手时麦克风未就绪，暂存意图
+  
+  function handleMove(px,py){
+    var cancelRect=slideCancel.getBoundingClientRect();
+    var sendRect=slideSend.getBoundingClientRect();
+    var overCancel=(px>=cancelRect.left&&px<=cancelRect.right&&py>=cancelRect.top&&py<=cancelRect.bottom);
+    var overSend=(px>=sendRect.left&&px<=sendRect.right&&py>=sendRect.top&&py<=sendRect.bottom);
+    slideCancel.classList.toggle('active',overCancel);
+    slideSend.classList.toggle('active',overSend);
+    _slideTarget=overCancel?'cancel':(overSend?'send':null);
+  }
+  
+  function handleEnd(e2){
+    e2.preventDefault();
+    zones.style.display='none';
+    slideCancel.classList.remove('active');
+    slideSend.classList.remove('active');
+    document.removeEventListener('touchmove',onMove);
+    document.removeEventListener('touchend',onEnd);
+    document.removeEventListener('mousemove',onMouseMove);
+    document.removeEventListener('mouseup',onMouseUp);
+    if(_slideTarget==='cancel'){
+      if(!_micReady && _mediaRecorder===null){
+        window.__pendingSend='cancel';
+        return;
+      }
+      cancelRecord();
+    }else{
+      // 如果麦克风还没准备好，标记意图，等就绪后自动发送
+      if(!_micReady && _mediaRecorder===null){
+        window.__pendingSend='send';
+        return;
+      }
+      confirmRecord();
+    }
+  }
+  
+  function onMove(e2){handleMove(e2.touches[0].clientX,e2.touches[0].clientY)}
+  function onEnd(e2){handleEnd(e2)}
+  function onMouseMove(e2){handleMove(e2.clientX,e2.clientY)}
+  function onMouseUp(e2){handleEnd(e2)}
+  
+  document.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('touchend',onEnd,{passive:false});
+  document.addEventListener('mousemove',onMouseMove);
+  document.addEventListener('mouseup',onMouseUp,{once:true});
 
   try{
     _stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    _micReady=true;
     // 音量检测动画
     var audioCtx=new (window.AudioContext||window.webkitAudioContext)();
     var source=audioCtx.createMediaStreamSource(_stream);
@@ -568,11 +1419,9 @@ async function startHoldRecord(){
       if(!_isHolding){audioCtx.close();return}
       analyser.getByteFrequencyData(dataArray);
       var sum=0;for(var i=0;i<dataArray.length;i++)sum+=dataArray[i];
-      var avg=sum/dataArray.length/255; // 0~1
+      var avg=sum/dataArray.length/255;
       var scale=1+avg*0.3;
-      var opacity=0.3+avg*0.7;
       ring.style.transform='translateX(-50%) scale('+scale+')';
-      ring.style.opacity=opacity;
       requestAnimationFrame(updateVolume);
     }
     updateVolume();
@@ -583,11 +1432,24 @@ async function startHoldRecord(){
     _mediaRecorder.onstop=function(){
       if(_stream){_stream.getTracks().forEach(function(t){t.stop()});_stream=null}
       audioCtx.close();
-      var blob=new Blob(_audioChunks,{type:'audio/webm'});
-      if(blob.size>0)sendAudio(blob);
-      resetRecordUI();
+      // ★onstop 触发时所有 dataavailable 已到齐，在这里发音频
+      if(window.__pendingSendChat && _audioChunks.length>0){
+        window.__pendingSendChat=false;
+        var blob=new Blob(_audioChunks,{type:'audio/webm'});
+        if(blob.size>0)sendAudio(blob);
+      }
     };
     _mediaRecorder.start();
+
+    // ★如果用户已经松手（提前发送/取消），处理等待中的意图
+    if(window.__pendingSend){
+      var intent=window.__pendingSend;
+      window.__pendingSend=null;
+      if(intent==='cancel'){
+        cancelRecord();return;
+      }
+      confirmRecord();return;
+    }
   }catch(e){
     alert('无法访问麦克风：'+e.message);
     resetRecordUI();
@@ -596,19 +1458,33 @@ async function startHoldRecord(){
 
 function stopHoldRecord(){
   if(!_isHolding)return;
+  // 松手不自动发送，保留按钮供用户选择
+}
+
+function cancelRecord(){
+  if(!_isHolding)return;
+  _isHolding=false;
+  if(_mediaRecorder&&_mediaRecorder.state==='recording'){_mediaRecorder.stop();_mediaRecorder=null}
+  resetRecordUI();
+}
+
+function confirmRecord(){
+  if(!_isHolding)return;
   _isHolding=false;
   document.getElementById('recordRing').classList.remove('show');
   if(_mediaRecorder&&_mediaRecorder.state==='recording'){
+    window.__pendingSendChat=true; // 标记：onstop 里要用
     _mediaRecorder.stop();
-  }else{
-    resetRecordUI();
+    // ★blob 创建和发送在 onstop 回调里处理（确保 dataavailable 到齐）
   }
+  resetRecordUI();
 }
 
 function resetRecordUI(){
   var btn=document.getElementById('holdRecord');
-  btn.textContent='按住 录音';
+  btn.textContent='🎤 按住说话';
   btn.classList.remove('recording');
+  document.getElementById('slideZones').style.display='none';
   var ring=document.getElementById('recordRing');
   ring.classList.remove('show');
   ring.style.transform='translateX(-50%) scale(1)';
@@ -631,17 +1507,41 @@ async function sendAudio(blob){
     var r=await fetch('/api/speech',{method:'POST',body:wav,headers:{'Content-Type':'audio/wav'}});
     var d=await r.json();
     if(d.text){
-      document.getElementById('input').value=d.text;
-      send();
+      btn.textContent='🎤 按住说话';btn.classList.remove('recording');
+      // ★语音转文字后逐字打出，不突然蹦出来
+      if (!(await checkCanSend())) { setInputEnabled(true);return; }
+      document.getElementById('input').value='';
+      setInputEnabled(false);
+      turnCount++;
+      if(turnCount>=maxTurns){
+        setInputEnabled(true);
+        addMsg('🎉 今天做得很棒了！游戏已保存，明天继续吧～',false);
+        btn.textContent='🎤 按住说话';btn.classList.remove('recording');
+        return;
+      }
+      var msgEl=addMsg('',true);
+      msgEl.innerHTML='';
+      var chars=d.text.split('');
+      for(var ci=0;ci<chars.length;ci++){
+        var sp=document.createElement('span');
+        sp.textContent=chars[ci];
+        sp.style.animation='fadeIn 0.15s';
+        msgEl.appendChild(sp);
+        document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
+        await new Promise(function(r){setTimeout(r,40+Math.random()*30)});
+      }
+      // 打字完毕，发送给AI
+      messages.push({role:'user',content:d.text});
+      doChat();
     }else{
       btn.textContent='没听清，再试一次';
       btn.style.background='#ff6644';
-      setTimeout(function(){btn.textContent='按住 录音';btn.style.background=''},1500);
+      setTimeout(function(){btn.textContent='🎤 按住说话';btn.style.background=''},1500);
     }
   }catch(e){
     btn.textContent='连接失败';
     btn.style.background='#ff6644';
-    setTimeout(function(){btn.textContent='按住 录音';btn.style.background=''},1500);
+    setTimeout(function(){btn.textContent='🎤 按住说话';btn.style.background=''},1500);
   }
 }
 
@@ -752,6 +1652,8 @@ function closePreview(){
     frame.contentWindow.postMessage('pause','*');
     if(frame.contentWindow.SFX) frame.contentWindow.SFX.stopBGM();
   }catch(e){}
+  // 彻底清空iframe内容，确保BGM完全停止
+  frame.srcdoc='';
   document.getElementById('previewPanel').classList.remove('open');
   document.getElementById('chatMain').classList.remove('shrink');
   document.getElementById('previewHints').style.display='none';
@@ -790,15 +1692,12 @@ document.addEventListener('keydown',function(e){
 // 首次点击激活音频上下文（浏览器安全策略）
 document.addEventListener('click',function(){SFX.resume()},{once:true});
 async function send(){
+  // 检查额度
+  if (!(await checkCanSend())) { return; }
+
   window._cancelled=false;
   setInputEnabled(false);
-  if(!DS_KEY){
-    addMsg('⚠️ 请先设置 DeepSeek API Key，点击右上角 🔑 接入AI',false);
-    document.getElementById('input').style.border='2px solid #ff4444';
-    setTimeout(function(){document.getElementById('input').style.border=''},2000);
-    setInputEnabled(true);
-    return;
-  }
+  
   var input=document.getElementById('input');
   var text=input.value.trim();
   if(!text||turnCount>=maxTurns){setInputEnabled(true);return;}
@@ -808,6 +1707,12 @@ async function send(){
   addMsg(text,true);
   input.value='';
 
+  messages.push({role:'user',content:text});
+  doChat();
+}
+
+async function doChat(){
+  window._cancelled=false;
   var typing=document.createElement('div');
   typing.className='msg ai';typing.id='typing';
   typing.innerHTML='<span class="think-dots"><i>.</i><i>.</i><i>.</i></span>'+
@@ -815,29 +1720,82 @@ async function send(){
   document.getElementById('msgs').appendChild(typing);
   document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
 
-  messages.push({role:'user',content:text});
-
   try{
     var controller=new AbortController();
     window._controller=controller;
-    var timeout=setTimeout(function(){controller.abort()},120000);
+    var timeout=setTimeout(function(){controller.abort()},300000);
 
-    var resp=await fetch('https://api.deepseek.com/v1/chat/completions',{
+    var resp=await fetch('/api/chat',{
       method:'POST',signal:controller.signal,
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+DS_KEY},
-      body:JSON.stringify({model:'deepseek-v4-flash',messages:[{role:'system',content:SYSTEM_PROMPT},...messages],max_tokens:8192,temperature:0.7})
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:[].concat(messages),stream:true})
     });
     clearTimeout(timeout);
     window._controller=null;
-    var data=await resp.json();
     var el=document.getElementById('typing');if(el)el.remove();
 
-    if(data.error){addMsg('出错了：'+data.error.message+', 换种说法试试？',false);return}
-    var reply=data.choices[0].message.content;
-    // 检测 API 层面截断
-    if(data.choices[0].finish_reason==='length'){
-      addMsg('⚠️ 输出被截断（达到上限），试试让AI精简代码',false);
+    // 读流解析SSE，边读边显示打字效果（每200ms更新DOM）
+    var fullReply='';
+    var reader=resp.body.getReader();
+    var decoder=new TextDecoder();
+    var buf='';
+    var msgEl=addMsg('',false);
+    msgEl.innerHTML='🤔 思考中...';
+    var _lastUpdate=0;
+    var _hasOutput=false;
+
+    function processLines(){
+      var lines=buf.split('\n');
+      buf=lines.pop()||'';
+      for(var i=0;i<lines.length;i++){
+        var t=lines[i].trim();
+        if(t.startsWith('data:')){
+          var d=t.slice(5).trim();
+          if(d==='[DONE]')continue;
+          try{
+            var j=JSON.parse(d);
+            var delta=j.choices&&j.choices[0]&&j.choices[0].delta;
+            if(delta){
+              // 有 reasoning_content 但还没 content → 仍在思考
+              if(delta.reasoning_content && !_hasOutput && !delta.content){
+                msgEl.textContent='🤔 思考中...';
+              }
+              if(delta.content){
+                _hasOutput=true;
+                fullReply+=delta.content;
+                // 节流：每200ms更新一次DOM
+                var now=Date.now();
+                if(now-_lastUpdate>200){
+                  _lastUpdate=now;
+                  msgEl.textContent=fullReply;
+                  document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
+                }
+              }
+            }
+          }catch(e){}
+        }
+      }
     }
+
+    function readStream(){
+      return reader.read().then(function(result){
+        if(result.done){
+          processLines();
+          msgEl.textContent=fullReply;
+          document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
+          return fullReply;
+        }
+        buf+=decoder.decode(result.value,{stream:true});
+        processLines();
+        return readStream();
+      });  // result.then
+    }  // readStream
+
+    var reply=await readStream();
+
+    // 流结束，继续处理完整回复
+    if(!reply||reply.length<5){addMsg('出错了，换种说法试试？',false);setInputEnabled(true);return}
+
     messages.push({role:'assistant',content:reply});
 
     var codeMatch=reply.match(/```html[ \t]*\r?\n([\s\S]*?)\r?\n\s*```/);
@@ -866,12 +1824,76 @@ async function send(){
     }
     if(!codeMatch){
       console.warn('⚠️ 未提取到代码！AI回复前200字符:',reply.slice(0,200));
+      // 自动继续：最多重试3次
+      window._retryCount=(window._retryCount||0)+1;
+      if(window._retryCount<=3){
+        addMsg('🤖 代码好像没写完整，让我继续...',false);
+        // 追加消息并继续
+        messages.push({role:'user',content:'请继续输出完整的HTML代码（用```html包裹），不要省略，不要只说"完成了"但没有代码'});
+        doChat(); // 继续调用 API
+        return;
+      }else{
+        addMsg('⚠️ 重试了多次还是没拿到代码，请手动说「继续写」试试',false);
+        window._retryCount=0;
+        setInputEnabled(true);
+      }
+    }else{
+      window._retryCount=0; // 成功了，重置计数
     }
     if(codeMatch){
-      gameCode=codeMatch[1];
-      gameSaved=false;
+      // ★备份旧代码，用于撤回
+      __prevCode=gameCode;
+      window.__prevVer=version-1;
+      var newCode=codeMatch[1].trim();
+
+      // 安全检查：新代码是否明显有问题
+      var codeOK=true;
+      if(newCode.length<100 && gameCode && gameCode.length>500){
+        console.warn('⚠️ 新代码太短('+newCode.length+'符)，可能不完整');
+        codeOK=false;
+      }
+      if(!/<(html|div|canvas|script|style)/i.test(newCode) && gameCode){
+        console.warn('⚠️ 新代码不含HTML标记，可能不是有效游戏代码');
+        codeOK=false;
+      }
+
+      gameCode=codeOK ? newCode : gameCode;
       version++;
-      SFX.powerup();
+
+      // 有问题时只预览不保存
+      if(codeOK){
+        saveChatGame();
+        SFX.powerup();
+      }else{
+        console.warn('⚠️ 自动保存已跳过，旧代码保留在服务器');
+        // 预览有问题的新版，但不保存
+        var frame=document.getElementById('previewFrame');
+        frame.srcdoc='';
+        setTimeout(function(){frame.srcdoc=newCode},50);
+        openPreview();
+        // 提示用户
+        setTimeout(function(){
+          var msg=addMsg('⚠️ 新代码好像有问题（太短或没内容），我没自动保存。请点"↩️ 撤回这版"恢复旧版，或重新说一遍需求',false);
+        },500);
+        // 跳过后续预览+保存逻辑
+        // 但仍然显示 AI 回复
+        var msgEl2=addMsg(reply,false);
+        (function(mEl){
+          var btn=document.createElement('button');
+          btn.className='preview-btn';
+          btn.textContent='⚠️ 预览这版（未保存）';
+          btn.onclick=function(){
+            var f=document.getElementById('previewFrame');
+            f.srcdoc='';setTimeout(function(){f.srcdoc=newCode},50);
+            openPreview();
+          };
+          mEl.appendChild(btn);
+        })(msgEl2);
+        setInputEnabled(true);
+        // 跳到消息显示部分之前返回
+        document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
+        return;
+      }
       console.log('✅ 代码已提取 ('+codeMatch[1].length+'字符) version='+version);
       if(!gameStarted){gameStarted=true;
         // 自动取名：从第一条用户消息提取关键词
@@ -901,12 +1923,22 @@ async function send(){
     // 完整显示 AI 回复
     var msgEl=addMsg(reply,false);
 
-    // 代码生成后，打字结束再追加按钮
+    // 代码生成后，在消息内插入预览按钮 + 打字结束后追加操作按钮
     if(codeMatch){
+      // 在 AI 消息底部插入内联预览按钮
+      (function(mEl){
+        var previewBtn=document.createElement('button');
+        previewBtn.className='preview-btn';
+        previewBtn.textContent='👁️ 预览游戏';
+        previewBtn.onclick=openPreview;
+        mEl.appendChild(previewBtn);
+      })(msgEl);
+
       (function(btnCode){
         function showBtns(){
           var btn=document.createElement('div');btn.className='suggestions';btn.id='suggestions';
-          btn.innerHTML='<button onclick="openPreview()" style="background:#4a6cf7;color:#fff;font-weight:600">👁️ 预览游戏</button>'+
+          btn.innerHTML='<button onclick="undoAIGame()" style="background:#e74c3c;color:#fff;font-weight:600">↩️ 撤回这版</button>'+
+            '<button onclick="openPreview()" style="background:#4a6cf7;color:#fff;font-weight:600">👁️ 预览游戏</button>'+
             '<button onclick="quickSend(\'好的，继续升级！\')">🚀 继续升级</button>'+
             '<button onclick="quickSend(\'加个Boss吧\')">👾 加Boss</button>'+
             '<button onclick="quickSend(\'让难度慢慢增加\')">📈 难度递增</button>'+
@@ -965,6 +1997,22 @@ async function send(){
   }
 }
 
+// 撤回AI生成的这一版，恢复旧代码
+function undoAIGame(){
+  if(!window.__prevCode){addMsg('⚠️ 没有可撤回的上一版',false);return}
+  gameCode=window.__prevCode;
+  version=window.__prevVer+1;
+  saveChatGame();
+  window.__prevCode=null;
+  var frame=document.getElementById('previewFrame');
+  frame.srcdoc='';
+  setTimeout(function(){frame.srcdoc=gameCode},50);
+  openPreview();
+  addMsg('↩️ 已撤回上一版',false);
+  // 更新版本号显示
+  document.getElementById('gameVer').textContent='🔄 第'+version+'次迭代';
+}
+
 function cancelSend(){
   if(window._controller){window._controller.abort();window._controller=null}
   var el=document.getElementById('typing');if(el)el.remove();
@@ -994,39 +2042,6 @@ function retryLast(){
       send();
     }
   }
-}
-
-function openSave(){
-  if(!gameCode){gameCode=document.getElementById('previewFrame').srcdoc||''}
-  if(!gameCode){alert('还没有生成游戏呢，先去聊天做游戏吧！');return}
-  document.getElementById('savePopup').classList.add('show');
-  document.getElementById('saveName').value=gameTitle;
-  document.getElementById('saveName').focus();
-}
-function closeSave(){document.getElementById('savePopup').classList.remove('show')}
-
-async function doSave(){
-  var name=document.getElementById('saveName').value.trim();
-  if(!name)return;
-  gameTitle=name;
-  document.getElementById('gameName').textContent=gameTitle;
-  // 始终从 iframe 取最新代码
-  var frame=document.getElementById('previewFrame');
-  // 先尝试 srcdoc，如果为空则尝试 contentDocument
-  var html=(frame.srcdoc||'').trim();
-  if(!html || html.length<50){
-    try{
-      var doc=frame.contentDocument||frame.contentWindow.document;
-      html=doc.documentElement.outerHTML;
-    }catch(e){}
-  }
-  if(!html || html.length<50)html=gameCode;
-  if(!html || html.length<50){alert('⚠️ 还没有生成游戏呢，先去聊天做游戏吧！');return}
-  try{
-    var r=await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:gameTitle,html:html,id:gameId,version:version})});
-    var d=await r.json();
-    if(d.ok){closeSave();gameSaved=true;gameId=d.id;SFX.success();alert('✅ 保存成功！✌️\n版本：'+d.ver)}else{SFX.fail();alert('❌ 保存失败：'+(d.error||'未知错误'))}
-  }catch(e){SFX.fail();alert('❌ 保存失败：网络错误')}
 }
 
 async function loadGameList(){
@@ -1077,65 +2092,31 @@ function logout(){
   fetch('/api/logout',{method:'POST'}).then(function(){location.href='/login'});
 }
 
-function openSettings(){
-  document.getElementById('settingsKey').value=DS_KEY||'';
-  document.getElementById('settingsPopup').classList.add('show');
-  document.getElementById('settingsKey').focus();
-}
-function toggleKeyEye(){
-  var inp=document.getElementById('settingsKey');
-  var eye=document.getElementById('keyEye');
-  if(inp.type==='password'){inp.type='text';eye.textContent='🙈'}
-  else{inp.type='password';eye.textContent='👁️'}
-}
-function closeSettings(){document.getElementById('settingsPopup').classList.remove('show')}
-function saveSettings(){
-  var k=document.getElementById('settingsKey').value.trim();
-  if(k){localStorage.setItem('dsGameKey',k);DS_KEY=k}
-  else{localStorage.removeItem('dsGameKey');DS_KEY=''}
-  closeSettings();
-  if(!DS_KEY){alert('⚠️ 未设置 Key，AI 功能不可用')}
-}
-
 // === 大厅逻辑 ===
 function enterWorkspace(){
   document.getElementById('viewLobby').classList.remove('show');
   document.getElementById('viewWorkspace').classList.add('show');
   document.getElementById('btnNewGameTop').style.display='none';
   document.getElementById('btnBackLobby').style.display='inline-block';
-  document.getElementById('btnSaveTop').style.display='inline-block';
-  document.getElementById('btnSettingsTop').style.display='none';
-  document.getElementById('btnLogoutTop').style.display='none';
+    document.getElementById('btnLogoutTop').style.display='none';
   document.getElementById('input').focus();
   // 重置聊天
   if(!gameStarted){
     gameSaved=false;gameId='';gameCode='';gameTitle='我的游戏';version=0;
     messages=[];turnCount=0;
-    // 清空聊天
-    var msgs=document.getElementById('msgs');
-    msgs.innerHTML='<div class="msg ai">嘿，小游戏设计师！🎮<br>这里是你的游戏工坊，你说想法，我帮你实现。<br><br>今天你想做一个什么样的游戏？</div>'+
-      '<div class="suggestions" id="suggestions">'+
-        '<button onclick="quickSend(\'我想做太空飞船打陨石的游戏\')">🚀 太空飞船</button>'+
-        '<button onclick="quickSend(\'我想做一个躲避怪兽的游戏\')">👾 躲避怪兽</button>'+
-        '<button onclick="quickSend(\'我想做一个收集宝石的游戏\')">💎 收集宝石</button>'+
-      '</div>';
+    // 打开设计向导
+    startWizard();
   }
 }
 
 function backToLobby(){
-  if(gameStarted && gameCode && !gameSaved){
-    var ok=confirm('你有未保存的游戏「'+gameTitle+'」，是否保存后再返回？');
-    if(ok){openSave();return}
-  }
   closePreview();
   document.getElementById('viewWorkspace').classList.remove('show');
   document.getElementById('viewLobby').classList.add('show');
   document.getElementById('btnNewGameTop').style.display='inline-block';
   document.getElementById('btnBackLobby').style.display='none';
   document.getElementById('topPreviewBtn').style.display='none';
-  document.getElementById('btnSaveTop').style.display='none';
-  document.getElementById('btnSettingsTop').style.display='inline-block';
-  document.getElementById('btnLogoutTop').style.display='inline-block';
+    document.getElementById('btnLogoutTop').style.display='inline-block';
   buildLobby();
   // 重置状态，下次新建游戏是干净的
   gameStarted=false;gameCode='';gameSaved=false;version=0;gameId='';
@@ -1154,42 +2135,28 @@ function buildLobby(){
     }
     empty.style.display='none';
     document.getElementById('lobbySubtitle').textContent='共 '+d.games.length+' 款游戏';
+    // 缓存游戏列表供详情弹窗使用
+    window._gameCache={};
+    d.games.forEach(function(g){window._gameCache[g.id]=g});
     d.games.forEach(function(g){
       var card=document.createElement('div');
       card.className='lobby-card';
       var icon=g.icon||'🎮';
-      card.innerHTML='<button class="card-del" title="删除">🗑️</button>'+
+      var pubBadge=g.public?'<span style="display:inline-block;padding:1px 6px;border-radius:4px;background:rgba(60,200,100,0.15);color:#66cc66;font-size:9px;margin-left:4px">广场</span>':'';
+      card.innerHTML=
         '<div class="card-icon">'+icon+'</div>'+
-        '<div class="card-title">'+g.title+'</div>'+
-        '<div class="card-meta">🔄 迭代'+g.ver+'次</div>';
-      card.querySelector('.card-icon').onclick=function(){playGame(g.id,g.title)};
-      card.querySelector('.card-title').onclick=function(){playGame(g.id,g.title)};
-      card.querySelector('.card-del').onclick=function(e){e.stopPropagation();deleteFromLobby(g.id,g.title)};
+        '<div class="card-title">'+g.title+pubBadge+'</div>'+
+        '<div class="card-meta">🔄 v'+g.ver+(g.likes?' · ❤️ '+g.likes:'')+'</div>';
+      card.onclick=function(){openGameDetail(g.id)};
       grid.appendChild(card);
     });
   });
 }
 
 var _editingGame=null,_playingId='',_playingTitle='';
-function playGame(id,title){
-  _playingId=id;_playingTitle=title;
-  fetch('/api/game/'+encodeURIComponent(id)).then(function(r){return r.json()}).then(function(d){
-    if(!d.ok)return;
-    _editingGame=d;gameId=id;
-    document.getElementById('playTitle').textContent='🎮 '+title;
-    document.getElementById('playFrame').srcdoc=d.html;
-    document.getElementById('playOverlay').classList.add('show');
-  });
-}
 
-function closePlay(){
-  var frame=document.getElementById('playFrame');
-  try{
-    frame.contentWindow.postMessage('pause','*');
-    if(frame.contentWindow.SFX) frame.contentWindow.SFX.stopBGM();
-  }catch(e){}
-  document.getElementById('playOverlay').classList.remove('show');
-}
+// playGame 已移除 — 开始游戏直接打开分享页面
+function closePlay(){ /* no-op: 播放浮层已移除 */ }
 
 async function shareGame(){
   if(!_playingId||!userCode)return;
@@ -1206,12 +2173,21 @@ async function shareGame(){
   }
 }
 
+function downloadGame(id,title){
+  var a=document.createElement('a');
+  a.href='/api/download-game/'+encodeURIComponent(id);
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast('✅ 开始下载');
+}
+
 function showToast(msg){
   var t=document.getElementById('toast');
   if(!t){
     t=document.createElement('div');
     t.id='toast';
-    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 24px;border-radius:20px;font-size:14px;z-index:9999;pointer-events:none;transition:opacity 0.4s;opacity:0;font-family:system-ui';
+    t.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#333;color:#fff;padding:16px 32px;border-radius:14px;font-size:16px;z-index:9999;pointer-events:none;transition:opacity 0.3s;opacity:0;font-family:system-ui;box-shadow:0 8px 32px rgba(0,0,0,0.5)';
     document.body.appendChild(t);
   }
   t.textContent=msg;t.style.opacity='1';
@@ -1230,8 +2206,6 @@ function editCurrentGame(){
   gameSaved=false;
   document.getElementById('gameName').textContent=gameTitle;
   document.getElementById('gameVer').textContent='🔄 第'+version+'次迭代';
-  var frame=document.getElementById('previewFrame');
-  frame.srcdoc='';setTimeout(function(){frame.srcdoc=gameCode},50);
   document.getElementById('topPreviewBtn').style.display='inline-block';
 
   enterWorkspace();
@@ -1243,14 +2217,154 @@ function editCurrentGame(){
     {role:'assistant',content:'了解了！你想给「'+gameTitle+'」做什么改进？'}
   ];
   turnCount=0;
-  addMsg('📂 继续创作「'+gameTitle+'」',false);
-  addMsg('了解了！你想给这个游戏做什么改进？',false);
+  var hp=window._userPlan&&window._userPlan.limits&&window._userPlan.limits.voice;
+  addMsg('🎮 欢迎回来！继续完善「'+gameTitle+'」',false);
+  addMsg('想改什么直接说就行了——打字或者'+(hp?'按住 🎤 说话':'语音输入')+'都行',false);
+  // 语音朗读欢迎语
+  if(hp){
+    setTimeout(function(){
+      fetch('/api/tts?text='+encodeURIComponent('欢迎回来继续完善'+gameTitle+'，想改什么直接说就行了')+'&voice=zh-CN-XiaoxiaoNeural')
+        .then(function(r){return r.blob()})
+        .then(function(blob){
+          var a=new Audio(URL.createObjectURL(blob));
+          a.volume=1;
+          a.play().catch(function(){});
+        }).catch(function(){});
+    },500);
+  }
 }
 
-function deleteFromLobby(id,title){
-  if(!confirm('删除「'+title+'」？'))return;
-  fetch('/api/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id})})
-    .then(function(){buildLobby()});
+function closeGameDetail(){
+  document.getElementById('gameDetail').classList.remove('show');
 }
+
+var _gdId='',_gdTitle='';
+function openGameDetail(id){
+  var g=window._gameCache[id];
+  if(!g)return;
+  _gdId=g.id;_gdTitle=g.title;
+  _playingId=g.id;_playingTitle=g.title;
+  document.getElementById('gdIcon').textContent=g.icon||'🎮';
+  document.getElementById('gdTitle').textContent=g.title;
+  document.getElementById('gdMeta').textContent='v'+g.ver+' · ❤️ '+g.likes+' · '+(g.public?'已发布到广场':'未发布');
+  var pubBtn=document.getElementById('gdPubBtn');
+  pubBtn.textContent=g.public?'🌐 取消发布':'📤 发布到广场';
+  pubBtn.className=g.public?'gd-btn danger':'gd-btn';
+  var dlBtn=document.getElementById('gdDlBtn');
+  dlBtn.style.display=(window._userPlan&&window._userPlan.limits&&window._userPlan.limits.download)?'':'none';
+  document.getElementById('gameDetail').classList.add('show');
+  // 预加载游戏HTML（同步等待以确保修改功能可用）
+  fetch('/api/game/'+encodeURIComponent(g.id)).then(function(r){return r.json()}).then(function(d){
+    if(d.ok){_editingGame=d;gameId=g.id}
+  }).catch(function(){});
+}
+
+function playFromDetail(){
+  closeGameDetail();
+  window.open('/play/'+userCode+'/'+_gdId, '_blank');
+}
+
+var _publishTimer=null,_pendingPublish=null;
+async function publishFromDetail(){
+  var g=window._gameCache[_gdId];
+  if(!g)return;
+  if(!g.public){
+    // 弹出协议确认
+    _pendingPublish=true;
+    document.getElementById('publishIcon').textContent='📜';
+    document.getElementById('publishTitle').textContent='发布到游戏广场';
+    document.getElementById('publishDesc').innerHTML='<div><span>1</span> 游戏代码以 MIT 协议开源</div><div><span>2</span> 平台可公开展示你的游戏</div><div><span>3</span> 如内容违法，平台有权下架</div><div><span>4</span> 法律责任由创作者承担</div>';
+    var btn=document.getElementById('agreeConfirmBtn');
+    btn.textContent='同意并发布';
+    btn.disabled=true;
+    btn.style.opacity='0.5';
+    btn.style.cursor='not-allowed';
+    var sec=5;
+    btn.textContent='请阅读协议（'+sec+'s）';
+    _publishTimer=setInterval(function(){
+      sec--;
+      if(sec<=0){
+        clearInterval(_publishTimer);
+        _publishTimer=null;
+        btn.textContent='同意并发布';
+        btn.disabled=false;
+        btn.style.opacity='1';
+        btn.style.cursor='pointer';
+      }else{
+        btn.textContent='请阅读协议（'+sec+'s）';
+      }
+    },1000);
+    document.getElementById('agreeOverlay').classList.add('show');
+    return;
+  }
+  // 取消发布 → 弹出确认
+  _pendingPublish=false;
+  document.getElementById('publishIcon').textContent='🌐';
+  document.getElementById('publishTitle').textContent='取消发布';
+  document.getElementById('publishDesc').innerHTML='<div style="text-align:center;font-size:13px;color:#999;line-height:2">游戏将从广场移除<br>其他人将无法看到你的游戏</div>';
+  var btn2=document.getElementById('agreeConfirmBtn');
+  btn2.textContent='确认取消';
+  btn2.disabled=false;
+  btn2.style.opacity='1';
+  btn2.style.cursor='pointer';
+  if(_publishTimer){clearInterval(_publishTimer);_publishTimer=null;}
+  document.getElementById('agreeOverlay').classList.add('show');
+}
+function closeAgree(){
+  if(_publishTimer){clearInterval(_publishTimer);_publishTimer=null;}
+  document.getElementById('agreeOverlay').classList.remove('show');
+  _pendingPublish=null;
+}
+async function confirmPublish(){
+  if(_pendingPublish===null)return;
+  var newPub=_pendingPublish;
+  closeAgree();
+  doPublish(newPub);
+}
+async function doPublish(newPub){
+  var g=window._gameCache[_gdId];
+  if(!g)return;
+  try{
+    var r=await fetch('/api/publish-game',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:_gdId,public:newPub})});
+    var d=await r.json();
+    if(d.ok){
+      g.public=newPub;
+      var pubBtn=document.getElementById('gdPubBtn');
+      pubBtn.textContent=newPub?'🌐 取消发布':'📤 发布到广场';
+      pubBtn.className=newPub?'gd-btn danger':'gd-btn';
+      document.getElementById('gdMeta').textContent='v'+g.ver+' · ❤️ '+g.likes+' · '+(newPub?'已发布到广场':'未发布');
+      showToast(newPub?'✅ 已发布到广场':'已取消发布');
+      buildLobby();
+    }
+  }catch(e){showToast('操作失败')}
+}
+
+function editFromDetail(){
+  closeGameDetail();
+  editCurrentGame();
+}
+
+function deleteFromDetail(){
+  document.getElementById('delGameTitle').textContent=_gdTitle;
+  document.getElementById('deleteOverlay').classList.add('show');
+}
+function closeDelete(){
+  document.getElementById('deleteOverlay').classList.remove('show');
+}
+function confirmDelete(){
+  closeDelete();
+  closeGameDetail();
+  fetch('/api/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:_gdId})})
+    .then(function(){
+      showToast('已删除');
+      buildLobby();
+    });
+}
+
+function goPlaza(){window.open('/plaza','_blank')}
+
+// 旧的辅助函数改为空（保留兼容）
+function deleteFromLobby(){}
+function togglePublish(){}
 </script>
 </body></html>

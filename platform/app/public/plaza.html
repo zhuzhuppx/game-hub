@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>游戏广场 · AI 游戏工坊</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui;background:#0f0f0f;color:#e0e0e0;min-height:100vh}
+header{background:#1a1a1a;border-bottom:1px solid #222;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+header h1{font-size:18px;color:#fff}
+header .nav{gap:12px;display:flex;align-items:center}
+header a{color:#88aaff;text-decoration:none;font-size:13px}
+header a:hover{text-decoration:underline}
+.container{max-width:960px;margin:0 auto;padding:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{background:#1a1a1a;border:1px solid #222;border-radius:12px;overflow:hidden;transition:all 0.2s}
+.card:hover{border-color:#333}
+.card-body{padding:16px}
+.card-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.card-icon{font-size:32px;flex-shrink:0}
+.card-title{font-size:15px;color:#fff;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-author{font-size:11px;color:#666;margin-top:2px}
+.card-meta{font-size:11px;color:#555;display:flex;gap:12px;align-items:center;margin-top:8px}
+.card-actions{display:flex;gap:8px;margin-top:12px;border-top:1px solid #222;padding-top:12px}
+.btn{background:rgba(255,255,255,0.06);border:1px solid #333;color:#ccc;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer;transition:all 0.15s;font-family:system-ui}
+.btn:hover{background:rgba(255,255,255,0.1);border-color:#555}
+.btn-like{display:flex;align-items:center;gap:4px}
+.btn-like.liked{background:rgba(255,60,80,0.15);border-color:#ff4060;color:#ff5577}
+.btn-like .heart{font-size:14px}
+.btn-like.liked .heart{animation:pop 0.3s ease}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
+.btn-play{background:#4a6cf7;color:#fff;border-color:#4a6cf7;flex:1;text-align:center;text-decoration:none;display:inline-block}
+.btn-play:hover{background:#5a7cf7}
+
+/* Comment section */
+.comments-section{display:none;border-top:1px solid #222;padding:12px 16px;max-height:280px;overflow-y:auto}
+.comments-section.show{display:block}
+.comment-item{padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.comment-user{font-size:11px;color:#88aaff;font-weight:600}
+.comment-text{font-size:12px;color:#bbb;margin-top:2px;word-break:break-word}
+.comment-time{font-size:10px;color:#555}
+.comment-input-wrap{display:flex;gap:6px;margin-top:8px}
+.comment-input-wrap input{flex:1;padding:6px 10px;border-radius:6px;border:1px solid #333;background:#2a2a2a;color:#fff;font-size:12px;outline:none;font-family:system-ui}
+.comment-input-wrap input:focus{border-color:#667eea}
+.comment-input-wrap button{padding:4px 12px;border-radius:6px;border:1px solid #333;background:#2a2a2a;color:#aaa;cursor:pointer;font-size:12px;font-family:system-ui}
+.comment-input-wrap button:hover{background:#3a3a3a;color:#fff}
+
+/* Login prompt */
+.login-banner{background:#1a1a1a;border:1px solid #222;border-radius:12px;padding:20px;text-align:center;margin-bottom:20px}
+.login-banner a{color:#4a6cf7;text-decoration:none;font-weight:600}
+.empty-state{text-align:center;padding:60px 20px;color:#555;font-size:14px}
+.empty-state .big{font-size:48px;margin-bottom:12px}
+
+/* Detail popup */
+.detail-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:99;display:flex;align-items:center;justify-content:center;padding:20px}
+.detail-box{background:#1a1a1a;border:1px solid #333;border-radius:16px;width:90vw;max-width:800px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
+.detail-top{padding:16px 20px;border-bottom:1px solid #222;display:flex;justify-content:space-between;align-items:center}
+.detail-top h3{color:#fff;font-size:16px}
+.detail-top button{background:none;border:none;color:#888;cursor:pointer;font-size:18px;padding:4px 8px}
+.detail-iframe{flex:1;min-height:0}
+.detail-iframe iframe{width:100%;height:100%;border:none}
+
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 24px;border-radius:20px;font-size:14px;z-index:999;pointer-events:none;animation:fadeInOut 2s forwards}
+@keyframes fadeInOut{0%{opacity:0}15%{opacity:1}80%{opacity:1}100%{opacity:0}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎮 游戏广场</h1>
+  <div class="nav">
+    <a href="/" id="loginLink">登录/注册</a>
+    <a href="/">我的工坊 →</a>
+  </div>
+</header>
+
+<div class="container">
+  <div class="login-banner" id="loginBanner" style="display:none">
+    🔐 <a href="/login">登录</a> 后即可点赞和评论
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="empty-state" id="empty">
+    <div class="big">🎪</div>
+    广场还没有游戏<br>快去工坊创作并发布吧！
+  </div>
+</div>
+
+<div class="detail-overlay" id="detailOverlay" style="display:none" onclick="if(event.target===this)closeDetail()">
+  <div class="detail-box">
+    <div class="detail-top">
+      <h3 id="detailTitle">游戏</h3>
+      <button onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-iframe"><iframe id="detailFrame"></iframe></div>
+  </div>
+</div>
+
+<script>
+var _loggedIn=false,_username='';
+async function init(){
+  try{
+    var r=await fetch('/api/me');var d=await r.json();
+    if(d.loggedIn){_loggedIn=true;_username=d.username;
+      document.getElementById('loginBanner').style.display='none';
+      document.getElementById('loginLink').textContent='👤 '+d.username;
+      document.getElementById('loginLink').href='/workspace';
+    }else{
+      document.getElementById('loginBanner').style.display='block';
+    }
+  }catch(e){}
+  loadPlaza();
+}
+
+async function loadPlaza(){
+  try{
+    var r=await fetch('/api/plaza');var d=await r.json();
+    var grid=document.getElementById('grid');
+    var empty=document.getElementById('empty');
+    if(!d.games||!d.games.length){grid.innerHTML='';empty.style.display='block';return}
+    empty.style.display='none';
+    grid.innerHTML=d.games.map(function(g){
+      return '<div class="card">'+
+        '<div class="card-body">'+
+          '<div class="card-header">'+
+            '<div class="card-icon">'+(g.icon||'🎮')+'</div>'+
+            '<div><div class="card-title">'+g.title+'</div>'+
+            '<div class="card-author">👤 '+g.username+' · v'+g.ver+'</div></div>'+
+          '</div>'+
+          '<div class="card-meta">'+
+            '<span>❤️ <b class="like-count" data-gid="'+g.id+'" data-guser="'+g.username+'">'+g.likes+'</b></span>'+
+            '<span>💬 <span class="comment-count" data-gid="'+g.id+'" data-guser="'+g.username+'">'+(g.comments||0)+'</span></span>'+
+          '</div>'+
+          '<div class="card-actions">'+
+            '<button class="btn btn-like '+ (g.liked?'liked':'') +'" data-gid="'+g.id+'" data-guser="'+g.username+'" onclick="toggleLike(this)">'+
+              '<span class="heart">'+ (g.liked?'💖':'🤍') +'</span> <span>'+g.likes+'</span></button>'+
+            '<a href="/play/'+g.userCode+'/'+g.id+'" class="btn btn-play">▶ 试玩</a>'+
+            '<button class="btn" onclick="toggleComments(this)" data-gid="'+g.id+'" data-guser="'+g.username+'">💬</button>'+
+          '</div>'+
+        '</div>'+
+        '<div class="comments-section" id="comments-'+g.id+'">'+
+          '<div class="comment-list" id="commentList-'+g.id+'"></div>'+
+          '<div class="comment-input-wrap">'+
+            '<input type="text" id="commentInput-'+g.id+'" placeholder="写评论..." maxlength="200" onkeydown="if(event.key===\'Enter\')sendComment(\''+g.id+'\',\''+g.username+'\')">'+
+            '<button onclick="sendComment(\''+g.id+'\',\''+g.username+'\')">发送</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+    // Load comment counts
+    d.games.forEach(function(g){
+      loadCommentCount(g.id, g.username);
+    });
+  }catch(e){console.error(e)}
+}
+
+async function toggleLike(btn){
+  if(!_loggedIn){location.href='/login';return}
+  var gid=btn.dataset.gid, guser=btn.dataset.guser;
+  btn.disabled=true;
+  try{
+    var r=await fetch('/api/like/'+gid+'/'+guser,{method:'POST'});
+    var d=await r.json();
+    if(d.ok){
+      btn.classList.toggle('liked',d.liked);
+      btn.querySelector('.heart').textContent=d.liked?'💖':'🤍';
+      btn.querySelector('span:last-child').textContent=d.likes;
+      // Update the like-count in meta
+      var lc=document.querySelector('.like-count[data-gid="'+gid+'"]');
+      if(lc)lc.textContent=d.likes;
+    }
+  }catch(e){}
+  btn.disabled=false;
+}
+
+var _loadedComments={};
+async function toggleComments(btn){
+  var gid=btn.dataset.gid, guser=btn.dataset.guser;
+  var section=document.getElementById('comments-'+gid);
+  var isOpen=section.classList.contains('show');
+  if(isOpen){section.classList.remove('show');return}
+  section.classList.add('show');
+  if(!_loadedComments[gid]) await loadComments(gid,guser);
+  document.getElementById('commentInput-'+gid).focus();
+}
+
+async function loadComments(gid,guser){
+  _loadedComments[gid]=true;
+  try{
+    var r=await fetch('/api/comments/'+gid+'/'+guser);
+    var d=await r.json();
+    renderComments(gid,d.comments||[]);
+  }catch(e){}
+}
+
+async function loadCommentCount(gid,guser){
+  try{
+    var r=await fetch('/api/comments/'+gid+'/'+guser);
+    var d=await r.json();
+    var cc=document.querySelector('.comment-count[data-gid="'+gid+'"]');
+    if(cc)cc.textContent=(d.comments||[]).length;
+  }catch(e){}
+}
+
+function renderComments(gid,comments){
+  var list=document.getElementById('commentList-'+gid);
+  if(!comments.length){list.innerHTML='<div style="font-size:11px;color:#555;padding:8px 0">暂无评论，来说两句吧</div>';return}
+  list.innerHTML=comments.map(function(c){
+    return '<div class="comment-item">'+
+      '<div class="comment-user">'+c.username+'</div>'+
+      '<div class="comment-text">'+c.text+'</div>'+
+      '<div class="comment-time">'+formatTime(c.created)+'</div></div>';
+  }).join('');
+}
+
+async function sendComment(gid,guser){
+  if(!_loggedIn){location.href='/login';return}
+  var inp=document.getElementById('commentInput-'+gid);
+  var text=inp.value.trim();
+  if(!text)return;
+  try{
+    var r=await fetch('/api/comment/'+gid+'/'+guser,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text})});
+    var d=await r.json();
+    if(d.ok){
+      inp.value='';
+      var list=document.getElementById('commentList-'+gid);
+      var div=document.createElement('div');div.className='comment-item';
+      div.innerHTML='<div class="comment-user">'+_username+'</div><div class="comment-text">'+text+'</div><div class="comment-time">刚刚</div>';
+      list.appendChild(div);
+      if(list.querySelector('.comment-item')&&list.querySelector('.comment-item').textContent.includes('暂无评论'))list.innerHTML='';
+      list.scrollTop=list.scrollHeight;
+      // Update comment count
+      var cc=document.querySelector('.comment-count[data-gid="'+gid+'"]');
+      if(cc)cc.textContent=parseInt(cc.textContent||0)+1;
+    }
+  }catch(e){}
+}
+
+function formatTime(t){
+  if(!t)return'';
+  var d=new Date(t.replace(' ','T')+'Z');
+  var now=new Date();
+  var diff=now-d;
+  if(diff<60000)return'刚刚';
+  if(diff<3600000)return Math.floor(diff/60000)+'分钟前';
+  if(diff<86400000)return Math.floor(diff/3600000)+'小时前';
+  return t.slice(0,10);
+}
+
+function openDetail(id,title){/* reserved for future */}
+
+function closeDetail(){document.getElementById('detailOverlay').style.display='none'}
+
+init();
+</script>
+</body>
+</html>

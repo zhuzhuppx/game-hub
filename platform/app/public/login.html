@@ -23,6 +23,14 @@ button{width:100%;padding:12px;border-radius:8px;border:none;cursor:pointer;font
 .toggle a{color:#88aaff;cursor:pointer;text-decoration:none}
 .toggle a:hover{text-decoration:underline}
 .info{text-align:center;color:#44cc66;font-weight:600;margin-top:8px;min-height:18px;font-size:13px}
+.agree{display:flex;align-items:flex-start;gap:6px;margin-top:14px;font-size:11px;color:#777;line-height:1.5}
+.agree input{width:14px;height:14px;margin-top:2px;flex-shrink:0;accent-color:#4a6cf7}
+.agree a{color:#88aaff;cursor:pointer;text-decoration:underline}
+.agreement-popup{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:99;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.agreement-box{background:#1a1a1a;border:1px solid #333;border-radius:16px;padding:28px;max-width:420px;width:90vw;max-height:80vh;overflow-y:auto;cursor:default;font-size:13px;line-height:1.7;color:#bbb}
+.agreement-box h2{color:#fff;font-size:16px;margin-bottom:12px}
+.agreement-box h3{color:#88aaff;font-size:13px;margin:16px 0 6px}
+.agreement-box .close-btn{display:block;margin:20px auto 0;padding:10px 32px;background:#4a6cf7;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px}
 </style>
 </head>
 <body>
@@ -39,6 +47,11 @@ button{width:100%;padding:12px;border-radius:8px;border:none;cursor:pointer;font
   <div id="confirmLabel" style="display:none">
     <label>确认密码</label>
     <input type="password" id="confirmPwd" placeholder="再次输入密码" onkeydown="if(event.key==='Enter')submit()">
+  </div>
+
+  <div class="agree" id="agreeBox" style="display:none">
+    <input type="checkbox" id="agreeCheck">
+    <span>我同意 <a onclick="event.stopPropagation();showAgreement()">《用户协议》</a>：我创作的游戏代码开源，授权平台公开展示。如游戏内容违法，责任由我承担，平台有权随时下架。</span>
   </div>
 
   <div class="err" id="errMsg"></div>
@@ -60,8 +73,30 @@ function toggleMode(){
   document.getElementById('toggleText').textContent=isRegister?'已有账号？':'没有账号？';
   document.getElementById('toggleLink').textContent=isRegister?'登录':'注册';
   document.getElementById('confirmLabel').style.display=isRegister?'block':'none';
+  document.getElementById('agreeBox').style.display=isRegister?'flex':'none';
   document.getElementById('errMsg').textContent='';
   document.getElementById('infoMsg').textContent='';
+}
+
+function showAgreement(){
+  var popup=document.createElement('div');
+  popup.className='agreement-popup';
+  popup.onclick=function(e){if(e.target===popup)popup.remove()};
+  popup.innerHTML='<div class="agreement-box">'+
+    '<h2>📜 用户协议</h2>'+
+    '<h3>一、游戏代码开源授权</h3>'+
+    '<p>你在本平台创作的所有游戏代码，默认以 MIT 开源协议授权。平台有权将你的游戏公开分享、展示在游戏广场等位置，无需另行通知或付费。</p>'+
+    '<h3>二、内容合法性</h3>'+
+    '<p>你承诺创作的游戏内容不包含：赌博、色情、暴力煽动、侵犯他人知识产权、或其他违反中华人民共和国法律法规的内容。</p>'+
+    '<h3>三、责任归属</h3>'+
+    '<p>游戏内容由创作者自行负责。如因游戏内容引发的法律责任，由创作者独立承担，与本平台无关。</p>'+
+    '<h3>四、平台管理权</h3>'+
+    '<p>平台有权不经通知下架任何违规游戏，包括但不限于：收到举报、内容违法、或平台自行判断存在风险的游戏。</p>'+
+    '<h3>五、免责声明</h3>'+
+    '<p>AI 生成的游戏代码可能存在安全隐患或不完善之处，平台不对代码质量、兼容性、安全性作任何保证。用户自行承担使用风险。</p>'+
+    '<button class="close-btn" onclick="this.parentElement.parentElement.remove()">我知道了</button>'+
+    '</div>';
+  document.body.appendChild(popup);
 }
 
 async function submit(){
@@ -75,6 +110,9 @@ async function submit(){
   if(isRegister&&p!==document.getElementById('confirmPwd').value){
     err.textContent='两次密码不一致';return
   }
+  if(isRegister&&!document.getElementById('agreeCheck').checked){
+    err.textContent='请先阅读并同意用户协议';return
+  }
 
   try{
     var r=await fetch(isRegister?'/api/register':'/api/login',{
@@ -85,7 +123,7 @@ async function submit(){
     if(!r.ok){err.textContent=d.error;return}
     if(isRegister){info.textContent='注册成功！正在跳转...'}
     else{info.textContent='登录成功！正在跳转...'}
-    setTimeout(function(){window.location.href='/'},600);
+    setTimeout(function(){window.location.href='/workspace'},600);
   }catch(e){err.textContent='网络错误，请重试'}
 }
 </script>

@@ -8,6 +8,12 @@ services:
     volumes:
       - ./app:/app
       - ./data:/data
+    environment:
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+    networks:
+      - default
+      - d2gpcf
 
   speech:
     build: ./speech
@@ -15,6 +21,8 @@ services:
     restart: unless-stopped
     ports:
       - "8766:8766"
+    environment:
+      - WHISPER_MODEL=large-v3
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
     deploy:
@@ -24,3 +32,11 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    networks:
+      - default
+      - d2gpcf
+
+networks:
+  d2gpcf:
+    external: true
+    name: d2gpcf_default
