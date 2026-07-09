@@ -417,12 +417,11 @@ body{display:flex;flex-direction:column}
 <!-- 新手引导弹窗 -->
 <div class="wizard-overlay" id="wizardOverlay">
   <div class="wizard-box" id="wizardBox">
-    <div class="wizard-step-num" id="wizardStepNum">✏️ 第 0 步 / 5</div>
+    <div class="wizard-step-num" id="wizardStepNum">✏️ 第 0 步 / 4</div>
     <div class="wizard-bar-wrap"><div class="wizard-bar" id="wizardBar" style="width:0%"></div></div>
     <div id="wizardBody"></div>
     <div class="wizard-btns" id="wizardBtns">
       <button class="btn-prev" id="wizardPrevBtn" onclick="wizardPrev()" style="visibility:hidden">⬅ 上一步</button>
-      <button class="btn-next" id="wizardNextBtn" onclick="wizardNext()">继续 ➜</button>
     </div>
   </div>
 </div>
@@ -466,12 +465,12 @@ var _STT_FIXES={
 var messages=[],turnCount=0,maxTurns=15;
 
 // ===== 向导核心 =====
-var wizardStep=0,wizardTotal=6;
-var wizardDesign={gameName:'',character:'',goal:'',challenge:'',controls:'',music:''};
-var wizardKeys=['gameName','character','goal','challenge','controls','music'];
-var wizardIcons={gameName:'✏️',character:'🎯',goal:'🏆',challenge:'⚡',controls:'🎮',music:'🔊'};
-var wizardTitles={gameName:'取个酷酷的名字',character:'谁是主角？',goal:'游戏目标是什么？',challenge:'什么让游戏刺激？',controls:'怎么操作？',music:'配什么音乐？'};
-var wizardDescs={gameName:'给你的游戏取一个名字吧！可以语音说，也可以点下面的灵感标签',character:'你的游戏里，谁来做主角？',goal:'怎么算赢？收集东西、消灭敌人、还是活下去？',challenge:'什么让游戏变得又刺激又好玩？',controls:'玩家怎么控制角色？',music:'背景音乐决定游戏的氛围！'};
+var wizardStep=0,wizardTotal=5;
+var wizardDesign={gameName:'',character:'',goal:'',challenge:'',music:''};
+var wizardKeys=['gameName','character','goal','challenge','music'];
+var wizardIcons={gameName:'✏️',character:'🎯',goal:'🏆',challenge:'⚡',music:'🔊'};
+var wizardTitles={gameName:'取个酷酷的名字',character:'谁是主角？',goal:'游戏目标是什么？',challenge:'什么让游戏刺激？',music:'配什么音乐？'};
+var wizardDescs={gameName:'给你的游戏取一个名字吧！可以语音说，也可以点下面的灵感标签',character:'你的游戏里，谁来做主角？',goal:'怎么算赢？收集东西、消灭敌人、还是活下去？',challenge:'什么让游戏变得又刺激又好玩？',music:'背景音乐决定游戏的氛围！'};
 var _wizardCharIcon='🚀';
 
 // 步骤数据
@@ -505,16 +504,6 @@ var wizardSteps=[
     {icon:'🌀',label:'地形变化',desc:'地图会动态变化'},
     {icon:'👻',label:'Boss 战',desc:'最后有个大Boss'}
   ]},
-  {icon:'🎮',opts:[
-    {icon:'⌨️',label:'键盘 WASD',desc:'WASD 或方向键操控'},
-    {icon:'🖱️',label:'鼠标点击',desc:'点哪里走哪里'},
-    {icon:'📱',label:'触摸滑动',desc:'手机触摸滑动控制'},
-    {icon:'🖲️',label:'键盘 + 空格',desc:'方向键 + 空格跳跃'},
-    {icon:'🎯',label:'鼠标瞄准',desc:'鼠标瞄准 + 点击射击'},
-    {icon:'🔄',label:'重力翻转',desc:'点击翻转重力方向'},
-    {icon:'👆',label:'单指操作',desc:'一个手指就能玩'},
-    {icon:'🎮',label:'双端都支持',desc:'PC键盘+手机触屏都兼容'}
-  ]},
   {icon:'🎵',opts:[
     {icon:'🗡️',label:'紧张刺激',desc:'bgmAdventure - 冒险战斗风'},
     {icon:'🌿',label:'轻快探索',desc:'bgmExplore - 轻松愉快'},
@@ -532,7 +521,7 @@ try{var cv=localStorage.getItem('wizardCustomVoices');if(cv)_wizardCustomVoices=
 var _nameTags=['星际大冒险','小勇士闯关','极速赛车王','太空探险','海底世界','恐龙乐园','宝石大盗','魔法学院'];
 
 function startWizard(){
-  wizardStep=0;wizardDesign={gameName:'',character:'',goal:'',challenge:'',controls:'',music:''};
+  wizardStep=0;wizardDesign={gameName:'',character:'',goal:'',challenge:'',music:''};
   document.getElementById('wizardOverlay').classList.add('show');
   // 同步语音权限状态到body class
   var d=window._userPlan;
@@ -542,14 +531,13 @@ function startWizard(){
 }
 
 function renderWizard(){
-  var stepDisplay=wizardStep===0?'✏️ 命名':'🎯🏆⚡🎮🔊'[wizardStep-1]+' 第 '+wizardStep+' 步 / 5';
+  var stepDisplay=wizardStep===0?'✏️ 命名':'🎯🏆⚡🔊'[wizardStep-1]+' 第 '+wizardStep+' 步 / 4';
   document.getElementById('wizardStepNum').textContent=stepDisplay;
-  var pct=wizardStep===0?8:8+((wizardStep-1)*18.4);
+  var pct=wizardStep===0?8:8+((wizardStep-1)*23);
   document.getElementById('wizardBar').style.width=Math.min(pct,100)+'%';
   
   var body=document.getElementById('wizardBody');
   var prevBtn=document.getElementById('wizardPrevBtn');
-  var nextBtn=document.getElementById('wizardNextBtn');
   
   prevBtn.style.visibility=(wizardStep>0?'visible':'hidden');
   
@@ -577,9 +565,6 @@ function renderWizard(){
       tags+='<span class="wizard-name-tag" onclick="fillName(\''+_nameTags[i]+'\')">'+_nameTags[i]+'</span>';
     }
     document.getElementById('wizardNameTags').innerHTML=tags;
-    nextBtn.textContent='继续 ➜';
-    nextBtn.disabled=true;
-    nextBtn.classList.remove('enabled');
     // 绑定录音按钮事件（仅语音权限用户）
     if(hasVoice){
       var wrBtn=document.getElementById('wizardHoldRecord');
@@ -625,15 +610,12 @@ function renderWizard(){
       var wk=wizardKeys[wizardStep];
       wizardSpeak(wizardTitles[wk]+' '+wizardDescs[wk]);
     },300);
-    nextBtn.textContent=(wizardStep===wizardTotal-1)?'🎮 生成游戏！':'继续 ➜';
-    nextBtn.disabled=true;
-    nextBtn.style.opacity='0.5';
   }else{
     // 总结页
     var summary='';winHtml='';
-    var keys=['character','goal','challenge','controls','music'];
-    var icons=['🎯','🏆','⚡','🎮','🔊'];
-    var labels=['主角','目标','挑战','操作','音乐'];
+    var keys=['character','goal','challenge','music'];
+    var icons=['🎯','🏆','⚡','🔊'];
+    var labels=['主角','目标','挑战','音乐'];
     for(var i=0;i<keys.length;i++){
       summary+='<div class="ws-item"><span class="ws-icon">'+icons[i]+'</span><span class="ws-key">'+labels[i]+'</span><span class="ws-val">'+(wizardDesign[keys[i]]||'未选')+'</span></div>';
     }
@@ -642,7 +624,6 @@ function renderWizard(){
     if(wizardDesign.character==='太空飞船'&&wizardDesign.goal==='消灭敌人')title='星际战士';
     else if(wizardDesign.character==='小勇士'&&wizardDesign.challenge==='Boss 战')title='勇者传说';
     else if(wizardDesign.character==='小猫咪')title='喵星人大冒险';
-    else if(wizardDesign.controls==='触摸滑动')title='指尖大师';
     else if(wizardDesign.challenge==='难度递增')title='硬核玩家';
     else if(wizardDesign.goal==='收集宝石'||wizardDesign.goal==='收集星星')title='收藏家';
     else if(wizardDesign.music==='轻快探索'||wizardDesign.music==='轻松休闲')title='悠然设计师';
@@ -655,11 +636,14 @@ function renderWizard(){
       '<div class="wizard-summary">'+summary+'</div>'+
       '<div class="wizard-desc">这就是你的游戏设计！让 AI 帮你变成现实吧 🚀</div>';
     
-    nextBtn.textContent='🎮 生成游戏！';
-    nextBtn.disabled=false;
-    nextBtn.style.opacity='1';
     prevBtn.textContent='⬅ 修改设计';
     prevBtn.style.visibility='visible';
+    
+    // 自动生成（延迟3秒让用户看清楚总结）
+    if(window._wizardAutoGenTimer)clearTimeout(window._wizardAutoGenTimer);
+    window._wizardAutoGenTimer=setTimeout(function(){
+      submitWizardGame();
+    },3000);
   }
 }
 
@@ -682,30 +666,28 @@ function wizardPick(step,idx){
   // 音效反馈
   try{SFX.resume();SFX.score()}catch(e){}
   
-  // 启用继续按钮
-  var nextBtn=document.getElementById('wizardNextBtn');
-  nextBtn.disabled=false;
-  nextBtn.classList.add('enabled');
-  
   // TTS 朗读（含描述）
   wizardSpeak('你选中了'+o.label+'！'+o.desc+'！');
   
-  // 自动跳转（等动画和TTS播完）
+  // 锁定交互 + 等TTS播完自动跳转
   document.getElementById('wizardBody').classList.add('wizard-opts-disabled');
-  setTimeout(function(){
+  if(_wizardAdvanceCallback)clearTimeout(_wizardAdvanceCallback);
+  _wizardAdvanceCallback=setTimeout(function(){
     document.getElementById('wizardBody').classList.remove('wizard-opts-disabled');
     wizardNext();
-  },1200);
+  },4000); // 兜底：最迟4秒后跳转（实际由TTS onended触发更早）
 }
 
 function wizardPrev(){
   if(_wizardSpeaking)return;
   if(wizardStep<=0)return;
+  if(_wizardAdvanceCallback){clearTimeout(_wizardAdvanceCallback);_wizardAdvanceCallback=null}
   wizardStep--;
   renderWizard();
 }
 
 function wizardNext(){
+  if(_wizardAdvanceCallback){clearTimeout(_wizardAdvanceCallback);_wizardAdvanceCallback=null}
   if(_wizardSpeaking)return;
   if(wizardStep===0){
     if(!wizardDesign.gameName){return}
@@ -721,13 +703,16 @@ function wizardNext(){
 
 function fillName(name){
   wizardDesign.gameName=name;
-  var btn=document.getElementById('wizardNextBtn');
-  if(btn){btn.disabled=false;btn.classList.add('enabled')}
   // 把页面标题「取个酷酷的名字」换成游戏名
   var titleEl=document.querySelector('.wizard-title');
   if(titleEl)titleEl.textContent=name;
   try{SFX.resume();SFX.score()}catch(e){}
   wizardSpeak('游戏名字：'+name+'！');
+  // 等TTS播完自动跳转
+  if(_wizardAdvanceCallback)clearTimeout(_wizardAdvanceCallback);
+  _wizardAdvanceCallback=setTimeout(function(){
+    wizardNext();
+  },4000);
 }
 
 // TTS 朗读（仅语音权限用户有效）
@@ -778,7 +763,7 @@ function doTTS(text){
 
 // 向导语音
 var _wizardStream=null,_wizardRecorder=null,_wizardChunks=[];
-var _wizardSpeaking=false,_wizardAudio=null;
+var _wizardSpeaking=false,_wizardAudio=null,_wizardAdvanceCallback=null;
 
 // TTS 朗读期间禁用卡片/标签/录音按钮/导航按钮点击，防语音重叠
 function lockWizardCards(lock){
@@ -795,12 +780,11 @@ function lockWizardCards(lock){
     hb.style.pointerEvents=lock?'none':'';
     hb.style.opacity=lock?'0.4':'';
   }
-  // 导航按钮（下一步/上一步）
-  ['wizardNextBtn','wizardPrevBtn'].forEach(function(id){
-    var el=document.getElementById(id);
-    if(el){
-      el.style.pointerEvents=lock?'none':'';
-      el.style.opacity=lock?'0.4':'';
+  // 导航按钮（仅有上一步）
+  var prevBtn=document.getElementById('wizardPrevBtn');
+  if(prevBtn){
+    prevBtn.style.pointerEvents=lock?'none':'';
+    prevBtn.style.opacity=lock?'0.4':'';
     }
   });
 }
@@ -933,6 +917,8 @@ function resetWizardRecord(){
 
 // 提交生成游戏
 function submitWizardGame(){
+  // 移除控制步骤后默认双端支持
+  if(!wizardDesign.controls)wizardDesign.controls='双端都支持（键盘+手机触屏）';
   var title=wizardDesign.gameName||'我的游戏';
   var msg='帮我设计一个叫\u300c'+title+'\u300d的游戏！\n\n'+
     '🎯 主角：'+wizardDesign.character+'\n'+
