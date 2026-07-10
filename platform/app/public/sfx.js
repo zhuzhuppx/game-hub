@@ -247,3 +247,39 @@ var SFX = (function(){
     tone: tone, noise: function(d){return playBuf(noise(d))}
   };
 })();
+
+// ===== 全局兼容别名（供使用 sfxXxx() 风格的老游戏使用） =====
+(function(){
+  var m = {
+    // 通用音效
+    sfxClick: SFX.click, sfxTap: SFX.tap, sfxBlip: SFX.tick,
+    sfxCoin: SFX.collect, sfxEat: SFX.collect, sfxGem: SFX.collect,
+    sfxShoot: SFX.shoot, sfxPew: SFX.shoot,
+    sfxExplode: SFX.boom,
+    sfxHit: SFX.hurt,
+    sfxJump: SFX.jump,
+    sfxLose: SFX.fail, sfxWrong: SFX.fail,
+    sfxWin: SFX.success, sfxClear: SFX.success,
+    sfxPowerUp: SFX.powerup,
+    sfxNotify: SFX.notify,
+    // 俄罗斯方块
+    sfxDrop: function(){SFX.tone && SFX.tone(200,0.1,'sine');},
+    sfxLock: function(){SFX.tone && SFX.tone(300,0.08,'square');},
+    sfxRotate: function(){SFX.tone && SFX.tone(400,0.05,'sine');},
+    sfxTetris: function(){SFX.tone && (SFX.tone(800,0.2,'sine'), SFX.tone(1000,0.2,'sine',{delay:0.1}));},
+    sfxGameOver: SFX.fail,
+    sfxInit: function(){},
+    sfxMove: function(){SFX.tone && SFX.tone(220,0.03,'sine',{vol:0.2});},
+    sfxMoveStop: function(){},
+    sfxNoise: function(){try{SFX.noise(0.05)}catch(e){}},
+    sfxTone: function(f,d,t,o){SFX.tone && SFX.tone(f,d,t,o);},
+    sfxBGM: SFX.bgmAdventure,
+    sfxResume: function(){try{SFX.resume()}catch(e){}},
+    sfxResumeAll: SFX.bgmAdventure,
+    sfxStopAll: SFX.stopBGM,
+    sfxTankStart: SFX.bgmAdventure,
+    sfxTankStop: SFX.stopBGM,
+    sfxBGM: SFX.bgmAdventure
+  };
+  for(var k in m) window[k]=m[k];
+})();

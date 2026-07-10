@@ -81,7 +81,7 @@ body{display:flex;flex-direction:column}
 .record-ring .pulse-ring:nth-child(3){animation-delay:0.8s}
 @keyframes ringPulse{0%{transform:scale(1);opacity:1}100%{transform:scale(1.6);opacity:0}}
 .slide-zones{position:fixed;bottom:110px;left:0;right:0;display:none;justify-content:center;gap:16px;z-index:99999;pointer-events:none;padding:0 16px}
-.slide-zone{flex:1;max-width:160px;height:80px;display:flex;align-items:center;justify-content:center;border-radius:16px;margin:0 6px;font-size:15px;font-weight:600;font-family:system-ui;transition:all 0.15s;pointer-events:auto;border:1px solid transparent}
+.slide-zone{flex:1;max-width:160px;height:80px;display:flex;align-items:center;justify-content:center;border-radius:16px;margin:0 6px;padding:10px 16px;font-size:15px;font-weight:600;font-family:system-ui;transition:all 0.15s;pointer-events:auto;border:1px solid transparent}
 .slide-cancel{background:rgba(60,60,60,0.7);color:#aaa;border-color:#444}
 .slide-cancel.active{background:rgba(200,60,60,0.9);color:#fff;border-color:#ff4444;transform:scale(1.05)}
 .slide-send{background:rgba(74,108,247,0.7);color:#aac;border-color:#4a6cf7}
@@ -89,7 +89,7 @@ body{display:flex;flex-direction:column}
 .wizard-voice-wrap{position:relative;display:flex;flex-direction:column;align-items:center;margin-top:28px}
 .wizard-slide-row{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);display:none;justify-content:center;gap:12px;white-space:nowrap;padding:0}
 .wizard-slide-row.show{display:flex}
-.wizard-slide-row .slide-zone{flex:1;max-width:150px;height:64px;font-size:14px;padding:0 8px}
+.wizard-slide-row .slide-zone{flex:1;max-width:150px;height:64px;font-size:14px;padding:8px 16px}
 /* AI 思考动画 */
 .think-dots{display:inline-flex;gap:2px;vertical-align:middle}
 .think-dots i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#888;animation:thinkBounce 1.2s infinite}
@@ -261,6 +261,9 @@ body{display:flex;flex-direction:column}
 .wizard-output .cursor{display:inline-block;width:2px;height:15px;background:#4a6cf7;margin-left:2px;animation:blinkCursor 0.8s step-end infinite;vertical-align:text-bottom}
 @keyframes blinkCursor{0%,100%{opacity:1}50%{opacity:0}}
 .wizard-output.has-code{border-color:#4a6cf7;color:#e0e0e0}
+.wizard-chat{margin-top:8px;max-height:130px;overflow-y:auto;text-align:left;padding:2px 0}
+.wizard-chat-msg{background:#1a1a2e;border:1px solid #333;border-radius:12px;padding:7px 12px;margin-bottom:5px;font-size:13px;color:#d0d0e0;animation:wizardChatIn 0.35s ease}
+@keyframes wizardChatIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .wizard-opts-disabled{pointer-events:none!important;opacity:0.6}
 
 </style>
@@ -672,10 +675,16 @@ function wizardPick(step,idx){
   // 锁定交互 + 等TTS播完自动跳转
   document.getElementById('wizardBody').classList.add('wizard-opts-disabled');
   if(_wizardAdvanceCallback)clearTimeout(_wizardAdvanceCallback);
-  _wizardAdvanceCallback=setTimeout(function(){
+  _wizardAdvanceCallback=setTimeout(function _pickFallback(){
+    if(_wizardSpeaking){
+      // TTS还在播，继续等
+      _wizardAdvanceCallback=setTimeout(_pickFallback,3000);
+      return;
+    }
+    _wizardAdvanceCallback=null;
     document.getElementById('wizardBody').classList.remove('wizard-opts-disabled');
     wizardNext();
-  },4000); // 兜底：最迟4秒后跳转（实际由TTS onended触发更早）
+  },4000); // 兜底：TTS失败时4秒后重试，正常由onended的_execAdvance更早触发
 }
 
 function wizardPrev(){
@@ -708,10 +717,16 @@ function fillName(name){
   if(titleEl)titleEl.textContent=name;
   try{SFX.resume();SFX.score()}catch(e){}
   wizardSpeak('游戏名字：'+name+'！');
-  // 等TTS播完自动跳转
+  // 等TTS播完自动跳转（由_execAdvance在onended触发）
   if(_wizardAdvanceCallback)clearTimeout(_wizardAdvanceCallback);
-  _wizardAdvanceCallback=setTimeout(function(){
-    wizardNext();
+  _wizardAdvanceCallback=setTimeout(function _fillFallback(){
+    _wizardAdvanceCallback=null;
+    if(_wizardSpeaking){
+      // TTS还在播，继续等
+      _wizardAdvanceCallback=setTimeout(_fillFallback,3000);
+      return;
+    }
+    wizardNext(); // 兜底：TTS失败时4秒后重试，正常由onended的_execAdvance更早触发
   },4000);
 }
 
@@ -738,11 +753,11 @@ function doTTS(text){
     try{
       var audio=new Audio(custom);
       audio.volume=1;
-      audio.onended=function(){_wizardSpeaking=false;lockWizardCards(false)};
-      audio.play().catch(function(){_wizardSpeaking=false;lockWizardCards(false)});
+      audio.onended=function(){_wizardSpeaking=false;lockWizardCards(false);_execAdvance()};
+      audio.play().catch(function(){_wizardSpeaking=false;lockWizardCards(false);_execAdvance()});
       _wizardAudio=audio;
       return;
-    }catch(e){_wizardSpeaking=false;lockWizardCards(false)}
+    }catch(e){_wizardSpeaking=false;lockWizardCards(false);_execAdvance()}
   }
   // 否则用 Edge TTS
   fetch('/api/tts?text='+encodeURIComponent(text)+'&voice='+encodeURIComponent(voiceKey))
@@ -755,15 +770,28 @@ function doTTS(text){
         _wizardSpeaking=false;
         lockWizardCards(false);
         URL.revokeObjectURL(url);
+        _execAdvance();
       };
-      audio.play().catch(function(){_wizardSpeaking=false;lockWizardCards(false)});
+      audio.play().catch(function(){_wizardSpeaking=false;lockWizardCards(false);_execAdvance()});
       _wizardAudio=audio;
-    }).catch(function(){_wizardSpeaking=false;lockWizardCards(false)});
+    }).catch(function(){_wizardSpeaking=false;lockWizardCards(false);_execAdvance()});
 }
 
 // 向导语音
 var _wizardStream=null,_wizardRecorder=null,_wizardChunks=[];
 var _wizardSpeaking=false,_wizardAudio=null,_wizardAdvanceCallback=null;
+// TTS播完后立即执行跳转，不等setTimeout
+function _execAdvance(){
+  if(!_wizardAdvanceCallback)return;
+  // 步骤范围保护，防止聊天TTS结束时意外越界跳转
+  if(wizardStep<1||wizardStep>wizardTotal)return;
+  clearTimeout(_wizardAdvanceCallback);
+  _wizardAdvanceCallback=null;
+  // 解除选项禁用（wizardPick添加的），否则下一步卡片点不动
+  try{document.getElementById('wizardBody').classList.remove('wizard-opts-disabled')}catch(e){}
+  // TTS已播完，_wizardSpeaking=false，可直接跳转
+  wizardNext();
+}
 
 // TTS 朗读期间禁用卡片/标签/录音按钮/导航按钮点击，防语音重叠
 function lockWizardCards(lock){
@@ -945,8 +973,9 @@ function submitWizardGame(){
   
   // 显示 loading + 发送消息
   var winHtml='<div class="wizard-loading"><div class="wl-icon" id="wlIcon">🚀</div>'+
-    '<div class="wl-text">AI 正在生成你的游戏...</div>'+
+    '<div class="wl-text">你正在亲手创造自己的游戏！</div>'+
     '<div class="wl-dots"><span></span><span></span><span></span></div>'+
+    '<div class="wizard-chat" id="wizardChat"></div>'+
     '<div class="wizard-output" id="wizardOutput"></div></div>';
   document.getElementById('msgs').innerHTML='';
   document.getElementById('msgs').innerHTML=winHtml;
@@ -962,24 +991,136 @@ function submitWizardGame(){
 
 function doWizardApiCall(msg){
   var outputEl=document.getElementById('wizardOutput');
-  if(outputEl)outputEl.textContent='AI 正在思考...';
+  if(outputEl)outputEl.textContent='正在拼装你的游戏...';
   
   var msgs=window.messages&&window.messages.length?window.messages:[{role:'user',content:msg}];
   var controller=new AbortController();
   var timeout=setTimeout(function(){controller.abort()},300000);
   
-  fetch('/api/chat',{
-    method:'POST',signal:controller.signal,
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({messages:msgs,stream:true})
+  // 生成过程中禁用输入，防止误操作
+  var ciEl=document.getElementById('chatInput');if(ciEl)ciEl.style.display='none';
+  
+  // ====== 等候闲聊：生成过程中说说话，让等待不无聊 ======
+  // 条纹 emoji（气泡里显示，TTS 不读）
+  function _stripEmoji(s){
+    return s.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}]/gu,'');
+  }
+  // 40 条消息模板，覆盖设计、思维、分享、改进、想象、叙事等多维度
+  // 每 8 秒一条，一圈刚好 5 分 20 秒，覆盖完整生成等待时间
+  var _wizardChatTpl=(function(){
+    var gn=function(){return wizardDesign.gameName||'我的游戏'};
+    var ch=function(){return wizardDesign.character||'主角'};
+    var go=function(){return wizardDesign.goal||'这个目标'};
+    var mu=function(){return wizardDesign.music||'欢快'};
+    var tpls=[
+      // 1-6: 设计和构思
+      function(){return '\uD83E\uDD14 让我想想你的\u300c'+gn()+'\u300d该怎么设计……'},
+      function(){return '\u2728 '+ch()+'当主角，太酷了！我给它设计一套专属技能！'},
+      function(){return '\uD83C\uDF1F '+go()+'，这个目标听起来就很有趣！'},
+      function(){return '\uD83D\uDD0D 我在构思'+gn()+'的关卡布局，怎样才好玩又有挑战？'},
+      function(){return '\uD83C\uDFB5 配上'+mu()+'风格的音乐，气氛一下子就有了！'},
+      function(){return '\uD83C\uDFA8 选颜色、定画面风格，让你的游戏看起来独一无二！'},
+      // 7-12: 逻辑和规则
+      function(){return '\uD83D\uDCA1 你知道做游戏就像搭积木吗？先想玩法规则，再搭画面，最后加特效！'},
+      function(){return '\uD83E\uDDE0 一个好游戏要有：清晰的目标、有趣的挑战、及时的反馈！'},
+      function(){return '\uD83C\uDFAF 设计游戏规则的时候，要想想：玩家要怎么赢？输了怎么办？'},
+      function(){return '\uD83D\uDD27 数值平衡很重要——太简单没意思，太难会气馁，要刚刚好！'},
+      function(){return '\uD83E\uDDE9 排列组合的思维很有趣：不同的道具搭配，会有不同的玩法效果！'},
+      function(){return '\uD83D\uDEE0\uFE0F 逻辑就像游戏的骨架——先做什么、再做什么、什么条件下触发什么效果！'},
+      // 13-18: 想象力和创意
+      function(){return '\uD83C\uDF04 如果给'+gn()+'加一个隐藏关卡，你会设计在哪里？'},
+      function(){return '\uD83C\uDF20 你可以设计一个独特的世界观！比如太空冒险、魔法森林或者海底寻宝！'},
+      function(){return '\uD83C\uDFA7 你还可以给'+ch()+'设计一句口头禅，每次过关就说出来！'},
+      function(){return '\uD83C\uDF89 好玩的游戏总有让人意想不到的小惊喜！'},
+      function(){return '\uD83D\uDC36 如果游戏里加一个宠物或者小跟班，你希望它长什么样？'},
+      function(){return '\uD83C\uDF1F 想象力是游戏设计师最宝贵的超能力！'},
+      // 19-24: 测试和反思
+      function(){return '\uD83D\uDD0D 游戏做好后记得自己先玩一遍，看看哪里需要改进！'},
+      function(){return '\uD83D\uDD04 找到一个 bug 不算坏事，修复它会让游戏变得更好！'},
+      function(){return '\uD83D\uDCDD 你可以拿个小本本，把玩家反馈记下来，下次改版就有方向了！'},
+      function(){return '\uD83C\uDF96\uFE0F 每玩一次，就问问自己：这关好玩吗？哪里可以更好？'},
+      function(){return '\uD83D\uDD52 好游戏不是一次做出来的，是反复打磨出来的！'},
+      function(){return '\uD83D\uDCA1 试试换个角度看自己的游戏——如果你是第一次玩这个游戏，会觉得哪里难？'},
+      // 25-30: 分享和社交（具体可操作的分享引导）
+      function(){return '\uD83C\uDF89 '+gn()+'做好之后，先给朋友看标题和截图，让他猜猜这是个什么游戏！'},
+      function(){return '\uD83D\uDCAC 你可以问问朋友：你最喜欢哪一关？哪一关你觉得最难？为什么？'},
+      function(){return '\uD83E\uDD1D 和朋友讨论时，还可以问：如果给你加一个道具，你会加什么？'},
+      function(){return '\uD83C\uDFC6 邀请小伙伴来挑战你的游戏，看看谁能拿最高分，顺便听听他们的建议！'},
+      function(){return '\uD83D\uDCDD 你还可以给'+gn()+'写一份攻略，教别人怎么玩！写攻略也是在锻炼逻辑表达哦！'},
+      function(){return '\uD83D\uDDE3\uFE0F 分享完记得问一句：如果你是设计师，你会修改哪个地方？这个问题能收到超多好点子！'},
+      // 31-34: 系统性思维延伸到生活
+      function(){return '\uD83E\uDDE0 设计游戏的思维也能用在生活中！比如规划一次旅行：先定目的地（目标）、再排路线（流程）、最后收拾行李（资源）！'},
+      function(){return '\uD83D\uDDA5\uFE0F 做一道菜和做游戏居然很像：先看菜谱（规则）、准备食材（素材）、按步骤烹饪（编程），最后尝尝味道（测试）！'},
+      function(){return '\uD83D\uDCA1 遇到难题时试试游戏设计师的思路：问题是什么？有哪些解决方法？选一个试，不行就换一个！'},
+      function(){return '\uD83D\uDD04 你有没有发现？学习新东西和做游戏一样：先理解规则，再动手试试，做错了就调整，慢慢就熟练了！'},
+      // 35-38: 发散思维和跨界联想
+      function(){return '\uD83C\uDF08 如果把'+gn()+'的玩法用到现实里会怎样？比如用闯关的方式来整理房间，每收拾一个区域就解锁一个奖励！'},
+      function(){return '\uD83C\uDFAE 你还可以想想：如果'+ch()+'是一个超级英雄，他的超能力除了在游戏里用，在生活中还能做什么？'},
+      function(){return '\uD83E\uDDE0 试着把两个不相关的东西连在一起！比如「太空」+「厨房」= 在宇宙飞船里做汉堡的游戏，是不是很有趣？'},
+      function(){return '\uD83D\uDE80 你每设计一个游戏，都在练习一种超能力：把脑子里天马行空的想法，用逻辑一步步变成现实！'},
+      // 39-40: 展望和收尾
+      function(){return '\uD83C\uDFAE '+gn()+'马上就好了！做完之后，你想不想把刚才想到的分享点子用上，去问问朋友的意见？'},
+      function(){return '\uD83C\uDF89 恭喜你！你不仅创造了一个游戏，还学会了怎么用系统性思维去思考问题、跟朋友交流想法——这才是最厉害的！'},
+    ];
+    var idx=0;
+    return {
+      getNext:function(){
+        var tpl=tpls[idx%tpls.length];
+        idx++;
+        return tpl();
+      }
+    };
+  })();
+  var _wizardChatTimer=null;
+  // 检查队列状态
+  function checkQueue(){
+    return fetch('/api/queue').then(function(r){return r.json()}).then(function(q){
+      return q.active > 1 ? q.active - 1 : 0;
+    }).catch(function(){return 0});
+  }
+  function showQueueHint(pos){
+    var el=document.getElementById('wizardChat');
+    if(!el)return;
+    var old=document.querySelector('.queue-hint');if(old)old.remove();
+    if(pos>0){
+      var b=document.createElement('div');b.className='queue-hint wizard-chat-msg';
+      b.style.cssText='color:#ffcc44;font-style:italic;font-size:13px';
+      b.textContent='⏳ 前面还有 '+pos+' 人在排队，请稍候...';
+      el.appendChild(b);el.scrollTop=el.scrollHeight;
+    }
+  }
+  function _wizardNextChat(){
+    var txt=_wizardChatTpl.getNext();
+    var el=document.getElementById('wizardChat');
+    if(el){
+      var b=document.createElement('div');b.className='wizard-chat-msg';b.textContent=txt;
+      el.appendChild(b);el.scrollTop=el.scrollHeight;
+    }
+    wizardSpeak(_stripEmoji(txt));
+    _wizardChatTimer=setTimeout(_wizardNextChat,8000);
+  }
+  _wizardChatTimer=setTimeout(_wizardNextChat,1500);
+  
+  // 先检查队列再发起请求
+  checkQueue().then(function(pos){
+    showQueueHint(pos);
+    return fetch('/api/chat',{
+      method:'POST',signal:controller.signal,
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:msgs,stream:true})
+    });
   }).then(function(r){
+    var oldQh=document.querySelector('.queue-hint');if(oldQh)oldQh.remove();
     var reader=r.body.getReader();
     var decoder=new TextDecoder();
     var buf='',full='';
     function readChunk(){
       return reader.read().then(function(result){
         if(result.done){
+          clearTimeout(_wizardChatTimer);
           clearTimeout(timeout);
+          // 生成完毕，恢复输入
+          var ciEl=document.getElementById('chatInput');if(ciEl)ciEl.style.display='';
           var codeMatch=full.match(/```html[\s\S]*?```/);
           if(!codeMatch)codeMatch=full.match(/<!DOCTYPE html[\s\S]*?<\/html>/i);
           if(codeMatch){
@@ -1018,7 +1159,10 @@ function doWizardApiCall(msg){
     }
     return readChunk();
   }).catch(function(e){
+    clearTimeout(_wizardChatTimer);
     clearTimeout(timeout);
+    // 出错也恢复输入
+    var ciEl=document.getElementById('chatInput');if(ciEl)ciEl.style.display='';
     var errMsg='网络出错了'+(e.name==='AbortError'?'（超时了，AI 思考太久）':': '+e.message);
     showWizardRetry(errMsg);
   });
@@ -1041,6 +1185,7 @@ function showGeneratedGame(htmlCode){
   // 先保存，再显示结果
   saveWizardGame(function(saved){
     if(saved)gameSaved=true;
+    var title=wizardDesign.gameName||'你的游戏';
     document.getElementById('msgs').innerHTML=
       '<div class="msg ai">🎉 游戏已生成！</div>'+
       '<div style="display:flex;gap:8px;padding:8px;justify-content:center">'+
@@ -1048,6 +1193,11 @@ function showGeneratedGame(htmlCode){
       '<button onclick="backToLobby()" style="background:#2a2a2a;color:#aaa;border:1px solid #444;padding:10px 24px;border-radius:10px;cursor:pointer;font-size:14px">🏠 返回大厅</button></div>'+
       '<div class="msg ai" style="margin-top:8px">💡 在下面输入框打字，告诉 AI 想改什么功能。'+
       (window._userPlan&&window._userPlan.limits&&window._userPlan.limits.voice?'按住 🎤 说话也行！':'')+'</div>';
+    
+    // TTS 语音提示小朋友点击预览（去除图标只读文字）
+    setTimeout(function(){
+      wizardSpeak('\u300c'+title+'\u300d做好啦！快点击预览按钮，试试你亲手设计的游戏吧！');
+    },500);
   });
 }
 
@@ -1693,6 +1843,16 @@ async function doChat(){
     window._controller=controller;
     var timeout=setTimeout(function(){controller.abort()},300000);
 
+    // 检查队列并显示提示
+    var qpos = await checkQueue();
+    if(qpos > 0){
+      var qel=document.createElement('div');qel.className='queue-hint msg ai';
+      qel.style.cssText='color:#ffcc44;font-style:italic;font-size:13px;padding:4px 12px';
+      qel.textContent='⏳ 前面还有 '+qpos+' 人在排队，请稍候...';
+      document.getElementById('msgs').appendChild(qel);
+      document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
+    }
+
     var resp=await fetch('/api/chat',{
       method:'POST',signal:controller.signal,
       headers:{'Content-Type':'application/json'},
@@ -1701,6 +1861,7 @@ async function doChat(){
     clearTimeout(timeout);
     window._controller=null;
     var el=document.getElementById('typing');if(el)el.remove();
+    var qh=document.querySelector('.queue-hint');if(qh)qh.remove();
 
     // 读流解析SSE，边读边显示打字效果（每200ms更新DOM）
     var fullReply='';

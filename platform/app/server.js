@@ -22,6 +22,11 @@ const db = new Database(DB_PATH);
 db.pragma('journal_mode=WAL');
 db.pragma('foreign_keys=ON');
 
+// 生成队列追踪
+var activeRequests = 0;
+var requestQueue = [];
+var MAX_CONCURRENT = 1; // 本地 LLM 通常只能跑一个请求
+
 // ==================== DB Schema ====================
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
@@ -264,14 +269,128 @@ app.get('/play/:ucode/:gcode', function(req,res){
     '<meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">'+
     '<meta http-equiv="Pragma" content="no-cache">'+
     '<meta http-equiv="Expires" content="0">'+
-    '<script src="https://studio.2u1.cn/platform/sfx.js"><\/script>'+
-    '<script>document.addEventListener("visibilitychange",function(){if(document.hidden&&window.SFX)SFX.stopBGM()})<\/script>'+
     '<title>'+title+' - '+author+' - AI 游戏工坊</title>'+
     '<style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;overflow:hidden;background:#000}'+
     'canvas{display:block}</style></head><body>'+credit;
   res.send(row.html.replace(/<!DOCTYPE[^>]*>/i,'').replace(/<html[^>]*>/i,'').replace(/<\/html>/i,'').replace(/<head>[\s\S]*?<\/head>/i,function(m){
     return wrapper+m.replace(/<\/head>/i,'');
   }));
+});
+
+// ==================== Pikafish Chess Engine ====================
+const net = require('net');
+
+function gameTypeToUci(t) {
+  t = t.toLowerCase();
+  switch(t) {
+    case 'k': return 'k';
+    case 'a': return 'a';
+    case 'e': return 'b'; // elephant → bishop
+    case 'h': return 'n'; // horse → knight
+    case 'r': return 'r';
+    case 'c': return 'c';
+    case 'p': return 'p';
+    default: return '?';
+  }
+}
+
+function boardToFen(board) {
+  var rows = [];
+  for (var r = 0; r < 10; r++) {
+    var row = '';
+    var empty = 0;
+    for (var c = 0; c < 9; c++) {
+      var piece = board[r][c];
+      if (!piece) {
+        empty++;
+      } else {
+        if (empty > 0) { row += empty; empty = 0; }
+        var u = gameTypeToUci(piece.type);
+        row += piece.color === 'r' ? u.toUpperCase() : u.toLowerCase();
+      }
+    }
+    if (empty > 0) row += empty;
+    rows.push(row);
+  }
+  return rows.join('/');
+}
+
+function pikafishCmd(cmd, timeoutMs) {
+  return new Promise(function(resolve, reject){
+    var client = new net.Socket();
+    var buf = '';
+    var timer = setTimeout(function(){
+      client.destroy();
+      reject(new Error('pikafish timeout'));
+    }, timeoutMs || 15000);
+    client.connect(9000, 'pikafish', function(){
+      client.write(cmd + '\n');
+    });
+    client.on('data', function(data){
+      buf += data.toString();
+      // END marker signals the daemon finished responding to this command
+      if (buf.indexOf('\nEND\n') !== -1 || buf.indexOf('\nEND') !== -1) {
+        clearTimeout(timer);
+        client.end();
+      }
+    });
+    client.on('close', function(){
+      clearTimeout(timer);
+      resolve(buf);
+    });
+    client.on('error', function(err){
+      clearTimeout(timer);
+      reject(err);
+    });
+  });
+}
+
+app.post('/api/chess-pikafish', function(req, res){
+  var board = req.body && req.body.board;
+  var depth = req.body && req.body.depth;
+  var color = req.body && req.body.color;
+  if (!board || !Array.isArray(board)) return res.json({ok: false, error: '参数错误: board'});
+  if (typeof depth !== 'number') depth = 12;
+  if (color !== 'r' && color !== 'b') color = 'r';
+  try {
+    var fen = boardToFen(board);
+    var moveColor = color === 'r' ? 'w' : 'b';
+    // Send position command first, then go command
+    pikafishCmd('position fen ' + fen + ' ' + moveColor + ' - 0 1', 10000).then(function(){
+      // Then send go command and parse bestmove
+      return pikafishCmd('go depth ' + depth, 30000);
+    }).then(function(result){
+      var lines = result.split('\n');
+      var bestmove = '';
+      for (var i = 0; i < lines.length; i++) {
+        if (lines[i].startsWith('bestmove ')) {
+          bestmove = lines[i];
+          break;
+        }
+      }
+      var parts = bestmove.split(' ');
+      if (parts.length >= 2 && parts[1].length >= 4) {
+        var m = parts[1];
+        var fc = m.charCodeAt(0) - 97; // a→0, b→1, ..., i→8
+        var fr = parseInt(m[1], 10);
+        var tc = m.charCodeAt(2) - 97;
+        var tr = parseInt(m[3], 10);
+        res.json({ok: true, move: {fr: fr, fc: fc, tr: tr, tc: tc}});
+      } else {
+        res.json({ok: false, error: 'pikafish 未返回合法走法'});
+      }
+    }).catch(function(err){
+      res.json({ok: false, error: err.message});
+    });
+  } catch(e) {
+    res.json({ok: false, error: e.message});
+  }
+});
+
+// ==================== Favicon ====================
+app.get('/favicon.ico', function(req, res){
+  res.set('Content-Type', 'image/svg+xml');
+  res.send('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#4a6cf7"/><text x="16" y="22" text-anchor="middle" font-size="20" fill="white" font-family="sans-serif">G</text></svg>');
 });
 
 // ==================== Auth ====================
@@ -444,11 +563,23 @@ app.post('/api/delete',requireAuth,function(req,res){
 });
 
 // ==================== AI Chat (支持流式和非流式) ====================
+// 队列状态查询
+app.get('/api/queue', requireAuth, function(req,res){
+  res.json({active: activeRequests, maxConcurrent: MAX_CONCURRENT});
+});
+
 app.post('/api/chat', requireAuth, checkLimit, function(req,res){
   var messages = req.body.messages;
   var planInfo = req.userPlanInfo;
   var useStream = req.body.stream === true;
   if (!messages||!Array.isArray(messages)) return res.status(400).json({error:'缺少消息'});
+
+  // 队列计数
+  activeRequests++;
+  var cleanup = function(){
+    activeRequests = Math.max(0, activeRequests - 1);
+    // 释放下一个排队请求（目前单线程，实际依赖 LLM 自身的并发处理）
+  };
 
   var modelName = LLM_MODEL;
   var payloadObj = {
@@ -484,13 +615,25 @@ app.post('/api/chat', requireAuth, checkLimit, function(req,res){
       res.setHeader('Connection', 'keep-alive');
       res.setHeader('X-Accel-Buffering', 'no');
       var consumed = false;
-      apiRes.on('data', function(c){ res.write(c); });
+      apiRes.on('data', function(c){
+        // 本地模型（Qwen3.6）流式输出只发 reasoning_content 不发 content，
+        // 前端 SSE 解析器只认 delta.content，故将 reasoning_content 替换为 content
+        if (LLM_LOCAL) {
+          var s = c.toString();
+          if (s.indexOf('"reasoning_content"') >= 0) {
+            s = s.replace(/"reasoning_content"/g, '"content"');
+            res.write(s);
+            return;
+          }
+        }
+        res.write(c);
+      });
       apiRes.on('end', function(){
-        if (!consumed) { consumed = true; consumeUsage(req.userName, planInfo.plan); }
+        if (!consumed) { consumed = true; consumeUsage(req.userName, planInfo.plan); cleanup(); }
         res.end();
       });
       apiReq.on('close', function(){
-        if (!consumed) { consumed = true; consumeUsage(req.userName, planInfo.plan); }
+        if (!consumed) { consumed = true; consumeUsage(req.userName, planInfo.plan); cleanup(); }
       });
     } else {
       // 非流式模式：聚合后返回 JSON（兼容旧聊天）
@@ -500,16 +643,16 @@ app.post('/api/chat', requireAuth, checkLimit, function(req,res){
         try{
           var json = JSON.parse(Buffer.concat(data).toString());
           if (json.error) return res.status(500).json({error: json.error.message||'API错误'});
-          consumeUsage(req.userName, planInfo.plan);
+          consumeUsage(req.userName, planInfo.plan); cleanup();
           res.json(json);
         }catch(e){
-          res.status(500).json({error:'API返回异常'});
+          res.status(500).json({error:'API返回异常'}); cleanup();
         }
       });
     }
   });
-  apiReq.on('error', function(e){ res.status(503).json({error:'AI服务连接失败: '+e.message}); });
-  apiReq.on('timeout', function(){ apiReq.destroy(); res.status(504).json({error:'AI响应超时'}); });
+  apiReq.on('error', function(e){ cleanup(); res.status(503).json({error:'AI服务连接失败: '+e.message}); });
+  apiReq.on('timeout', function(){ cleanup(); apiReq.destroy(); res.status(504).json({error:'AI响应超时'}); });
   apiReq.write(payload);
   apiReq.end();
 });
