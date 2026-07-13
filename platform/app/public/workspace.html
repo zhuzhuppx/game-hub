@@ -26,9 +26,12 @@ body{display:flex;flex-direction:column}
 .limit-bar a{color:#ffbb33;text-decoration:underline;cursor:pointer}
 .main{flex:1;display:flex;overflow:hidden;position:relative;min-height:0}
 /* 聊天主区域 */
-.chat-main{flex:1;display:flex;flex-direction:column;background:#1a1a1a;min-width:0;min-height:0;transition:margin-right 0.35s cubic-bezier(0.4,0,0.2,1)}
+.chat-main{flex:1;display:flex;flex-direction:column;background:#1a1a1a;min-width:0;min-height:0;position:relative;transition:margin-right 0.35s cubic-bezier(0.4,0,0.2,1)}
 .chat-main.shrink{margin-right:420px}
 @media(max-width:768px){.chat-main.shrink{margin-right:0}}
+.chat-title{font-size:13px;font-weight:600;padding:10px 14px;border-bottom:1px solid #222;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.chat-title span{color:#fff}.chat-title .toggle{color:#666;cursor:pointer;font-size:11px}
+.chat-title .toggle:hover{color:#aaa}
 .gamelist{display:none;border-bottom:1px solid #222;max-height:140px;overflow-y:auto;padding:6px;flex-shrink:0}
 .gamelist.show{display:block}
 .gamelist .game-item{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:12px;color:#aaa;border-radius:6px;cursor:pointer;transition:all 0.15s}
@@ -46,7 +49,7 @@ body{display:flex;flex-direction:column}
 .msg.user{align-self:flex-end;background:#4a6cf7;border-bottom-right-radius:4px;color:#fff}
 .msg .preview-btn{display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:6px 14px;background:#4a6cf7;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-family:system-ui}
 .msg .preview-btn:hover{background:#5b7df8}
-.chat-input{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid #222;flex-shrink:0}
+.chat-input{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid #222;flex-shrink:0;position:relative}
 .chat-input input{flex:1;padding:9px 14px;border-radius:18px;border:none;background:#252525;color:#e0e0e0;font-size:13px;outline:none;font-family:system-ui}
 .chat-input input::placeholder{color:#444}
 .chat-input .send{width:34px;height:34px;border-radius:50%;border:none;background:#4a6cf7;color:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s}
@@ -54,42 +57,52 @@ body{display:flex;flex-direction:column}
 /* 语音/键盘切换按钮 */
 .chat-input .mode-btn{width:34px;height:34px;border-radius:50%;border:none;background:#2a2a2a;color:#aaa;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s}
 .chat-input .mode-btn:hover{background:#333}
-.chat-input .mode-btn.voice{background:#4a6cf7;color:#fff}
+.chat-input .mode-btn.voice{background:#4a6cf7;color:#fff;transition:all 0.3s ease}
+.chat-input .mode-btn.voice:active{animation:micBtnTap 0.2s ease}
 /* 语音模式 - 按住录音按钮 */
-.chat-input .hold-record{flex:1;padding:10px;border-radius:18px;border:1px solid #333;background:#252525;color:#aaa;font-size:13px;text-align:center;cursor:pointer;user-select:none;font-family:system-ui;display:none}
-.chat-input .hold-record.recording{background:#ff4444;color:#fff;border-color:#ff4444}
+.chat-input .hold-record{flex:1;padding:10px;border-radius:18px;border:1px solid #333;background:#252525;color:#aaa;font-size:13px;text-align:center;cursor:pointer;user-select:none;font-family:system-ui;display:none;position:relative;overflow:hidden}
+.chat-input.voice-mode .hold-record{display:block}
+.chat-input .hold-record.recording{background:#ff4444;color:#fff;border-color:#ff4444;animation:recBtnPulse 1.2s ease-in-out infinite}
+@keyframes recBtnPulse{0%,100%{opacity:1}50%{opacity:0.7}}
+@keyframes micBtnTap{0%{transform:scale(1)}50%{transform:scale(0.85)}100%{transform:scale(1)}}
+/* 全屏录音 overlay - bar 用 fixed 钉在顶部，不用 flex 排列 */
+.rec-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(2px)}
+.rec-overlay.show{display:flex}
+/* 选项栏 - 两个独立按钮 */
+.rec-overlay .rec-opt-cancel{position:fixed;bottom:84px;left:calc(50% - 170px);padding:14px 38px;border-radius:24px;font-size:15px;color:#e0e0e0;background:rgba(30,30,30,0.95);border:1px solid rgba(255,255,255,0.12);z-index:1000;transition:all 0.1s;cursor:default}
+.rec-overlay .rec-opt-confirm{position:fixed;bottom:84px;right:calc(50% - 170px);padding:14px 38px;border-radius:24px;font-size:15px;color:#4a6cf7;background:rgba(30,30,30,0.95);border:1px solid rgba(255,255,255,0.12);z-index:1000;transition:all 0.1s;cursor:default}
+.rec-overlay .rec-opt-cancel.hover{background:rgba(255,50,50,0.25);border-color:#ff6666}
+.rec-overlay .rec-opt-confirm.hover{background:rgba(74,108,247,0.2);border-color:#4a6cf7}
+/* 大圆盘 */
+.rec-overlay .rec-big-ring{position:relative;width:160px;height:160px;border-radius:50%;border:4px solid #ff4444;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85)}
+.rec-overlay .rec-big-ring .wave{position:absolute;width:100%;height:100%;border-radius:50%;border:2px solid rgba(255,68,68,0.35);animation:waveExpand 1.5s ease-out infinite}
+.rec-overlay .rec-big-ring .wave:nth-child(2){animation-delay:0.5s}
+.rec-overlay .rec-big-ring .wave:nth-child(3){animation-delay:1.0s}
+@keyframes waveExpand{0%{transform:scale(1);opacity:0.8}100%{transform:scale(1.8);opacity:0}}
+.rec-overlay .rec-big-ring .inner{font-size:32px;color:#ff6666;z-index:1;text-align:center}
+.rec-overlay .rec-big-ring .inner .mic-icon{display:block;font-size:40px;margin-bottom:4px;animation:micPulse 1.2s ease-in-out infinite}
+@keyframes micPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
+@keyframes timeFade{0%,100%{opacity:1}50%{opacity:0.5}}
+.rec-overlay .rec-big-ring .inner .rec-time{font-size:14px;font-weight:600;letter-spacing:1px;animation:timeFade 1s ease-in-out infinite}
+/* 底部提示 - 改到顶部 */
+.rec-overlay .rec-hint{color:#aaa;font-size:14px;padding:20px;position:fixed;top:20px;left:0;right:0;text-align:center}
 .chat-input.voice-mode input{display:none}
 .chat-input.voice-mode .send{display:none}
-.chat-input.voice-mode .hold-record{display:block}
-/* 语音录音环 */
-.record-ring{position:fixed;bottom:320px;left:50%;transform:translateX(-50%);width:160px;height:160px;border-radius:50%;display:none;align-items:center;justify-content:center;z-index:999999;
-  background:rgba(0,0,0,0.85);border:3px solid #ff4444;color:#fff;font-size:13px;pointer-events:none}
-.record-ring.show{
-  display:flex;
-}
-.record-ring .inner{width:110px;height:110px;border-radius:50%;background:rgba(255,68,68,0.15);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px}
-.record-ring .wave{display:flex;align-items:center;gap:3px;height:24px}
-.record-ring .wave span{display:inline-block;width:4px;border-radius:2px;background:#ff4444;animation:waveBounce 0.6s ease-in-out infinite}
-.record-ring .wave span:nth-child(1){height:8px;animation-delay:0s}
-.record-ring .wave span:nth-child(2){height:14px;animation-delay:0.1s}
-.record-ring .wave span:nth-child(3){height:22px;animation-delay:0.2s}
-.record-ring .wave span:nth-child(4){height:14px;animation-delay:0.3s}
-.record-ring .wave span:nth-child(5){height:8px;animation-delay:0.4s}
-@keyframes waveBounce{0%,100%{transform:scaleY(1)}50%{transform:scaleY(0.3)}}
-.record-ring .pulse-ring{position:absolute;width:100%;height:100%;border-radius:50%;border:3px solid rgba(255,68,68,0.4);animation:ringPulse 1.2s ease-out infinite}
-.record-ring .pulse-ring:nth-child(2){animation-delay:0.4s}
-.record-ring .pulse-ring:nth-child(3){animation-delay:0.8s}
-@keyframes ringPulse{0%{transform:scale(1);opacity:1}100%{transform:scale(1.6);opacity:0}}
-.slide-zones{position:fixed;bottom:110px;left:0;right:0;display:none;justify-content:center;gap:16px;z-index:99999;pointer-events:none;padding:0 16px}
-.slide-zone{flex:1;max-width:160px;height:80px;display:flex;align-items:center;justify-content:center;border-radius:16px;margin:0 6px;padding:10px 16px;font-size:15px;font-weight:600;font-family:system-ui;transition:all 0.15s;pointer-events:auto;border:1px solid transparent}
-.slide-cancel{background:rgba(60,60,60,0.7);color:#aaa;border-color:#444}
-.slide-cancel.active{background:rgba(200,60,60,0.9);color:#fff;border-color:#ff4444;transform:scale(1.05)}
-.slide-send{background:rgba(74,108,247,0.7);color:#aac;border-color:#4a6cf7}
-.slide-send.active{background:rgba(74,108,247,0.95);color:#fff;border-color:#6a8cff;transform:scale(1.05)}
-.wizard-voice-wrap{position:relative;display:flex;flex-direction:column;align-items:center;margin-top:28px}
-.wizard-slide-row{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);display:none;justify-content:center;gap:12px;white-space:nowrap;padding:0}
-.wizard-slide-row.show{display:flex}
-.wizard-slide-row .slide-zone{flex:1;max-width:150px;height:64px;font-size:14px;padding:8px 16px}
+/* Wizard 录音 overlay — 与聊天区一致（大圆环+波浪+取消/转文字） */
+.wizard-record-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(2px)}
+.wizard-record-overlay.show{display:flex}
+.wizard-record-overlay .wiz-opt-cancel{position:fixed;bottom:84px;left:calc(50% - 170px);padding:14px 38px;border-radius:24px;font-size:15px;color:#e0e0e0;background:rgba(30,30,30,0.95);border:1px solid rgba(255,255,255,0.12);z-index:1000;transition:all 0.1s;cursor:default}
+.wizard-record-overlay .wiz-opt-confirm{position:fixed;bottom:84px;right:calc(50% - 170px);padding:14px 38px;border-radius:24px;font-size:15px;color:#4a6cf7;background:rgba(30,30,30,0.95);border:1px solid rgba(255,255,255,0.12);z-index:1000;transition:all 0.1s;cursor:default}
+.wizard-record-overlay .wiz-opt-cancel.hover{background:rgba(255,50,50,0.25);border-color:#ff6666}
+.wizard-record-overlay .wiz-opt-confirm.hover{background:rgba(74,108,247,0.2);border-color:#4a6cf7}
+.wizard-record-overlay .wiz-big-ring{position:relative;width:160px;height:160px;border-radius:50%;border:4px solid #ff4444;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85)}
+.wizard-record-overlay .wiz-big-ring .wave{position:absolute;width:100%;height:100%;border-radius:50%;border:2px solid rgba(255,68,68,0.35);animation:waveExpand 1.5s ease-out infinite}
+.wizard-record-overlay .wiz-big-ring .wave:nth-child(2){animation-delay:0.5s}
+.wizard-record-overlay .wiz-big-ring .wave:nth-child(3){animation-delay:1.0s}
+.wizard-record-overlay .wiz-big-ring .inner{font-size:32px;color:#ff6666;z-index:1;text-align:center}
+.wizard-record-overlay .wiz-big-ring .inner .mic-icon{display:block;font-size:40px;margin-bottom:4px;animation:micPulse 1.2s ease-in-out infinite}
+.wizard-record-overlay .wiz-big-ring .inner .rec-time{font-size:14px;font-weight:600;letter-spacing:1px;animation:timeFade 1s ease-in-out infinite}
+.wizard-record-overlay .wiz-hint{color:#aaa;font-size:14px;padding:20px;position:fixed;top:20px;left:0;right:0;text-align:center}
 /* AI 思考动画 */
 .think-dots{display:inline-flex;gap:2px;vertical-align:middle}
 .think-dots i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#888;animation:thinkBounce 1.2s infinite}
@@ -207,9 +220,10 @@ body{display:flex;flex-direction:column}
 .view-workspace.show{display:flex}
 
 /* ===== 向导样式 ===== */
-.wizard-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:9998;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px)}
+.wizard-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:9998;display:none;flex-direction:column;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px)}
 .wizard-overlay.show{display:flex}
-.wizard-box{background:#161616;border:1px solid #222;border-radius:20px;padding:24px 28px;max-width:600px;width:90%;max-height:90vh;overflow-y:auto;position:relative}
+.wizard-box{background:#161616;border:1px solid #222;border-radius:0;padding:20px 20px 0;width:100%;display:flex;flex-direction:column;flex:1;min-height:0;position:relative}
+.wizard-box-body{flex:1;overflow-y:auto;min-height:0}
 .wizard-step-num{font-size:12px;color:#888;text-align:center;margin-bottom:12px}
 .wizard-bar-wrap{height:4px;background:#222;border-radius:4px;margin-bottom:20px;overflow:hidden}
 .wizard-bar{height:100%;background:linear-gradient(90deg,#4a6cf7,#6c5ce7);border-radius:4px;transition:width 0.4s ease;width:0%}
@@ -234,6 +248,10 @@ body{display:flex;flex-direction:column}
 .wizard-btns .btn-next:hover{background:#5a7cf7;box-shadow:0 2px 12px rgba(74,108,247,0.3);transform:translateY(-1px)}
 .wizard-btns .btn-next:disabled{opacity:0.3;cursor:not-allowed;pointer-events:none;transform:none!important}
 .wizard-btns .btn-next.enabled{animation:wizBtnEnable 0.3s ease}
+/* 向导底部的"按住说话"按钮 — 跟编辑游戏页面的风格一致 */
+.wizard-btns .wizard-hold-record{flex:1;padding:11px;border-radius:18px;border:1px solid #333;background:#252525;color:#aaa;font-size:14px;text-align:center;cursor:pointer;user-select:none;font-family:system-ui;overflow:hidden;transition:all 0.2s}
+.wizard-btns .wizard-hold-record:hover{background:#333;border-color:#4a6cf7;color:#ddd}
+.wizard-btns .wizard-hold-record.recording{background:#ff4444;color:#fff;border-color:#ff4444;animation:recBtnPulse 1.2s ease-in-out infinite}
 @keyframes wizBtnEnable{0%{transform:scale(0.95)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
 .wizard-summary{background:#1a1a1a;border:1px solid #222;border-radius:14px;padding:16px;margin-bottom:16px}
 .wizard-summary .ws-item{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #222}
@@ -243,11 +261,24 @@ body{display:flex;flex-direction:column}
 .wizard-summary .ws-val{font-size:13px;color:#ddd}
 .wizard-title-big{font-size:28px;font-weight:800;text-align:center;color:#fff;margin-bottom:4px}
 .wizard-sub{font-size:13px;color:#999;text-align:center;margin-bottom:16px}
-.wizard-hold-record{display:block;text-align:center;padding:14px 28px;border-radius:20px;border:1px solid #555;cursor:pointer;transition:all 0.15s;font-size:15px;color:#ddd;background:#2a2a2a;user-select:none;-webkit-user-select:none;touch-action:manipulation;margin:12px auto 6px;width:fit-content;min-width:180px}
-.wizard-hold-record:hover{border-color:#888;color:#fff;background:#333}
-.wizard-hold-record:active{background:#222}
-.wizard-hold-record.recording{background:#ff4444;border-color:#ff4444;color:#fff}
-.no-voice .wizard-hold-record{display:none!important}
+.no-voice .wizard-btns .wizard-hold-record{display:none!important}
+/* 向导底部输入栏 — 在 overlay 内部最底部，跟编辑页面 chat-input 风格一致 */
+.wizard-bottom-input{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid #222;flex-shrink:0;background:#161616}
+.wizard-bottom-input input{flex:1;padding:9px 14px;border-radius:18px;border:none;background:#252525;color:#e0e0e0;font-size:13px;outline:none;font-family:system-ui}
+.wizard-bottom-input input::placeholder{color:#444}
+.wizard-bottom-input .send{width:34px;height:34px;border-radius:50%;border:none;background:#4a6cf7;color:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s}
+.wizard-bottom-input .send:disabled{background:#2a2a2a;color:#444;cursor:default}
+.wizard-bottom-input .mode-btn{width:34px;height:34px;border-radius:50%;border:none;background:#2a2a2a;color:#aaa;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s}
+.wizard-bottom-input .mode-btn:hover{background:#333}
+.wizard-bottom-input .mode-btn.voice{background:#4a6cf7;color:#fff;transition:all 0.3s ease}
+.wizard-bottom-input .mode-btn.voice:active{animation:micBtnTap 0.2s ease}
+.wizard-bottom-input .hold-record{flex:1;padding:10px;border-radius:18px;border:1px solid #333;background:#252525;color:#aaa;font-size:13px;text-align:center;cursor:pointer;user-select:none;font-family:system-ui;display:none;position:relative;overflow:hidden}
+.wizard-bottom-input.voice-mode .hold-record{display:block}
+.wizard-bottom-input.voice-mode input{display:none}
+.wizard-bottom-input.voice-mode .send{display:none}
+.wizard-bottom-input .hold-record.recording{background:#ff4444;color:#fff;border-color:#ff4444;animation:recBtnPulse 1.2s ease-in-out infinite}
+.no-voice .wizard-bottom-input .mode-btn{display:none!important}
+.no-voice .wizard-bottom-input .hold-record{display:none!important}
 .wizard-loading{text-align:center;padding:20px}
 .wizard-loading .wl-icon{font-size:64px;animation:wizardBounce 1s ease-in-out infinite}
 @keyframes wizardBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
@@ -261,9 +292,6 @@ body{display:flex;flex-direction:column}
 .wizard-output .cursor{display:inline-block;width:2px;height:15px;background:#4a6cf7;margin-left:2px;animation:blinkCursor 0.8s step-end infinite;vertical-align:text-bottom}
 @keyframes blinkCursor{0%,100%{opacity:1}50%{opacity:0}}
 .wizard-output.has-code{border-color:#4a6cf7;color:#e0e0e0}
-.wizard-chat{margin-top:8px;max-height:130px;overflow-y:auto;text-align:left;padding:2px 0}
-.wizard-chat-msg{background:#1a1a2e;border:1px solid #333;border-radius:12px;padding:7px 12px;margin-bottom:5px;font-size:13px;color:#d0d0e0;animation:wizardChatIn 0.35s ease}
-@keyframes wizardChatIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .wizard-opts-disabled{pointer-events:none!important;opacity:0.6}
 
 </style>
@@ -321,22 +349,23 @@ body{display:flex;flex-direction:column}
     <div class="chat-input" id="chatInput">
       <button class="mode-btn" id="modeBtn" onclick="toggleInputMode()" title="切换到语音输入">🎤</button>
       <input type="text" id="input" placeholder="说说你的游戏想法..." onkeydown="return handleInputKey(event)" autofocus>
-      <div class="hold-record" id="holdRecord">🎤 按住说话</div>
+      <div class="hold-record" id="holdRecord">按住说话</div>
       <button class="send" id="sendBtn" onclick="send()">➤</button>
     </div>
-    <!-- 录音状态环 -->
-    <div class="record-ring" id="recordRing">
-      <div class="pulse-ring"></div>
-      <div class="pulse-ring"></div>
-      <div class="pulse-ring"></div>
-      <div class="inner">
-        <div class="wave"><span></span><span></span><span></span><span></span><span></span></div>
-        <span style="font-size:15px;color:#ff6666;font-weight:600">🎙️ 说话中</span>
+    <!-- 全屏录音 overlay -->
+    <div class="rec-overlay" id="recOverlay">
+      <div class="rec-big-ring">
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="inner">
+          <span class="mic-icon">🎤</span>
+          <span class="rec-time" id="recTime">0:00</span>
+        </div>
       </div>
-    </div>
-    <div class="slide-zones" id="slideZones">
-      <div class="slide-zone slide-cancel" id="slideCancel">✕ 取消</div>
-      <div class="slide-zone slide-send" id="slideSend">✓ 转文字</div>
+      <div class="rec-hint">手指上滑选择取消或转文字</div>
+      <div class="rec-opt-cancel" id="recZoneCancel">✕ 取消</div>
+      <div class="rec-opt-confirm" id="recZoneConfirm">✓ 转文字</div>
     </div>
   </div>
 
@@ -420,12 +449,20 @@ body{display:flex;flex-direction:column}
 <!-- 新手引导弹窗 -->
 <div class="wizard-overlay" id="wizardOverlay">
   <div class="wizard-box" id="wizardBox">
-    <div class="wizard-step-num" id="wizardStepNum">✏️ 第 0 步 / 4</div>
+    <div class="wizard-step-num" id="wizardStepNum">✏️ 第 0 步 / 5</div>
     <div class="wizard-bar-wrap"><div class="wizard-bar" id="wizardBar" style="width:0%"></div></div>
-    <div id="wizardBody"></div>
+    <div class="wizard-box-body" id="wizardBody"></div>
     <div class="wizard-btns" id="wizardBtns">
       <button class="btn-prev" id="wizardPrevBtn" onclick="wizardPrev()" style="visibility:hidden">⬅ 上一步</button>
-    </div>
+      <button class="btn-next" id="wizardNextBtn" onclick="wizardNext()">继续 ➜</button>
+      </div>
+  </div>
+  <!-- 向导底部输入栏（命名步专用，固定在屏幕最底部，跟编辑页面风格一致） -->
+  <div class="wizard-bottom-input" id="wizardBottomInput" style="display:none">
+    <button class="mode-btn" id="wizardModeBtn" onclick="wizardToggleInputMode()" title="切换到语音输入">🎤</button>
+    <input type="text" id="wizardInput" placeholder="输入游戏名字..." onkeydown="return wizardInputKey(event)">
+    <div class="hold-record" id="wizardHoldRecord">按住说话</div>
+    <button class="send" id="wizardSendBtn" onclick="wizardSendText()">➤</button>
   </div>
 </div>
 
@@ -531,16 +568,27 @@ function startWizard(){
   if(d&&d.limits&&!d.limits.voice) document.body.classList.add('no-voice');
   else document.body.classList.remove('no-voice');
   renderWizard();
+  // 显示底部输入栏
+  var bottomEl=document.getElementById('wizardBottomInput');
+  if(bottomEl)bottomEl.style.display='flex';
+  // 绑定底部输入栏的语音按钮事件（只绑一次）
+  var wrBtn=document.getElementById('wizardHoldRecord');
+  if(wrBtn&&!wrBtn.dataset.bound){
+    wrBtn.dataset.bound='1';
+    wrBtn.addEventListener('touchstart',function(e){wizardInitHold(e)},{passive:false});
+    wrBtn.addEventListener('mousedown',function(e){wizardInitHold(e)});
+  }
 }
 
 function renderWizard(){
-  var stepDisplay=wizardStep===0?'✏️ 命名':'🎯🏆⚡🔊'[wizardStep-1]+' 第 '+wizardStep+' 步 / 4';
+  var stepDisplay=wizardStep===0?'✏️ 命名':'🎯🏆⚡🔊'[wizardStep-1]+' 第 '+wizardStep+' 步 / '+(wizardTotal-1);
   document.getElementById('wizardStepNum').textContent=stepDisplay;
   var pct=wizardStep===0?8:8+((wizardStep-1)*23);
   document.getElementById('wizardBar').style.width=Math.min(pct,100)+'%';
   
   var body=document.getElementById('wizardBody');
   var prevBtn=document.getElementById('wizardPrevBtn');
+  var nextBtn=document.getElementById('wizardNextBtn');
   
   prevBtn.style.visibility=(wizardStep>0?'visible':'hidden');
   
@@ -551,16 +599,16 @@ function renderWizard(){
     body.innerHTML=
       '<div class="wizard-icon">✏️</div>'+
       '<div class="wizard-title">取个酷酷的名字</div>'+
-      '<div class="wizard-desc">给你的游戏取一个名字吧！点下面的灵感标签'+(hasVoice?'，或按住按钮说话':'')+'</div>'+
+      '<div class="wizard-desc">给你的游戏取一个名字吧！点下面的灵感标签'+(hasVoice?'':'')+'</div>'+
       '<div class="wizard-name-wrap" id="wizardNameTags"></div>'+
       (hasVoice
-        ?'<div class="wizard-voice-wrap">'+
-            '<div class="wizard-slide-row" id="wizardSlideRow">'+
-              '<div class="slide-zone slide-cancel" id="wizSc">✕ 取消</div>'+
-              '<div class="slide-zone slide-send" id="wizSs">✓ 转文字</div>'+
-            '</div>'+
-            '<div class="wizard-hold-record" id="wizardHoldRecord">🎤 按住说话</div>'+
-          '</div>'
+        ?'<div class="wizard-record-overlay" id="wizardRecordOverlay">'+
+         '<div class="wiz-big-ring">'+
+         '<div class="wave"></div><div class="wave"></div><div class="wave"></div>'+
+         '<div class="inner"><span class="mic-icon">🎤</span><span class="rec-time" id="wizRecTime">0:00</span></div></div>'+
+         '<div class="wiz-hint">手指上滑选择取消或转文字</div>'+
+         '<div class="wiz-opt-cancel" id="wizBtnCancel">✕ 取消</div>'+
+         '<div class="wiz-opt-confirm" id="wizBtnConfirm">✓ 转文字</div></div>'
         :'');
     // 渲染灵感标签
     var tags='';
@@ -568,14 +616,24 @@ function renderWizard(){
       tags+='<span class="wizard-name-tag" onclick="fillName(\''+_nameTags[i]+'\')">'+_nameTags[i]+'</span>';
     }
     document.getElementById('wizardNameTags').innerHTML=tags;
-    // 绑定录音按钮事件（仅语音权限用户）
+    nextBtn.style.display='none';
+    nextBtn.disabled=true;
+    nextBtn.classList.remove('enabled');
+    document.getElementById('wizardBtns').style.display='none';
+    // 底部输入栏（跟编辑页面一样的样式，支持语音和文字输入）
+    var bottomEl=document.getElementById('wizardBottomInput');
+    if(bottomEl)bottomEl.style.display='flex';
+    // 有语音权限时默认进入语音模式（按住说话）
     if(hasVoice){
-      var wrBtn=document.getElementById('wizardHoldRecord');
-      if(wrBtn){
-        wrBtn.addEventListener('touchstart',function(e){wizardInitHold(e)},{passive:false});
-        wrBtn.addEventListener('mousedown',function(e){wizardInitHold(e)});
-      }
+      if(bottomEl)bottomEl.classList.add('voice-mode');
+      _wizardVoiceMode=true;
+      var m=document.getElementById('wizardModeBtn');
+      if(m){m.classList.add('voice');m.textContent='⌨';m.title='切换到文字输入';}
+    }else{
+      if(bottomEl)bottomEl.classList.remove('voice-mode');
     }
+    document.getElementById('wizardInput').value='';
+    document.getElementById('wizardInput').focus();
     // TTS 朗读引导（仅语音权限用户）
     if(hasVoice){
       setTimeout(function(){wizardSpeak('取个酷酷的名字！给你的游戏取一个名字吧！可以按住下面的按钮说话，也可以点灵感标签');},300);
@@ -585,8 +643,6 @@ function renderWizard(){
       var d2=window._userPlan;
       if(!d2||!d2.limits||!d2.limits.voice){
         document.body.classList.add('no-voice');
-        var btn2=document.getElementById('wizardHoldRecord');
-        if(btn2)btn2.style.display='none';
       }
     },100);
     return;
@@ -613,6 +669,14 @@ function renderWizard(){
       var wk=wizardKeys[wizardStep];
       wizardSpeak(wizardTitles[wk]+' '+wizardDescs[wk]);
     },300);
+    // 恢复显示按钮容器（步骤0隐藏了它），同时隐藏底部输入栏
+    document.getElementById('wizardBtns').style.display='';
+    // 隐藏继续按钮，由 TTS 播完后自动跳转下一步
+    nextBtn.style.display='none';
+    nextBtn.disabled=true;
+    nextBtn.style.opacity='0.5';
+    var bottomEl2=document.getElementById('wizardBottomInput');
+    if(bottomEl2)bottomEl2.style.display='none';
   }else{
     // 总结页
     var summary='';winHtml='';
@@ -639,14 +703,20 @@ function renderWizard(){
       '<div class="wizard-summary">'+summary+'</div>'+
       '<div class="wizard-desc">这就是你的游戏设计！让 AI 帮你变成现实吧 🚀</div>';
     
+    document.getElementById('wizardBtns').style.display='';
+    nextBtn.textContent='🎮 生成游戏！';
+    nextBtn.disabled=false;
+    nextBtn.style.opacity='1';
     prevBtn.textContent='⬅ 修改设计';
     prevBtn.style.visibility='visible';
-    
-    // 自动生成（延迟3秒让用户看清楚总结）
-    if(window._wizardAutoGenTimer)clearTimeout(window._wizardAutoGenTimer);
-    window._wizardAutoGenTimer=setTimeout(function(){
-      submitWizardGame();
-    },3000);
+    // 朗读总结页
+    var d=window._userPlan;
+    var hasVoice=d&&d.limits&&d.limits.voice;
+    if(hasVoice){
+      setTimeout(function(){
+        wizardSpeak(wizardDesign.gameName+'！'+title+'！'+'这就是你的游戏设计，让 AI 帮你变成现实吧');
+      },400);
+    }
   }
 }
 
@@ -669,34 +739,38 @@ function wizardPick(step,idx){
   // 音效反馈
   try{SFX.resume();SFX.score()}catch(e){}
   
-  // TTS 朗读（含描述）
-  wizardSpeak('你选中了'+o.label+'！'+o.desc+'！');
+  // 启用继续按钮
+  var nextBtn=document.getElementById('wizardNextBtn');
+  nextBtn.disabled=false;
+  nextBtn.classList.add('enabled');
   
-  // 锁定交互 + 等TTS播完自动跳转
+  // 锁定卡片防止重复点击
   document.getElementById('wizardBody').classList.add('wizard-opts-disabled');
-  if(_wizardAdvanceCallback)clearTimeout(_wizardAdvanceCallback);
-  _wizardAdvanceCallback=setTimeout(function _pickFallback(){
-    if(_wizardSpeaking){
-      // TTS还在播，继续等
-      _wizardAdvanceCallback=setTimeout(_pickFallback,3000);
-      return;
-    }
-    _wizardAdvanceCallback=null;
-    document.getElementById('wizardBody').classList.remove('wizard-opts-disabled');
-    wizardNext();
-  },4000); // 兜底：TTS失败时4秒后重试，正常由onended的_execAdvance更早触发
+  
+  // 有语音权限时 TTS 播完自动跳转，否则短延迟跳转
+  var d=window._userPlan;
+  var hasVoice=d&&d.limits&&d.limits.voice;
+  if(hasVoice){
+    wizardSpeak('你选中了'+o.label+'！'+o.desc+'！',function(){
+      document.getElementById('wizardBody').classList.remove('wizard-opts-disabled');
+      wizardNext();
+    });
+  }else{
+    setTimeout(function(){
+      document.getElementById('wizardBody').classList.remove('wizard-opts-disabled');
+      wizardNext();
+    },800);
+  }
 }
 
 function wizardPrev(){
   if(_wizardSpeaking)return;
   if(wizardStep<=0)return;
-  if(_wizardAdvanceCallback){clearTimeout(_wizardAdvanceCallback);_wizardAdvanceCallback=null}
   wizardStep--;
   renderWizard();
 }
 
 function wizardNext(){
-  if(_wizardAdvanceCallback){clearTimeout(_wizardAdvanceCallback);_wizardAdvanceCallback=null}
   if(_wizardSpeaking)return;
   if(wizardStep===0){
     if(!wizardDesign.gameName){return}
@@ -710,39 +784,84 @@ function wizardNext(){
   renderWizard();
 }
 
+/* 向导底部输入栏 — 文字输入相关 */
+function wizardInputKey(e){
+  if(e.key==='Enter'){
+    wizardSendText();
+    return false;
+  }
+}
+function wizardSendText(){
+  var inp=document.getElementById('wizardInput');
+  var name=(inp.value||'').trim();
+  if(!name)return;
+  fillName(name);
+  inp.value='';
+}
+function wizardToggleInputMode(){
+  var d=window._userPlan;
+  if(!_wizardVoiceMode&&d&&d.limits&&!d.limits.voice){
+    if(typeof SFX!=='undefined')SFX.tap();
+    var upgradeBtn=document.getElementById('planBadge');
+    if(typeof addMsg==='function')addMsg('🔇 语音输入是会员专享功能\n\n💎 升级创作者/家庭版会员解锁语音输入、无限AI对话、源码下载等全部功能',false);
+    if(upgradeBtn){upgradeBtn.style.animation='pulse 1s 3';setTimeout(function(){upgradeBtn.style.animation='';},4000);}
+    return;
+  }
+  _wizardVoiceMode=!_wizardVoiceMode;
+  var c=document.getElementById('wizardBottomInput');
+  var m=document.getElementById('wizardModeBtn');
+  if(_wizardVoiceMode){
+    c.classList.add('voice-mode');
+    m.classList.add('voice');
+    m.textContent='⌨';
+    m.title='切换到文字输入';
+  }else{
+    c.classList.remove('voice-mode');
+    m.classList.remove('voice');
+    m.textContent='🎤';
+    m.title='切换到语音输入';
+    document.getElementById('wizardInput').focus();
+  }
+  var hr=document.getElementById('wizardHoldRecord');
+  if(hr)hr.style.display=_wizardVoiceMode?'':'none';
+}
+var _wizardVoiceMode=false;
+
 function fillName(name){
   wizardDesign.gameName=name;
+  var btn=document.getElementById('wizardNextBtn');
+  if(btn){btn.disabled=false;btn.classList.add('enabled');btn.style.display=''}
   // 把页面标题「取个酷酷的名字」换成游戏名
   var titleEl=document.querySelector('.wizard-title');
   if(titleEl)titleEl.textContent=name;
   try{SFX.resume();SFX.score()}catch(e){}
-  wizardSpeak('游戏名字：'+name+'！');
-  // 等TTS播完自动跳转（由_execAdvance在onended触发）
-  if(_wizardAdvanceCallback)clearTimeout(_wizardAdvanceCallback);
-  _wizardAdvanceCallback=setTimeout(function _fillFallback(){
-    _wizardAdvanceCallback=null;
-    if(_wizardSpeaking){
-      // TTS还在播，继续等
-      _wizardAdvanceCallback=setTimeout(_fillFallback,3000);
-      return;
-    }
-    wizardNext(); // 兜底：TTS失败时4秒后重试，正常由onended的_execAdvance更早触发
-  },4000);
+  // 播放名字语音，播完后自动跳到第二步
+  var d=window._userPlan;
+  var hasVoice=d&&d.limits&&d.limits.voice;
+  if(hasVoice){
+    wizardSpeak('游戏名字：'+name+'！',function(){
+      setTimeout(function(){wizardNext()},500);
+    });
+  } else {
+    // 无语音权限：直接跳转
+    setTimeout(function(){wizardNext()},500);
+  }
 }
 
 // TTS 朗读（仅语音权限用户有效）
-function wizardSpeak(text){
+function wizardSpeak(text,onDone){
   var d=window._userPlan;
   if(d&&d.limits&&!d.limits.voice) return;
   // 如果正在说话，先停掉旧的
   if(_wizardAudio){_wizardAudio.pause();_wizardAudio=null}
-  try{doTTS(text)}catch(e){}
+  try{doTTS(text,onDone)}catch(e){}
 }
 
-function doTTS(text){
+function doTTS(text,onDone){
   if(!text)return;
   // 锁定交互，防止点击触发叠加语音
   _wizardSpeaking=true;
+  setInputEnabled(false);
   lockWizardCards(true);
   
   var voices=JSON.parse(localStorage.getItem('wizardCustomVoices')||'{}');
@@ -753,11 +872,11 @@ function doTTS(text){
     try{
       var audio=new Audio(custom);
       audio.volume=1;
-      audio.onended=function(){_wizardSpeaking=false;lockWizardCards(false);_execAdvance()};
-      audio.play().catch(function(){_wizardSpeaking=false;lockWizardCards(false);_execAdvance()});
+      audio.onended=function(){_wizardSpeaking=false;lockWizardCards(false);setInputEnabled(true);if(onDone)onDone()};
+      audio.play().catch(function(){_wizardSpeaking=false;lockWizardCards(false);setInputEnabled(true);if(onDone)onDone()});
       _wizardAudio=audio;
       return;
-    }catch(e){_wizardSpeaking=false;lockWizardCards(false);_execAdvance()}
+    }catch(e){_wizardSpeaking=false;lockWizardCards(false);setInputEnabled(true);if(onDone)onDone()}
   }
   // 否则用 Edge TTS
   fetch('/api/tts?text='+encodeURIComponent(text)+'&voice='+encodeURIComponent(voiceKey))
@@ -769,29 +888,18 @@ function doTTS(text){
       audio.onended=function(){
         _wizardSpeaking=false;
         lockWizardCards(false);
+        setInputEnabled(true);
         URL.revokeObjectURL(url);
-        _execAdvance();
+        if(onDone)onDone();
       };
-      audio.play().catch(function(){_wizardSpeaking=false;lockWizardCards(false);_execAdvance()});
+      audio.play().catch(function(){_wizardSpeaking=false;lockWizardCards(false);setInputEnabled(true);if(onDone)onDone()});
       _wizardAudio=audio;
-    }).catch(function(){_wizardSpeaking=false;lockWizardCards(false);_execAdvance()});
+    }).catch(function(){_wizardSpeaking=false;lockWizardCards(false);setInputEnabled(true);if(onDone)onDone()});
 }
 
 // 向导语音
 var _wizardStream=null,_wizardRecorder=null,_wizardChunks=[];
-var _wizardSpeaking=false,_wizardAudio=null,_wizardAdvanceCallback=null;
-// TTS播完后立即执行跳转，不等setTimeout
-function _execAdvance(){
-  if(!_wizardAdvanceCallback)return;
-  // 步骤范围保护，防止聊天TTS结束时意外越界跳转
-  if(wizardStep<1||wizardStep>wizardTotal)return;
-  clearTimeout(_wizardAdvanceCallback);
-  _wizardAdvanceCallback=null;
-  // 解除选项禁用（wizardPick添加的），否则下一步卡片点不动
-  try{document.getElementById('wizardBody').classList.remove('wizard-opts-disabled')}catch(e){}
-  // TTS已播完，_wizardSpeaking=false，可直接跳转
-  wizardNext();
-}
+var _wizardSpeaking=false,_wizardAudio=null;
 
 // TTS 朗读期间禁用卡片/标签/录音按钮/导航按钮点击，防语音重叠
 function lockWizardCards(lock){
@@ -808,12 +916,14 @@ function lockWizardCards(lock){
     hb.style.pointerEvents=lock?'none':'';
     hb.style.opacity=lock?'0.4':'';
   }
-  // 导航按钮（仅有上一步）
-  var prevBtn=document.getElementById('wizardPrevBtn');
-  if(prevBtn){
-    prevBtn.style.pointerEvents=lock?'none':'';
-    prevBtn.style.opacity=lock?'0.4':'';
-  }
+  // 导航按钮（下一步/上一步）
+  ['wizardNextBtn','wizardPrevBtn'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){
+      el.style.pointerEvents=lock?'none':'';
+      el.style.opacity=lock?'0.4':'';
+    }
+  });
 }
 
 function wizardInitHold(e){
@@ -827,83 +937,91 @@ function wizardInitHold(e){
     return;
   }
   var btn=document.getElementById('wizardHoldRecord');
-  btn.textContent='🔴 松手发送';
+  btn.textContent='🔴 松开发送';
   btn.classList.add('recording');
-  document.getElementById('recordRing').classList.add('show');
-  // 确保全局划区隐藏，用向导内置的
-  document.getElementById('slideZones').style.display='none';
-  // 显示向导内置划区（按钮正下方）
-  var sr=document.getElementById('wizardSlideRow');
-  sr.classList.add('show');
-  var sc=document.getElementById('wizSc'), ss=document.getElementById('wizSs');
-  sc.classList.remove('active'); ss.classList.remove('active');
+  // 显示全屏录音 overlay（新样式，与聊天区统一）
+  document.getElementById('wizardRecordOverlay').classList.add('show');
+  _wizRecIntent='confirm';
+  _wizRecStartTime=Date.now();
+  document.getElementById('wizRecTime').textContent='0:00';
+  _wizRecTimerInterval=setInterval(function(){
+    var sec=Math.floor((Date.now()-_wizRecStartTime)/1000);
+    var m=Math.floor(sec/60),s=sec%60;
+    document.getElementById('wizRecTime').textContent=m+':'+(s<10?'0':'')+s;
+  },500);
+  _wizHighlightZone('confirm');
 
-  var _slideTarget=null, _wizMicReady=false;
-  window.__wizPending=null;
+  // 绑定 move/end 事件到 document（确保手指在任何位置松开都能捕获）
+  _wizOnMoveFn=function(ev){_wizOnMove(ev)};
+  _wizOnEndFn=function(ev){_wizOnEnd(ev)};
+  document.addEventListener('mousemove',_wizOnMoveFn);
+  document.addEventListener('mouseup',_wizOnEndFn);
+  document.addEventListener('touchmove',_wizOnMoveFn,{passive:false});
+  document.addEventListener('touchend',_wizOnEndFn);
+  document.addEventListener('touchcancel',_wizOnEndFn);
 
-  function handleMove(px,py){
-    var cr=sc.getBoundingClientRect(), sr2=ss.getBoundingClientRect();
-    var oc=(px>=cr.left&&px<=cr.right&&py>=cr.top&&py<=cr.bottom);
-    var os=(px>=sr2.left&&px<=sr2.right&&py>=sr2.top&&py<=sr2.bottom);
-    sc.classList.toggle('active',oc); ss.classList.toggle('active',os);
-    _slideTarget=oc?'cancel':(os?'send':null);
-  }
-  function handleEnd(ev){
-    ev.preventDefault();
-    sr.classList.remove('show'); sc.classList.remove('active'); ss.classList.remove('active');
-    document.removeEventListener('touchmove',onMove); document.removeEventListener('touchend',onEnd);
-    document.removeEventListener('mousemove',onMouse); document.removeEventListener('mouseup',onMouseUp);
-    if(_slideTarget==='cancel'){
-      if(!_wizMicReady && !_wizardRecorder){ window.__wizPending='cancel'; return; }
-      if(_wizardRecorder&&_wizardRecorder.state!='inactive'){_wizardRecorder.stop();_wizardChunks=[];}
-      _wizardRecorder=null; resetWizardRecord();
-    }else{
-      if(!_wizMicReady && !_wizardRecorder){ window.__wizPending='send'; return; }
-      wizardStopHoldAndSend();
-    }
-  }
-  function onMove(ev){handleMove(ev.touches[0].clientX,ev.touches[0].clientY)}
-  function onEnd(ev){handleEnd(ev)}
-  function onMouse(ev){handleMove(ev.clientX,ev.clientY)}
-  function onMouseUp(ev){handleEnd(ev)}
-  
-  // ★ 先注册事件，再等 getUserMedia
-  document.addEventListener('touchmove',onMove,{passive:false});
-  document.addEventListener('touchend',onEnd,{passive:false});
-  document.addEventListener('mousemove',onMouse);
-  document.addEventListener('mouseup',onMouseUp,{once:true});
-  
   navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
-    _wizMicReady=true;
     _wizardStream=stream;
     _wizardRecorder=new MediaRecorder(stream,{mimeType:'audio/webm'});
     _wizardChunks=[];
     _wizardRecorder.ondataavailable=function(e){if(e.data.size>0)_wizardChunks.push(e.data)};
     _wizardRecorder.onstop=function(){
       if(_wizardStream){_wizardStream.getTracks().forEach(function(t){t.stop()});_wizardStream=null}
-      if(_wizardChunks.length>0){
+      if(_wizRecIntent!=='cancel'&&_wizardChunks.length>0){
+        // 录音太短（<500ms）直接忽略，避免 Whisper 幻觉乱出字
+        var dur=Date.now()-_wizRecStartTime;
+        if(dur<500){resetWizardRecord();return}
         var blob=new Blob(_wizardChunks,{type:'audio/webm'});
         if(blob.size>0)wizardSendAudio(blob);
       }
     };
     _wizardRecorder.start();
-    // 如果松手时麦克风未就绪，现在处理
-    if(window.__wizPending==='cancel'){_wizardRecorder.stop();_wizardChunks=[];_wizardRecorder=null;resetWizardRecord();window.__wizPending=null}
-    else if(window.__wizPending==='send'){window.__wizPending=null;wizardStopHoldAndSend()}
   }).catch(function(e){alert('麦克风访问失败：'+e.message);resetWizardRecord()});
 }
 
-function wizardStopHoldAndSend(){
-  if(!_wizardRecorder)return;
-  _wizardRecorder.stop();
-  _wizardRecorder=null;
-  // onstop 回调中会调用 wizardSendAudio
+var _wizRecIntent='confirm',_wizRecStartTime=0,_wizRecTimerInterval=null;
+var _wizOnMoveFn=null,_wizOnEndFn=null;
+
+function _wizGetZone(e){
+  var cx=(e.touches&&e.touches[0]?e.touches[0].clientX:e.clientX)||0;
+  var cy=(e.touches&&e.touches[0]?e.touches[0].clientY:e.clientY)||0;
+  var cancel=document.getElementById('wizBtnCancel');
+  var confirm=document.getElementById('wizBtnConfirm');
+  if(!cancel||!confirm)return 'confirm';
+  var rc=cancel.getBoundingClientRect();
+  var rv=confirm.getBoundingClientRect();
+  if(cx>=rc.left&&cx<=rc.right&&cy>=rc.top&&cy<=rc.bottom)return 'cancel';
+  if(cx>=rv.left&&cx<=rv.right&&cy>=rv.top&&cy<=rv.bottom)return 'confirm';
+  return _wizRecIntent;
 }
 
-function wizardStopHold(){
-  if(!_wizardRecorder)return;
-  _wizardRecorder.stop();
+function _wizHighlightZone(zone){
+  var left=document.getElementById('wizBtnCancel');
+  var right=document.getElementById('wizBtnConfirm');
+  if(left)left.classList.toggle('hover',zone==='cancel');
+  if(right)right.classList.toggle('hover',zone==='confirm');
+}
+
+function _wizOnMove(e){
+  e.preventDefault();
+  _wizRecIntent=_wizGetZone(e);
+  _wizHighlightZone(_wizRecIntent);
+}
+
+function _wizOnEnd(e){
+  // 移除 document 事件监听
+  if(_wizOnMoveFn){
+    document.removeEventListener('mousemove',_wizOnMoveFn);
+    document.removeEventListener('mouseup',_wizOnEndFn);
+    document.removeEventListener('touchmove',_wizOnMoveFn);
+    document.removeEventListener('touchend',_wizOnEndFn);
+    document.removeEventListener('touchcancel',_wizOnEndFn);
+    _wizOnMoveFn=null;_wizOnEndFn=null;
+  }
+  if(_wizRecTimerInterval){clearInterval(_wizRecTimerInterval);_wizRecTimerInterval=null}
+  if(_wizardRecorder&&_wizardRecorder.state==='recording')_wizardRecorder.stop();
   _wizardRecorder=null;
+  resetWizardRecord();
 }
 
 async function wizardSendAudio(blob){
@@ -933,31 +1051,29 @@ async function wizardSendAudio(blob){
 }
 
 function resetWizardRecord(){
-  var wsr=document.getElementById('wizardSlideRow');
-  if(wsr)wsr.classList.remove('show');
   var btn=document.getElementById('wizardHoldRecord');
-  if(btn){btn.textContent='🎤 按住说话';btn.classList.remove('recording')}
-  document.getElementById('recordRing').classList.remove('show');
+  if(btn){btn.textContent='按住说话';btn.classList.remove('recording')}
+  var ov=document.getElementById('wizardRecordOverlay');
+  if(ov)ov.classList.remove('show');
   _wizardRecorder=null;
   if(_wizardStream){_wizardStream.getTracks().forEach(function(t){t.stop()});_wizardStream=null}
 }
 
 // 提交生成游戏
 function submitWizardGame(){
-  // 移除控制步骤后默认双端支持
-  if(!wizardDesign.controls)wizardDesign.controls='双端都支持（键盘+手机触屏）';
   var title=wizardDesign.gameName||'我的游戏';
   var msg='帮我设计一个叫\u300c'+title+'\u300d的游戏！\n\n'+
     '🎯 主角：'+wizardDesign.character+'\n'+
     '🏆 目标：'+wizardDesign.goal+'\n'+
     '⚡ 挑战：'+wizardDesign.challenge+'\n'+
-    '🎮 操作：'+wizardDesign.controls+'\n'+
     '🔊 音乐：'+wizardDesign.music+'\n\n'+
-    '重要：游戏必须同时支持PC和手机！PC用WASD/方向键+A/B键，手机用虚拟摇杆+A/B键。\n\n'+
+    '重要：游戏必须同时支持PC和手机！PC用WASD/方向键移动+J/K键功能，手机用虚拟摇杆（左半屏）+AB按钮（右半屏下方）。\n\n'+
     '这是小朋友花时间认真设计的完整方案。请先给一句游戏预览，再写出完整HTML代码！';
   
   // 关闭向导，显示loading
   document.getElementById('wizardOverlay').classList.remove('show');
+  var bottomEl3=document.getElementById('wizardBottomInput');
+  if(bottomEl3)bottomEl3.style.display='none';
   
   // 进入工作台
   if(!gameStarted){
@@ -973,9 +1089,8 @@ function submitWizardGame(){
   
   // 显示 loading + 发送消息
   var winHtml='<div class="wizard-loading"><div class="wl-icon" id="wlIcon">🚀</div>'+
-    '<div class="wl-text">你正在亲手创造自己的游戏！</div>'+
+    '<div class="wl-text">AI 正在生成你的游戏...</div>'+
     '<div class="wl-dots"><span></span><span></span><span></span></div>'+
-    '<div class="wizard-chat" id="wizardChat"></div>'+
     '<div class="wizard-output" id="wizardOutput"></div></div>';
   document.getElementById('msgs').innerHTML='';
   document.getElementById('msgs').innerHTML=winHtml;
@@ -991,136 +1106,24 @@ function submitWizardGame(){
 
 function doWizardApiCall(msg){
   var outputEl=document.getElementById('wizardOutput');
-  if(outputEl)outputEl.textContent='正在拼装你的游戏...';
+  if(outputEl)outputEl.textContent='AI 正在思考...';
   
   var msgs=window.messages&&window.messages.length?window.messages:[{role:'user',content:msg}];
   var controller=new AbortController();
   var timeout=setTimeout(function(){controller.abort()},300000);
   
-  // 生成过程中禁用输入，防止误操作
-  var ciEl=document.getElementById('chatInput');if(ciEl)ciEl.style.display='none';
-  
-  // ====== 等候闲聊：生成过程中说说话，让等待不无聊 ======
-  // 条纹 emoji（气泡里显示，TTS 不读）
-  function _stripEmoji(s){
-    return s.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}]/gu,'');
-  }
-  // 40 条消息模板，覆盖设计、思维、分享、改进、想象、叙事等多维度
-  // 每 8 秒一条，一圈刚好 5 分 20 秒，覆盖完整生成等待时间
-  var _wizardChatTpl=(function(){
-    var gn=function(){return wizardDesign.gameName||'我的游戏'};
-    var ch=function(){return wizardDesign.character||'主角'};
-    var go=function(){return wizardDesign.goal||'这个目标'};
-    var mu=function(){return wizardDesign.music||'欢快'};
-    var tpls=[
-      // 1-6: 设计和构思
-      function(){return '\uD83E\uDD14 让我想想你的\u300c'+gn()+'\u300d该怎么设计……'},
-      function(){return '\u2728 '+ch()+'当主角，太酷了！我给它设计一套专属技能！'},
-      function(){return '\uD83C\uDF1F '+go()+'，这个目标听起来就很有趣！'},
-      function(){return '\uD83D\uDD0D 我在构思'+gn()+'的关卡布局，怎样才好玩又有挑战？'},
-      function(){return '\uD83C\uDFB5 配上'+mu()+'风格的音乐，气氛一下子就有了！'},
-      function(){return '\uD83C\uDFA8 选颜色、定画面风格，让你的游戏看起来独一无二！'},
-      // 7-12: 逻辑和规则
-      function(){return '\uD83D\uDCA1 你知道做游戏就像搭积木吗？先想玩法规则，再搭画面，最后加特效！'},
-      function(){return '\uD83E\uDDE0 一个好游戏要有：清晰的目标、有趣的挑战、及时的反馈！'},
-      function(){return '\uD83C\uDFAF 设计游戏规则的时候，要想想：玩家要怎么赢？输了怎么办？'},
-      function(){return '\uD83D\uDD27 数值平衡很重要——太简单没意思，太难会气馁，要刚刚好！'},
-      function(){return '\uD83E\uDDE9 排列组合的思维很有趣：不同的道具搭配，会有不同的玩法效果！'},
-      function(){return '\uD83D\uDEE0\uFE0F 逻辑就像游戏的骨架——先做什么、再做什么、什么条件下触发什么效果！'},
-      // 13-18: 想象力和创意
-      function(){return '\uD83C\uDF04 如果给'+gn()+'加一个隐藏关卡，你会设计在哪里？'},
-      function(){return '\uD83C\uDF20 你可以设计一个独特的世界观！比如太空冒险、魔法森林或者海底寻宝！'},
-      function(){return '\uD83C\uDFA7 你还可以给'+ch()+'设计一句口头禅，每次过关就说出来！'},
-      function(){return '\uD83C\uDF89 好玩的游戏总有让人意想不到的小惊喜！'},
-      function(){return '\uD83D\uDC36 如果游戏里加一个宠物或者小跟班，你希望它长什么样？'},
-      function(){return '\uD83C\uDF1F 想象力是游戏设计师最宝贵的超能力！'},
-      // 19-24: 测试和反思
-      function(){return '\uD83D\uDD0D 游戏做好后记得自己先玩一遍，看看哪里需要改进！'},
-      function(){return '\uD83D\uDD04 找到一个 bug 不算坏事，修复它会让游戏变得更好！'},
-      function(){return '\uD83D\uDCDD 你可以拿个小本本，把玩家反馈记下来，下次改版就有方向了！'},
-      function(){return '\uD83C\uDF96\uFE0F 每玩一次，就问问自己：这关好玩吗？哪里可以更好？'},
-      function(){return '\uD83D\uDD52 好游戏不是一次做出来的，是反复打磨出来的！'},
-      function(){return '\uD83D\uDCA1 试试换个角度看自己的游戏——如果你是第一次玩这个游戏，会觉得哪里难？'},
-      // 25-30: 分享和社交（具体可操作的分享引导）
-      function(){return '\uD83C\uDF89 '+gn()+'做好之后，先给朋友看标题和截图，让他猜猜这是个什么游戏！'},
-      function(){return '\uD83D\uDCAC 你可以问问朋友：你最喜欢哪一关？哪一关你觉得最难？为什么？'},
-      function(){return '\uD83E\uDD1D 和朋友讨论时，还可以问：如果给你加一个道具，你会加什么？'},
-      function(){return '\uD83C\uDFC6 邀请小伙伴来挑战你的游戏，看看谁能拿最高分，顺便听听他们的建议！'},
-      function(){return '\uD83D\uDCDD 你还可以给'+gn()+'写一份攻略，教别人怎么玩！写攻略也是在锻炼逻辑表达哦！'},
-      function(){return '\uD83D\uDDE3\uFE0F 分享完记得问一句：如果你是设计师，你会修改哪个地方？这个问题能收到超多好点子！'},
-      // 31-34: 系统性思维延伸到生活
-      function(){return '\uD83E\uDDE0 设计游戏的思维也能用在生活中！比如规划一次旅行：先定目的地（目标）、再排路线（流程）、最后收拾行李（资源）！'},
-      function(){return '\uD83D\uDDA5\uFE0F 做一道菜和做游戏居然很像：先看菜谱（规则）、准备食材（素材）、按步骤烹饪（编程），最后尝尝味道（测试）！'},
-      function(){return '\uD83D\uDCA1 遇到难题时试试游戏设计师的思路：问题是什么？有哪些解决方法？选一个试，不行就换一个！'},
-      function(){return '\uD83D\uDD04 你有没有发现？学习新东西和做游戏一样：先理解规则，再动手试试，做错了就调整，慢慢就熟练了！'},
-      // 35-38: 发散思维和跨界联想
-      function(){return '\uD83C\uDF08 如果把'+gn()+'的玩法用到现实里会怎样？比如用闯关的方式来整理房间，每收拾一个区域就解锁一个奖励！'},
-      function(){return '\uD83C\uDFAE 你还可以想想：如果'+ch()+'是一个超级英雄，他的超能力除了在游戏里用，在生活中还能做什么？'},
-      function(){return '\uD83E\uDDE0 试着把两个不相关的东西连在一起！比如「太空」+「厨房」= 在宇宙飞船里做汉堡的游戏，是不是很有趣？'},
-      function(){return '\uD83D\uDE80 你每设计一个游戏，都在练习一种超能力：把脑子里天马行空的想法，用逻辑一步步变成现实！'},
-      // 39-40: 展望和收尾
-      function(){return '\uD83C\uDFAE '+gn()+'马上就好了！做完之后，你想不想把刚才想到的分享点子用上，去问问朋友的意见？'},
-      function(){return '\uD83C\uDF89 恭喜你！你不仅创造了一个游戏，还学会了怎么用系统性思维去思考问题、跟朋友交流想法——这才是最厉害的！'},
-    ];
-    var idx=0;
-    return {
-      getNext:function(){
-        var tpl=tpls[idx%tpls.length];
-        idx++;
-        return tpl();
-      }
-    };
-  })();
-  var _wizardChatTimer=null;
-  // 检查队列状态
-  function checkQueue(){
-    return fetch('/api/queue').then(function(r){return r.json()}).then(function(q){
-      return q.active > 1 ? q.active - 1 : 0;
-    }).catch(function(){return 0});
-  }
-  function showQueueHint(pos){
-    var el=document.getElementById('wizardChat');
-    if(!el)return;
-    var old=document.querySelector('.queue-hint');if(old)old.remove();
-    if(pos>0){
-      var b=document.createElement('div');b.className='queue-hint wizard-chat-msg';
-      b.style.cssText='color:#ffcc44;font-style:italic;font-size:13px';
-      b.textContent='⏳ 前面还有 '+pos+' 人在排队，请稍候...';
-      el.appendChild(b);el.scrollTop=el.scrollHeight;
-    }
-  }
-  function _wizardNextChat(){
-    var txt=_wizardChatTpl.getNext();
-    var el=document.getElementById('wizardChat');
-    if(el){
-      var b=document.createElement('div');b.className='wizard-chat-msg';b.textContent=txt;
-      el.appendChild(b);el.scrollTop=el.scrollHeight;
-    }
-    wizardSpeak(_stripEmoji(txt));
-    _wizardChatTimer=setTimeout(_wizardNextChat,8000);
-  }
-  _wizardChatTimer=setTimeout(_wizardNextChat,1500);
-  
-  // 先检查队列再发起请求
-  checkQueue().then(function(pos){
-    showQueueHint(pos);
-    return fetch('/api/chat',{
-      method:'POST',signal:controller.signal,
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({messages:msgs,stream:true})
-    });
+  fetch('/api/chat',{
+    method:'POST',signal:controller.signal,
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({messages:msgs,stream:true})
   }).then(function(r){
-    var oldQh=document.querySelector('.queue-hint');if(oldQh)oldQh.remove();
     var reader=r.body.getReader();
     var decoder=new TextDecoder();
     var buf='',full='';
     function readChunk(){
       return reader.read().then(function(result){
         if(result.done){
-          clearTimeout(_wizardChatTimer);
           clearTimeout(timeout);
-          // 生成完毕，恢复输入
-          var ciEl=document.getElementById('chatInput');if(ciEl)ciEl.style.display='';
           var codeMatch=full.match(/```html[\s\S]*?```/);
           if(!codeMatch)codeMatch=full.match(/<!DOCTYPE html[\s\S]*?<\/html>/i);
           if(codeMatch){
@@ -1141,16 +1144,14 @@ function doWizardApiCall(msg){
             if(d==='[DONE]')continue;
             try{
               var j=JSON.parse(d);
-              var delta=j.choices&&j.choices[0]&&j.choices[0].delta;
-              if(delta&&delta.content){
-                full+=delta.content;if(outputEl){
-                  if(full.includes('```')||full.includes('<html')||full.includes('<!DOCTYPE'))outputEl.classList.add('has-code');
-                  outputEl.textContent=full;
-                  var cur=document.createElement('span');cur.className='cursor';
-                  outputEl.appendChild(cur);
-                  outputEl.scrollTop=outputEl.scrollHeight;
-                }
-              }
+              var c=j.choices&&j.choices[0]&&j.choices[0].delta&&j.choices[0].delta.content;
+              if(c){full+=c;if(outputEl){
+                if(full.includes('```')||full.includes('<html')||full.includes('<!DOCTYPE'))outputEl.classList.add('has-code');
+                outputEl.textContent=full;
+                var cur=document.createElement('span');cur.className='cursor';
+                outputEl.appendChild(cur);
+                outputEl.scrollTop=outputEl.scrollHeight;
+              }}
             }catch(e){}
           }
         }
@@ -1159,10 +1160,7 @@ function doWizardApiCall(msg){
     }
     return readChunk();
   }).catch(function(e){
-    clearTimeout(_wizardChatTimer);
     clearTimeout(timeout);
-    // 出错也恢复输入
-    var ciEl=document.getElementById('chatInput');if(ciEl)ciEl.style.display='';
     var errMsg='网络出错了'+(e.name==='AbortError'?'（超时了，AI 思考太久）':': '+e.message);
     showWizardRetry(errMsg);
   });
@@ -1185,7 +1183,6 @@ function showGeneratedGame(htmlCode){
   // 先保存，再显示结果
   saveWizardGame(function(saved){
     if(saved)gameSaved=true;
-    var title=wizardDesign.gameName||'你的游戏';
     document.getElementById('msgs').innerHTML=
       '<div class="msg ai">🎉 游戏已生成！</div>'+
       '<div style="display:flex;gap:8px;padding:8px;justify-content:center">'+
@@ -1193,11 +1190,6 @@ function showGeneratedGame(htmlCode){
       '<button onclick="backToLobby()" style="background:#2a2a2a;color:#aaa;border:1px solid #444;padding:10px 24px;border-radius:10px;cursor:pointer;font-size:14px">🏠 返回大厅</button></div>'+
       '<div class="msg ai" style="margin-top:8px">💡 在下面输入框打字，告诉 AI 想改什么功能。'+
       (window._userPlan&&window._userPlan.limits&&window._userPlan.limits.voice?'按住 🎤 说话也行！':'')+'</div>';
-    
-    // TTS 语音提示小朋友点击预览（去除图标只读文字）
-    setTimeout(function(){
-      wizardSpeak('\u300c'+title+'\u300d做好啦！快点击预览按钮，试试你亲手设计的游戏吧！');
-    },500);
   });
 }
 
@@ -1232,20 +1224,33 @@ function wizardPreviewGame(){
   try{setDnd(true)}catch(e){}
 }
 
-var SYSTEM_PROMPT="你是'游戏工坊'的AI助手，把小朋友的游戏设计变成HTML代码。\n\n"+
-"## 核心规则\n"+
-"1. 收到方案直接写完整HTML，不要提问分析\n"+
-"2. ❌ 绝不说「好了」「完成了」。给代码后必须追问：「试试你的游戏！想加什么新功能？」并给2-3个建议\n"+
-"3. ❌ 小朋友不说结束就不结束。没想法时主动给3建议：加敌人/加道具/加特效\n"+
-"4. ✅ 代码放回复最后，前面简要说明改了什么\n\n"+
-"## 代码规范\n"+
-"• 单文件HTML，Canvas自适应，完整可运行，```html包裹\n"+
-"• 必须有：得分、生命值、胜负条件、操控提示\n"+
-"• 🎮 PC:WASD/方向键+A/B键 手机:左摇杆+右AB键\n"+
-"• 🎵 开头加<script src=\"https://studio.2u1.cn/platform/sfx.js\"><"+"/script>，BGM首次点击启动，🔊/🔇切换(不要播放器)。音效:SFX.score() hurt() success()\n"+
-"• ⏸️ 暂停:window.addEventListener('message',function(e){if(e.data==='pause'){paused=true;SFX.stopBGM()}if(e.data==='resume'){paused=false}})，循环里if(paused)return\n\n"+
-"## 迭代\n"+
-"先问想升级哪方面(主角/目标/挑战/操作/音乐)，再改代码。简单功能直接改。已有BGM就换风格别加第二个。\n";
+var SYSTEM_PROMPT="你是'游戏工坊'的AI助手，帮小朋友把游戏想法变成现实。小朋友是游戏设计师，你只负责实现他的设计。\n\n"+
+"收到小朋友的完整 5 步设计方案后，直接写完整 HTML 代码，不要再逐步骤提问。\n\n"+
+"## 绝对禁止\n"+
+"❌ 绝对不要说「好了」「完成了」「游戏已经完成」「可以开始玩了」之类的结束语！\n"+
+"❌ 不要替小朋友决定游戏已经做完。只有小朋友说「好了」「可以了」「就这样」才算结束。\n"+
+"✅ 代码给出后必须追问：「试试你的游戏！这是你设计的，想加什么新功能？」并给 2-3 个具体建议。\n"+
+"✅ 如果小朋友只是说「继续」「再升级」「再来」而没有具体想法，主动给 3 个功能建议：加敌人、加道具、加特效\n\n"+
+"## 代码规则\n"+
+"1. 画布自适应屏幕，Canvas 绘制，单文件 HTML\n"+
+"2. 完整代码用 ```html ... ``` 包裹，代码要完整可运行，不要省略\n"+
+"3. 必须有：得分显示、生命值、胜负条件、操控提示\n"+
+"4. 必须完全基于小朋友的设计方案\n"+
+"5. 代码放在回复的最后面，前面简要说明改了什么即可\n"+
+"6. 🎮 **必须同时支持PC和手机，这是硬性要求！** PC用WASD或方向键移动+J/K键功能（J跳跃/攻击,K特殊技能），手机用虚拟摇杆（左半屏）+AB按钮（右半屏下方，A键在左下，B键在右下）。不满足双端控制的代码视为无效，必须重写\n"+
+"7. 🎵 必须内置背景音乐！代码开头加：<script src=\"https://studio.2u1.cn/platform/sfx.js\"><"+"/script>。BGM 在第一次点击/按键时启动。加一个简单的 🔊/🔇 按钮切换音乐，**不要加播放器（不要进度条/快进/快退/暂停播放按钮）**。音效：得分 SFX.score()，碰撞 SFX.hurt()，胜利 SFX.success()\n"+
+"8. ⏸️ **必须支持暂停！** 在游戏脚本开头声明 var paused=false; 添加 window.addEventListener('message',function(e){if(e.data==='pause'){paused=true;if(typeof SFX!=='undefined'&&SFX.stopBGM)SFX.stopBGM()}if(e.data==='resume'){paused=false}}); 在游戏主循环（requestAnimationFrame）开头加 if(paused)return; 否则预览关闭时页面会卡死。不满足此规则的代码视为无效\n\n"+
+"## 迭代升级建议格式\n"+
+"如果小朋友想升级，先问想升级哪个部分：\n"+
+"🎯 主角：换角色/改大小/加特效\n"+
+"🏆 目标：调整胜利条件/加关卡\n"+
+"⚡ 挑战：加敌人/加障碍/调难度\n"+
+"🎮 操作：加按键/加触摸/改控制方式\n"+
+"🔊 音乐：换风格/加音效/调音量\n\n"+
+"⚠️ 迭代时：已有BGM就替换风格（如 bgmAdventure→bgmSpace），不要加第二个。简单功能（加BGM/音效/按钮/分数）直接改代码，不用重走五步法\n"+
+"⚠️ 不要加播放器控件（进度条/快进/快退），只需简单的 🔊/🔇 切换\n"+
+"核心原则：每次升级都让小朋友意识到他是在修改游戏设计的一个维度，强化结构化思维框架\n\n"+
+"如果小朋友说想从头做一个新游戏，先问五次设计问题再写代码。\n";
 
 function showGuide(){
   document.getElementById('viewLobby').classList.add('show');
@@ -1396,7 +1401,6 @@ function closeHints(){document.getElementById('previewHints').style.display='non
 
 // 🎤 语音输入 - 微信风格（按住录音松开发送）
 var _mediaRecorder=null,_audioChunks=[],_voiceMode=true,_stream=null;
-window.__pendingSendChat=false;
 // 默认语音模式
 (function(){
   var c=document.getElementById('chatInput');
@@ -1449,170 +1453,130 @@ function setInputEnabled(enabled){
   if(enabled && !_voiceMode) document.getElementById('input').focus();
 }
 
-// 按住录音按钮
-var _holdTimer=null,_isHolding=false;
-document.getElementById('holdRecord').addEventListener('mousedown',startHoldRecord);
-document.getElementById('holdRecord').addEventListener('mouseup',stopHoldRecord);
-document.getElementById('holdRecord').addEventListener('mouseleave',stopHoldRecord);
-document.getElementById('holdRecord').addEventListener('touchstart',function(e){e.preventDefault();startHoldRecord()});
-document.getElementById('holdRecord').addEventListener('touchend',function(e){e.preventDefault();stopHoldRecord()});
+// 按住录音 - 全屏 overlay 模式
+var _isHolding=false,_recIntent='confirm',_recStartTime=0,_recTimerInterval=null;
+var _holdBtn=document.getElementById('holdRecord');
+var _recOverlay=document.getElementById('recOverlay');
 
-async function startHoldRecord(){
+_holdBtn.addEventListener('mousedown',startHoldRecord);
+_holdBtn.addEventListener('mouseup',stopHoldRecord);
+_holdBtn.addEventListener('mouseleave',stopHoldRecord);
+_holdBtn.addEventListener('touchstart',function(e){e.preventDefault();startHoldRecord(e)});
+_holdBtn.addEventListener('touchmove',function(e){e.preventDefault();onHoldMove(e)});
+_holdBtn.addEventListener('touchend',function(e){e.preventDefault();stopHoldRecord(e)});
+_recOverlay.addEventListener('mousemove',onHoldMove);
+_recOverlay.addEventListener('mouseup',stopHoldRecord);
+_recOverlay.addEventListener('touchmove',function(e){e.preventDefault();onHoldMove(e)});
+_recOverlay.addEventListener('touchend',function(e){e.preventDefault();stopHoldRecord(e)});
+
+function _getHoldZone(e){
+  var cx=(e.clientX||(e.touches&&e.touches[0].clientX)||0);
+  var cy=(e.clientY||(e.touches&&e.touches[0].clientY)||0);
+  // 手指上滑后按屏幕左右半区判定：上滑超过 80px 则左半屏=取消，右半屏=转文字
+  var dy=cy-(e.touches&&e.touches[0]?window._holdStartY||cy:cy);
+  if(window._holdStartY-cy>80){
+    return cx<window.innerWidth/2?'cancel':'confirm';
+  }
+  // 手指仍在底部时按按钮边界检测
+  var cancel=document.getElementById('recZoneCancel');
+  var confirm=document.getElementById('recZoneConfirm');
+  var rc=cancel.getBoundingClientRect();
+  var rv=confirm.getBoundingClientRect();
+  if(cx>=rc.left&&cx<=rc.right&&cy>=rc.top&&cy<=rc.bottom)return 'cancel';
+  if(cx>=rv.left&&cx<=rv.right&&cy>=rv.top&&cy<=rv.bottom)return 'confirm';
+  return _recIntent;
+}
+
+function _highlightZone(zone){
+  var left=document.getElementById('recZoneCancel');
+  var right=document.getElementById('recZoneConfirm');
+  left.classList.toggle('hover',zone==='cancel');
+  right.classList.toggle('hover',zone==='confirm');
+}
+
+function _updateRecTime(){
+  var elapsed=Math.floor((Date.now()-_recStartTime)/1000);
+  var m=Math.floor(elapsed/60);
+  var s=elapsed%60;
+  document.getElementById('recTime').textContent=m+':'+(s<10?'0':'')+s;
+}
+
+async function startHoldRecord(e){
   if(_isHolding)return;
+  // 如果 TTS 正在朗读，禁用录音
+  if(window._wizardSpeaking){return;}
   _isHolding=true;
-  var btn=document.getElementById('holdRecord');
-  btn.textContent='🔴 松手发送';
-  btn.classList.add('recording');
-  document.getElementById('recordRing').classList.add('show');
-  // 显示滑动区域
-  var zones=document.getElementById('slideZones');
-  zones.style.display='flex';
-  document.getElementById('slideCancel').classList.remove('active');
-  document.getElementById('slideSend').classList.remove('active');
-
-  // ★立即注册滑动事件，不等 getUserMedia（麦克风请求可能卡1-3秒）
-  var slideCancel=document.getElementById('slideCancel');
-  var slideSend=document.getElementById('slideSend');
-  var _slideTarget=null;
-  var _micReady=false; // 标记麦克风是否就绪
-  window.__pendingSend=null; // 松手时麦克风未就绪，暂存意图
-  
-  function handleMove(px,py){
-    var cancelRect=slideCancel.getBoundingClientRect();
-    var sendRect=slideSend.getBoundingClientRect();
-    var overCancel=(px>=cancelRect.left&&px<=cancelRect.right&&py>=cancelRect.top&&py<=cancelRect.bottom);
-    var overSend=(px>=sendRect.left&&px<=sendRect.right&&py>=sendRect.top&&py<=sendRect.bottom);
-    slideCancel.classList.toggle('active',overCancel);
-    slideSend.classList.toggle('active',overSend);
-    _slideTarget=overCancel?'cancel':(overSend?'send':null);
-  }
-  
-  function handleEnd(e2){
-    e2.preventDefault();
-    zones.style.display='none';
-    slideCancel.classList.remove('active');
-    slideSend.classList.remove('active');
-    document.removeEventListener('touchmove',onMove);
-    document.removeEventListener('touchend',onEnd);
-    document.removeEventListener('mousemove',onMouseMove);
-    document.removeEventListener('mouseup',onMouseUp);
-    if(_slideTarget==='cancel'){
-      if(!_micReady && _mediaRecorder===null){
-        window.__pendingSend='cancel';
-        return;
-      }
-      cancelRecord();
-    }else{
-      // 如果麦克风还没准备好，标记意图，等就绪后自动发送
-      if(!_micReady && _mediaRecorder===null){
-        window.__pendingSend='send';
-        return;
-      }
-      confirmRecord();
-    }
-  }
-  
-  function onMove(e2){handleMove(e2.touches[0].clientX,e2.touches[0].clientY)}
-  function onEnd(e2){handleEnd(e2)}
-  function onMouseMove(e2){handleMove(e2.clientX,e2.clientY)}
-  function onMouseUp(e2){handleEnd(e2)}
-  
-  document.addEventListener('touchmove',onMove,{passive:false});
-  document.addEventListener('touchend',onEnd,{passive:false});
-  document.addEventListener('mousemove',onMouseMove);
-  document.addEventListener('mouseup',onMouseUp,{once:true});
+  // 记录触摸起点Y坐标（用于滑动到取消检测）
+  window._holdStartY=(e.touches&&e.touches[0]&&e.touches[0].clientY)||(e.clientY||0);
+  _recIntent='confirm';
+  _holdBtn.textContent='松开 发送';
+  _holdBtn.classList.add('recording');
+  _recOverlay.classList.add('show');
+  _recStartTime=Date.now();
+  document.getElementById('recTime').textContent='0:00';
+  _recTimerInterval=setInterval(_updateRecTime,500);
+  _highlightZone('confirm');
 
   try{
     _stream=await navigator.mediaDevices.getUserMedia({audio:true});
-    _micReady=true;
-    // 音量检测动画
-    var audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-    var source=audioCtx.createMediaStreamSource(_stream);
-    var analyser=audioCtx.createAnalyser();
-    analyser.fftSize=256;
-    source.connect(analyser);
-    var dataArray=new Uint8Array(analyser.frequencyBinCount);
-    var ring=document.getElementById('recordRing');
-    function updateVolume(){
-      if(!_isHolding){audioCtx.close();return}
-      analyser.getByteFrequencyData(dataArray);
-      var sum=0;for(var i=0;i<dataArray.length;i++)sum+=dataArray[i];
-      var avg=sum/dataArray.length/255;
-      var scale=1+avg*0.3;
-      ring.style.transform='translateX(-50%) scale('+scale+')';
-      requestAnimationFrame(updateVolume);
-    }
-    updateVolume();
-
     _mediaRecorder=new MediaRecorder(_stream,{mimeType:'audio/webm'});
     _audioChunks=[];
     _mediaRecorder.ondataavailable=function(e){if(e.data.size>0)_audioChunks.push(e.data)};
     _mediaRecorder.onstop=function(){
       if(_stream){_stream.getTracks().forEach(function(t){t.stop()});_stream=null}
-      audioCtx.close();
-      // ★onstop 触发时所有 dataavailable 已到齐，在这里发音频
-      if(window.__pendingSendChat && _audioChunks.length>0){
-        window.__pendingSendChat=false;
-        var blob=new Blob(_audioChunks,{type:'audio/webm'});
-        if(blob.size>0)sendAudio(blob);
-      }
+      // 录音太短（<500ms）直接忽略，避免 Whisper 幻觉乱出字
+      var dur=Date.now()-_recStartTime;
+      if(dur<500){_audioChunks=[];return}
+      var blob=new Blob(_audioChunks,{type:'audio/webm'});
+      if(blob.size>0)sendAudio(blob);
     };
     _mediaRecorder.start();
-
-    // ★如果用户已经松手（提前发送/取消），处理等待中的意图
-    if(window.__pendingSend){
-      var intent=window.__pendingSend;
-      window.__pendingSend=null;
-      if(intent==='cancel'){
-        cancelRecord();return;
-      }
-      confirmRecord();return;
-    }
   }catch(e){
     alert('无法访问麦克风：'+e.message);
     resetRecordUI();
   }
 }
 
-function stopHoldRecord(){
+function onHoldMove(e){
   if(!_isHolding)return;
-  // 松手不自动发送，保留按钮供用户选择
+  _recIntent=_getHoldZone(e);
+  _highlightZone(_recIntent);
 }
 
-function cancelRecord(){
+function stopHoldRecord(e){
   if(!_isHolding)return;
   _isHolding=false;
-  if(_mediaRecorder&&_mediaRecorder.state==='recording'){_mediaRecorder.stop();_mediaRecorder=null}
-  resetRecordUI();
-}
-
-function confirmRecord(){
-  if(!_isHolding)return;
-  _isHolding=false;
-  document.getElementById('recordRing').classList.remove('show');
-  if(_mediaRecorder&&_mediaRecorder.state==='recording'){
-    window.__pendingSendChat=true; // 标记：onstop 里要用
-    _mediaRecorder.stop();
-    // ★blob 创建和发送在 onstop 回调里处理（确保 dataavailable 到齐）
+  _recOverlay.classList.remove('show');
+  _highlightZone(null);
+  if(_recTimerInterval){clearInterval(_recTimerInterval);_recTimerInterval=null}
+  if(_recIntent==='cancel'){
+    if(_mediaRecorder&&_mediaRecorder.state==='recording'){
+      _mediaRecorder.onstop=function(){
+        if(_stream){_stream.getTracks().forEach(function(t){t.stop()});_stream=null}
+        _audioChunks=[];
+      };
+      _mediaRecorder.stop();
+    }
+    _mediaRecorder=null;
+    resetRecordUI();
+  }else{
+    if(_mediaRecorder&&_mediaRecorder.state==='recording')_mediaRecorder.stop();
+    resetRecordUI();
   }
-  resetRecordUI();
 }
 
 function resetRecordUI(){
-  var btn=document.getElementById('holdRecord');
-  btn.textContent='🎤 按住说话';
-  btn.classList.remove('recording');
-  document.getElementById('slideZones').style.display='none';
-  var ring=document.getElementById('recordRing');
-  ring.classList.remove('show');
-  ring.style.transform='translateX(-50%) scale(1)';
-  ring.style.opacity='1';
+  _holdBtn.textContent='按住说话';
+  _holdBtn.classList.remove('recording');
+  _recOverlay.classList.remove('show');
+  if(_recTimerInterval){clearInterval(_recTimerInterval);_recTimerInterval=null}
   _isHolding=false;
   _mediaRecorder=null;
 }
 
 async function sendAudio(blob){
   var btn=document.getElementById('holdRecord');
+  btn.classList.remove('recording');
   btn.textContent='识别中...';
   try{
     var arrayBuffer=await blob.arrayBuffer();
@@ -1625,7 +1589,7 @@ async function sendAudio(blob){
     var r=await fetch('/api/speech',{method:'POST',body:wav,headers:{'Content-Type':'audio/wav'}});
     var d=await r.json();
     if(d.text){
-      btn.textContent='🎤 按住说话';btn.classList.remove('recording');
+      btn.textContent='按住说话';
       // ★语音转文字后逐字打出，不突然蹦出来
       if (!(await checkCanSend())) { setInputEnabled(true);return; }
       document.getElementById('input').value='';
@@ -1634,7 +1598,6 @@ async function sendAudio(blob){
       if(turnCount>=maxTurns){
         setInputEnabled(true);
         addMsg('🎉 今天做得很棒了！游戏已保存，明天继续吧～',false);
-        btn.textContent='🎤 按住说话';btn.classList.remove('recording');
         return;
       }
       var msgEl=addMsg('',true);
@@ -1654,12 +1617,12 @@ async function sendAudio(blob){
     }else{
       btn.textContent='没听清，再试一次';
       btn.style.background='#ff6644';
-      setTimeout(function(){btn.textContent='🎤 按住说话';btn.style.background=''},1500);
+      setTimeout(function(){btn.textContent='按住说话';btn.style.background=''},1500);
     }
   }catch(e){
     btn.textContent='连接失败';
     btn.style.background='#ff6644';
-    setTimeout(function(){btn.textContent='🎤 按住说话';btn.style.background=''},1500);
+    setTimeout(function(){btn.textContent='按住说话';btn.style.background=''},1500);
   }
 }
 
@@ -1770,7 +1733,8 @@ function closePreview(){
     frame.contentWindow.postMessage('pause','*');
     if(frame.contentWindow.SFX) frame.contentWindow.SFX.stopBGM();
   }catch(e){}
-  // 彻底清空iframe内容，确保BGM完全停止
+  // 先设about:blank再清空，避免游戏循环卡死
+  try{frame.src='about:blank'}catch(e){}
   frame.srcdoc='';
   document.getElementById('previewPanel').classList.remove('open');
   document.getElementById('chatMain').classList.remove('shrink');
@@ -1843,16 +1807,6 @@ async function doChat(){
     window._controller=controller;
     var timeout=setTimeout(function(){controller.abort()},300000);
 
-    // 检查队列并显示提示
-    var qpos = await checkQueue();
-    if(qpos > 0){
-      var qel=document.createElement('div');qel.className='queue-hint msg ai';
-      qel.style.cssText='color:#ffcc44;font-style:italic;font-size:13px;padding:4px 12px';
-      qel.textContent='⏳ 前面还有 '+qpos+' 人在排队，请稍候...';
-      document.getElementById('msgs').appendChild(qel);
-      document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
-    }
-
     var resp=await fetch('/api/chat',{
       method:'POST',signal:controller.signal,
       headers:{'Content-Type':'application/json'},
@@ -1861,9 +1815,8 @@ async function doChat(){
     clearTimeout(timeout);
     window._controller=null;
     var el=document.getElementById('typing');if(el)el.remove();
-    var qh=document.querySelector('.queue-hint');if(qh)qh.remove();
 
-    // 读流解析SSE，边读边显示打字效果（每200ms更新DOM）
+    // 读流解析SSE，边读边显示打字效果（每50ms更新DOM）
     var fullReply='';
     var reader=resp.body.getReader();
     var decoder=new TextDecoder();
@@ -1892,9 +1845,9 @@ async function doChat(){
               if(delta.content){
                 _hasOutput=true;
                 fullReply+=delta.content;
-                // 节流：每200ms更新一次DOM
+                // 节流：每50ms更新一次DOM
                 var now=Date.now();
-                if(now-_lastUpdate>200){
+                if(now-_lastUpdate>50){
                   _lastUpdate=now;
                   msgEl.textContent=fullReply;
                   document.getElementById('msgs').scrollTop=document.getElementById('msgs').scrollHeight;
@@ -1917,7 +1870,19 @@ async function doChat(){
         buf+=decoder.decode(result.value,{stream:true});
         processLines();
         return readStream();
-      });  // result.then
+      }).catch(function(e){
+        console.warn('Stream read error:',e.message);
+        if(!window._cancelled){
+          var retryBtn=document.createElement('button');
+          retryBtn.className='retry-btn';
+          retryBtn.textContent='🔄 连接断开，点此重试';
+          retryBtn.style.cssText='display:block;margin:8px auto;padding:8px 16px;background:#4a6cf7;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px';
+          retryBtn.onclick=function(){retryBtn.remove();doChat();};
+          if(msgEl)msgEl.appendChild(retryBtn);
+          setInputEnabled(true);
+        }
+        throw e;
+      });
     }  // readStream
 
     var reply=await readStream();
@@ -2355,10 +2320,13 @@ function editCurrentGame(){
       fetch('/api/tts?text='+encodeURIComponent('欢迎回来继续完善'+gameTitle+'，想改什么直接说就行了')+'&voice=zh-CN-XiaoxiaoNeural')
         .then(function(r){return r.blob()})
         .then(function(blob){
+          window._wizardSpeaking=true;
+          setInputEnabled(false);
           var a=new Audio(URL.createObjectURL(blob));
           a.volume=1;
-          a.play().catch(function(){});
-        }).catch(function(){});
+          a.onended=function(){window._wizardSpeaking=false;setInputEnabled(true)};
+          a.play().catch(function(){window._wizardSpeaking=false;setInputEnabled(true)});
+        }).catch(function(){window._wizardSpeaking=false;setInputEnabled(true)});
     },500);
   }
 }
